@@ -1,5 +1,6 @@
 // The theme's HUD components with their user-set alignment, shared by the HUD browser and the HUD editor.
 import { request } from "../api/client";
+import { storage } from "../api/routes";
 import { on, onReconnect } from "../api/events";
 import type { Alignment, HudComponent } from "../api/types";
 import { moduleStore } from "../modules.svelte";
@@ -7,6 +8,10 @@ import { live } from "./live.svelte";
 
 export const THEME_ID = "tinted";
 export const COMPONENT_NAMES = ["Island", "Modules", "Scoreboard", "Armor", "Effects", "Target"];
+// Components that became on by default after 0.2.1. The client keeps every component's state in its config, so
+// installs saved before still have them off; the HUD switches each on once and remembers that in the client's storage.
+const LATER_DEFAULTS = ["Armor", "Effects", "Target"];
+const DEFAULTS_KEY = "tinted.componentDefaults";
 
 /** Context key the editor sets, so its live copies of the components stay silent. */
 export const EDITING = Symbol("hud-editing");
@@ -98,8 +103,23 @@ class HudComponents {
     }
   }
 
-  /** Loads the components and keeps them, the module list and the live game state current; returns the stop. */
-  start() {
+  async #catchUpDefaults() {
+    // Declarations stand in for the client's list with their names as ids; there is nothing stored to catch up
+    if (this.list.every((component) => component.id === component.name)) return;
+    const done = new Set((await storage.get(DEFAULTS_KEY))?.split(",") ?? []);
+    const due = LATER_DEFAULTS.filter((name) => !done.has(name));
+    if (!due.length) return;
+    for (const component of this.list) {
+      if (due.includes(component.name) && !component.settings.enabled) await this.setEnabled(component, true);
+    }
+    await storage.set(DEFAULTS_KEY, [...done, ...due].join(","));
+  }
+
+  /**
+   * Loads the components and keeps them, the module list and the live game state current; returns the stop. Only
+   * the HUD itself passes `catchUp`, so components new to the defaults are switched on once.
+   */
+  start({ catchUp = false } = {}) {
     let running = true;
     // Moves and switches made while the event socket was down are lost, so a reconnect loads the list again
     const load = () =>
@@ -108,7 +128,8 @@ class HudComponents {
           if (running) this.list = list;
         })
         .catch(() => {});
-    load();
+    const first = load();
+    if (catchUp) first.then(() => (running ? this.#catchUpDefaults() : undefined)).catch(() => {});
     const offs = [
       on("componentsUpdate", (event) => {
         if (event.source === "theme" && (event.themeId ?? THEME_ID) === THEME_ID) this.list = event.components;

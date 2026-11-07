@@ -1,7 +1,7 @@
 {
   "name": "Armor",
   "description": "Worn armor with its durability",
-  "enabled": false,
+  "enabled": true,
   "singleton": true,
   "alignment": {
     "horizontalAlignment": "Right",

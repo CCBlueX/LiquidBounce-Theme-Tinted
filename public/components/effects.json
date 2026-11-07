@@ -1,7 +1,7 @@
 {
   "name": "Effects",
   "description": "Every active effect with its time left, in place of the Island's effect row",
-  "enabled": false,
+  "enabled": true,
   "singleton": true,
   "alignment": {
     "horizontalAlignment": "Left",

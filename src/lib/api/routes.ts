@@ -1,7 +1,7 @@
 // Typed functions for the routes the theme uses. Every call goes through `call`, which takes its types from ApiRoutes.
 // Gotchas: validation errors are mostly 403 (ApiError.status), ids are list indices, colors are signed ARGB ints.
 
-import { apiUrl, request, type HttpMethod, type QueryValue } from "./client";
+import { ApiError, apiUrl, request, type HttpMethod, type QueryValue } from "./client";
 import type {
   Account,
   ApiRoutes,
@@ -94,6 +94,20 @@ export const client = {
   window: (): Promise<WindowInfo> => call("GET /window"),
   /** Quits Minecraft. */
   exit: (): Promise<void> => call("POST /exit"),
+};
+
+/** The client's own key-value store, kept in its config across starts (the pages' localStorage is not). */
+export const storage = {
+  /** undefined for a key that was never set (the client answers 403). */
+  get: (key: string): Promise<string | undefined> =>
+    call("GET /localStorage", { query: { key } }).then(
+      (entry) => entry.value,
+      (error) => {
+        if (error instanceof ApiError && error.status === 403) return undefined;
+        throw error;
+      },
+    ),
+  set: (key: string, value: string): Promise<void> => call("PUT /localStorage", { body: { key, value } }),
 };
 
 /** URLs for <img src>; they carry the lb_auth cookie like any request to the interop server. */

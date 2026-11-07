@@ -9,7 +9,7 @@
     return () => document.documentElement.classList.remove("ctx-hud");
   });
 
-  $effect(() => hud.start());
+  $effect(() => hud.start({ catchUp: true }));
 </script>
 
 <aside class="hud" aria-label="Heads-up display">

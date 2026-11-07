@@ -1,7 +1,7 @@
 {
   "name": "Target",
   "description": "The player you are fighting, in place of the Island's target activity",
-  "enabled": false,
+  "enabled": true,
   "singleton": true,
   "alignment": {
     "horizontalAlignment": "CenterTranslated",
