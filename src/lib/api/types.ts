@@ -919,6 +919,8 @@ export type EventMap = {
   accountManagerRemoval: { username?: string };
   proxyCheckResult: { proxy?: Proxy; error?: string };
   virtualScreen: VirtualScreenEvent;
+  /** Before every Minecraft screen change (newer clients); a cancelled one never opens. */
+  screen: { screen?: { class: string; title: string } | null; isCancelled: boolean };
   serverPinged: { server: ServerData };
   /** Sent twice per change: native list, then the active theme's list. */
   componentsUpdate: { source: "native" | "theme"; components: HudComponent[]; themeId?: string };

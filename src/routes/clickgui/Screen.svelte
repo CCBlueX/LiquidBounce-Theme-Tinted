@@ -145,7 +145,8 @@
       localStorage.removeItem(STORAGE_KEY);
     }
     ready = true;
-    play("open");
+    // The cached page loads hidden when a world is joined
+    if (!cached) play("open");
     load();
     // A page reload or disconnect while the HUD editor was open leaves the client hiding the HUD; nothing else resets it
     request("PUT", "/hud-editor", { body: { selected: false } }).catch(() => {});
@@ -158,9 +159,8 @@
       })
       .catch(() => {});
     // The client closes the ClickGUI on Esc before this page sees the key; what floats over the window closes with it,
-    // and focus leaves so no caret keeps the page drawing while it fades out. The in-game ClickGUI is a cached page
-    // the client only hides, without a screen event, so there the page's own Esc handling is all that runs.
-    return onScreenChange(({ name, action }) => {
+    // and focus leaves so no caret keeps the page drawing while it fades out
+    const offScreen = onScreenChange(({ name, action }) => {
       if (name !== "clickgui") return;
       if (action === "close") {
         dropLayers();
@@ -169,6 +169,23 @@
         if (autofocus) focusSearch();
       }
     });
+    // The in-game ClickGUI is a cached page the client only hides, with no virtualScreen events. Toggling the ClickGUI
+    // module shows it; newer clients send every screen change, so a hide by anything but Esc reaches it as well.
+    const offToggle = on("moduleActivation", ({ moduleName }) => {
+      if (!cached || moduleName !== "ClickGUI") return;
+      shown = true;
+      play("open");
+      if (autofocus) focusSearch();
+    });
+    const offGameScreen = on("screen", ({ screen, isCancelled }) => {
+      if (!cached || !shown || isCancelled || screen?.class === STANDALONE_SCREEN) return;
+      hide();
+    });
+    return () => {
+      offScreen();
+      offToggle();
+      offGameScreen();
+    };
   });
 
   $effect(() => {
@@ -300,14 +317,20 @@
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   }
 
-  // The client hides the in-game ClickGUI on every Esc, whatever is open in it, and tells this cached page nothing;
-  // the page drops all of it at once (search, menus, the HUD editor, a key being recorded) so it comes back clean
+  // The client hides the in-game ClickGUI on every Esc, whatever is open in it; the page drops all of it at once
+  // (search, menus, the HUD editor, a key being recorded) so it comes back clean
   const cached = readLocation().isStatic;
+  const STANDALONE_SCREEN = "net.ccbluex.liquidbounce.integration.screen.impl.CustomStandaloneMinecraftScreen";
+  let shown = false;
+  function hide() {
+    shown = false;
+    query = "";
+    dropLayers();
+  }
   function cachedEscape(event: KeyboardEvent) {
     if (!cached || event.key !== "Escape") return;
     event.preventDefault();
-    query = "";
-    dropLayers();
+    hide();
   }
 
   // Esc clears the search first and closes the screen second; typing anywhere starts a search
