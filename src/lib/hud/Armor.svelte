@@ -44,7 +44,7 @@
     gap: 12px;
     height: 30px;
     margin: 0;
-    padding: 0 12px 0 9px;
+    padding: 0 12px;
     list-style: none;
     border-radius: 15px;
     font-size: 13px;

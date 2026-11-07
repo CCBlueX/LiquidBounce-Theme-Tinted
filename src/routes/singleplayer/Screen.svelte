@@ -460,7 +460,7 @@
   .search :global(input:focus-visible) { outline: none; }
 
   .pill {
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 28px; padding: 0 6px 0 12px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 28px; padding: 0 8px 0 12px;
     border-radius: 14px; background: var(--fill-2); font-size: 13px; font-weight: 500; white-space: nowrap;
     transition: transform var(--t-press) var(--ease), background-color var(--t-pop) var(--ease);
   }

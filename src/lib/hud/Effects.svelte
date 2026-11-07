@@ -47,7 +47,7 @@
     align-items: center;
     gap: 8px;
     height: 24px;
-    padding: 0 10px 0 7px;
+    padding: 0 10px;
   }
   .name {
     flex: 1;

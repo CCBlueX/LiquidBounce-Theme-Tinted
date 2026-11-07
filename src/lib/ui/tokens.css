@@ -151,5 +151,5 @@ input { font: inherit; color: inherit; background: none; border: 0; outline: 0; 
   text-shadow: var(--text-shadow); transition: transform var(--t-press) var(--ease);
 }
 .menu-pill:active { transform: scale(0.98); }
-.menu-pill.with-head { padding-left: 3px; }
+.menu-pill.with-head { padding-left: 7px; gap: 7px; }
 .menu-pill .quiet { font-weight: 400; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }

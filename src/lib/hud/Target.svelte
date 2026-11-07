@@ -37,7 +37,7 @@
     gap: 10px;
     width: 220px;
     height: 56px;
-    padding: 0 12px 0 10px;
+    padding: 0 12px;
     border-radius: var(--r-card);
     box-shadow: var(--specular), 0 8px 24px rgb(0 0 0 / 0.16), 0 1px 4px rgb(0 0 0 / 0.1);
   }

@@ -31,7 +31,7 @@
     align-items: center;
     gap: 10px;
     height: 52px;
-    padding: 0 18px 0 10px;
+    padding: 0 16px;
   }
   .text {
     display: flex;

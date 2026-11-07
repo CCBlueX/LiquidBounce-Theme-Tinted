@@ -20,7 +20,7 @@
     align-items: center;
     gap: 16px;
     height: 52px;
-    padding: 0 12px 0 20px;
+    padding: 0 16px;
   }
   .text {
     display: flex;

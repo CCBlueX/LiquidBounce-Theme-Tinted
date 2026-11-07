@@ -153,7 +153,7 @@
 .mg-pill.danger { color: #ff8a8e; font-weight: 600; }
 :root.contrast-more .mg-pill.danger { color: #ffb3b5; }
 .mg-pill.busy { opacity: 1; color: var(--label-2); }
-.mg-pill .chev { font-size: 12px; margin-top: -4px; }
+.mg-pill .chev { font-size: 12px; margin: -4px -2px 0 0; }
 .mg-glyph { width: 26px; padding: 0; font-size: 14px; }
 
 /* Progress text breathes; reduce motion keeps it still and the words carry the state */

@@ -45,7 +45,7 @@
     align-items: center;
     gap: 6px;
     height: 24px;
-    padding: 0 10px 0 8px;
+    padding: 0 10px;
     border-radius: 12px;
     background: var(--fill-2);
     font-size: 13px;

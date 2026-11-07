@@ -32,7 +32,7 @@
     width: 300px;
     max-width: 100%;
     height: 52px;
-    padding: 0 20px 4px 12px;
+    padding: 0 16px 4px;
   }
   .text {
     display: flex;
@@ -53,8 +53,8 @@
   }
   .bar {
     position: absolute;
-    left: 20px;
-    right: 20px;
+    left: 16px;
+    right: 16px;
     bottom: 5px;
     height: 3px;
     border-radius: 2px;

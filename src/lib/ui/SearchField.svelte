@@ -25,7 +25,7 @@
     align-items: center;
     gap: 8px;
     height: 28px;
-    padding: 0 5px 0 12px;
+    padding: 0 8px 0 12px;
     border-radius: 14px;
     background: var(--fill);
     box-shadow: inset 0 0 0 0.5px var(--line);

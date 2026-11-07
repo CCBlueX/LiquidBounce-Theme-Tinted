@@ -145,7 +145,7 @@
       aria-label="Account, {user?.username ?? 'unknown'}{accountNote ? `, ${accountNote}` : ''}"
       onclick={loadAccounts}
     >
-      <PlayerHead uuid={user?.uuid} avatar={user?.avatar} size={24} radius={12} inWorld={false} />
+      <PlayerHead uuid={user?.uuid} avatar={user?.avatar} size={16} radius={8} inWorld={false} />
       <span class="name">{user?.username ?? "Accounts"}</span>
       {#if accountNote}<span class="l3 quiet" class:mg-pulse={busy}>{accountNote}</span>{/if}
       <span class="chev" aria-hidden="true">⌄</span>
@@ -217,7 +217,7 @@
 
 <style>
   .name { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
-  .chev { flex: none; font-size: 12px; color: var(--label-2); margin: -4px 0 0 -2px; }
+  .chev { flex: none; font-size: 12px; color: var(--label-2); margin: -4px -2px 0 -2px; }
   .check { flex: none; width: 14px; text-align: center; font-size: 12px; }
   .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 

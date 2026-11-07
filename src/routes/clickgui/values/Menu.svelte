@@ -36,5 +36,5 @@
 <style>
   .trigger { max-width: min(220px, 62%); min-width: 0; }
   .value { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .chev { flex: none; font-size: 12px; color: var(--label-2); margin-top: -4px; }
+  .chev { flex: none; font-size: 12px; color: var(--label-2); margin: -4px -2px 0 0; }
 </style>
