@@ -69,7 +69,7 @@
 
 {#snippet dialog()}
   <div
-    class="panel glass deep on-glass {placement}"
+    class="panel glass deep layered on-glass {placement}"
     style:width="{width}px"
     role="alertdialog"
     aria-modal="true"
@@ -99,20 +99,20 @@
 
 <style>
   .scrim { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: rgb(10 12 16 / 0.32); }
-  .panel { padding: 16px; border-radius: var(--r-card); outline: none; text-align: center; }
-  .panel.modal { padding: 20px; }
-  .panel.center, .panel.end { position: absolute; bottom: calc(100% + 12px); z-index: 3; }
+  .panel { padding: 14px; border-radius: var(--r-card); outline: none; text-align: center; }
+  .panel.modal { padding: 16px; }
+  .panel.center, .panel.end { position: absolute; bottom: calc(100% + 8px); z-index: 3; }
   .panel.center { left: 50%; translate: -50% 0; }
   .panel.end { right: 0; text-align: left; }
   h2 { overflow-wrap: anywhere; }
-  p { margin-top: 6px; overflow-wrap: anywhere; }
-  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
-  .modal .actions { margin-top: 16px; }
+  p { margin-top: 4px; overflow-wrap: anywhere; }
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .modal .actions { margin-top: 14px; }
   .btn {
-    height: 32px; border-radius: 16px; font-size: 14px; font-weight: 500; color: var(--label);
+    height: 28px; border-radius: 14px; font-size: 13px; font-weight: 500; color: var(--label);
     background: var(--fill-2); transition: transform var(--t-press) var(--ease), background-color var(--t-pop) var(--ease);
   }
-  .modal .btn { height: 34px; border-radius: 17px; }
+  .modal .btn { height: 30px; border-radius: 15px; }
   .btn:hover { background: var(--fill-3); }
   .btn:active { transform: scale(0.98); }
   .btn.primary { color: #fff; background: var(--accent-fill); font-weight: 600; }

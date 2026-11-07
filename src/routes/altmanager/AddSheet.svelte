@@ -16,7 +16,6 @@
 
 <script lang="ts">
   import { onMount } from "svelte";
-  import ItemIcon from "../../lib/ui/ItemIcon.svelte";
   import Switch from "../../lib/ui/Switch.svelte";
 
   // One form per way of adding an account. Secrets (password, tokens, API key) live in the inputs only until they are
@@ -39,13 +38,13 @@
     onclose: () => void;
   } = $props();
 
-  const HEADS: Record<Flow, { icon: string; title: string; text: string }> = {
-    cracked: { icon: "minecraft:name_tag", title: "Cracked account", text: "A name without sign-in. Joins offline-mode servers only." },
-    microsoft: { icon: "minecraft:ender_eye", title: "Microsoft account", text: "Sign in with Microsoft to join any server." },
-    credentials: { icon: "minecraft:writable_book", title: "Email and password", text: "Signs in to Microsoft without opening a browser." },
-    session: { icon: "minecraft:tripwire_hook", title: "Session token", text: "Adds the account a Minecraft access or refresh token belongs to." },
-    altening: { icon: "minecraft:emerald", title: "The Altening token", text: "Adds the account behind a token from The Altening." },
-    generate: { icon: "minecraft:experience_bottle", title: "Generate with The Altening", text: "Creates an account with your The Altening API key." },
+  const HEADS: Record<Flow, { title: string; text: string }> = {
+    cracked: { title: "Cracked account", text: "A name without sign-in. Joins offline-mode servers only." },
+    microsoft: { title: "Microsoft account", text: "Sign in with Microsoft to join any server." },
+    credentials: { title: "Email and password", text: "Signs in to Microsoft without opening a browser." },
+    session: { title: "Session token", text: "Adds the account a Minecraft access or refresh token belongs to." },
+    altening: { title: "The Altening token", text: "Adds the account behind a token from The Altening." },
+    generate: { title: "Generate with The Altening", text: "Creates an account with your The Altening API key." },
   };
   const head = $derived(HEADS[flow]);
 
@@ -104,7 +103,6 @@
 </script>
 
 <div class="mg-sheet-head on-glass">
-  <ItemIcon id={head.icon} size={32} />
   <div class="grow">
     <h2 class="t-title3" id="mg-sheet-title">{head.title}</h2>
     <p class="t-callout l2">{head.text}</p>
@@ -144,15 +142,12 @@
   {:else if flow === "microsoft"}
     <div class="group mg-options">
       <button class="mg-item mg-option" disabled={busy} onclick={() => send("device")}>
-        <ItemIcon id="minecraft:ender_eye" size={32} />
         <span class="grow"><span class="label">Sign in with browser</span><span>Opens the Microsoft sign-in page in your browser.</span></span>
       </button>
       <button class="mg-item mg-option" onclick={() => send("clipboard")}>
-        <ItemIcon id="minecraft:paper" size={32} />
         <span class="grow"><span class="label">Copy sign-in link</span><span>Puts the sign-in link on your clipboard.</span></span>
       </button>
       <button class="mg-item mg-option" disabled={busy} onclick={() => send("webview")}>
-        <ItemIcon id="minecraft:filled_map" size={32} />
         <span class="grow"><span class="label">Sign-in window</span><span>Signs in inside a client window.</span></span>
       </button>
     </div>

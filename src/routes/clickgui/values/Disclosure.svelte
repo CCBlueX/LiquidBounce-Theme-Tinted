@@ -49,14 +49,14 @@
 </div>
 
 <style>
-  .head { padding-right: 14px; }
+  .head { padding-right: 8px; }
   .opener {
     flex: 1;
     min-width: 0;
-    min-height: 44px;
+    min-height: 32px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     text-align: left;
   }
   .chev {

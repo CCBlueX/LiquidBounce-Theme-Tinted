@@ -1,12 +1,10 @@
 <script lang="ts">
-  import ItemIcon from "../../lib/ui/ItemIcon.svelte";
   import type { NoteActivity } from "./island.svelte";
 
   let { note }: { note: NoteActivity } = $props();
 </script>
 
 <div class="activity">
-  <span class="badge"><ItemIcon id="minecraft:bell" size={32} /></span>
   <span class="text">
     <span class="t-headline">{note.title}</span>
     <span class="t-footnote l2 message">{note.message}</span>
@@ -21,18 +19,8 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: 56px;
-    padding: 8px 20px 8px 8px;
-  }
-  .badge {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 20px;
-    background: var(--fill-2);
-    flex: none;
-    align-self: flex-start;
+    min-height: 52px;
+    padding: 8px 20px;
   }
   .text {
     display: flex;

@@ -71,7 +71,12 @@ function open(): void {
   });
 }
 
+// The client writes the name first, so frames no page part listens to (most of the per-tick stream) are never parsed
+const FRAME_NAME = /^\{"name":"([^"]+)"/;
+
 function dispatch(data: string): void {
+  const name = FRAME_NAME.exec(data)?.[1];
+  if (name !== undefined && !handlers.get(name as EventName)?.size) return;
   let frame: { name?: unknown; event?: unknown };
   try {
     frame = JSON.parse(data);
@@ -79,7 +84,7 @@ function dispatch(data: string): void {
     return;
   }
   const set = typeof frame.name === "string" ? handlers.get(frame.name as EventName) : undefined;
-  if (!set) return;
+  if (!set?.size) return;
   for (const handler of [...set]) {
     try {
       handler(frame.event as never);

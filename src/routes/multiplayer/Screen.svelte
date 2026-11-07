@@ -543,74 +543,74 @@
 
 <style>
   .stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-  .frame { position: relative; width: min(1360px, calc(100% - 160px)); height: min(776px, calc(100% - 124px)); margin-bottom: 44px; }
+  .frame { position: relative; width: min(1120px, calc(100% - 160px)); height: min(620px, calc(100% - 124px)); margin-bottom: 40px; }
   .window { position: absolute; inset: 0; border-radius: var(--r-window); overflow: hidden; }
-  .head { position: absolute; left: 28px; right: 452px; top: 24px; height: 44px; display: flex; align-items: center; gap: 16px; }
-  .titles { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 14px; }
+  .head { position: absolute; left: 16px; right: 348px; top: 14px; height: 32px; display: flex; align-items: center; gap: 12px; }
+  .titles { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; }
   .titles span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   h1 { white-space: nowrap; }
   .tools { display: flex; align-items: center; gap: 8px; flex: none; }
-  .search { width: 240px; margin: 0 4px; }
+  .search { width: 200px; }
   .search :global(input:focus-visible) { outline: none; }
   .add { color: #fff; background: var(--fill-3); }
 
   .list-wrap {
     position: absolute;
-    left: 20px;
-    right: 444px;
-    top: 88px;
-    bottom: 76px;
-    padding: 4px 8px 32px;
+    left: 8px;
+    right: 340px;
+    top: 54px;
+    bottom: 52px;
+    padding: 4px 8px 24px;
     overflow-y: auto;
     scrollbar-width: none;
-    mask-image: linear-gradient(180deg, transparent 0, #000 6px, #000 calc(100% - 40px), transparent);
+    mask-image: linear-gradient(180deg, transparent 0, #000 6px, #000 calc(100% - 28px), transparent);
   }
-  .list { display: grid; gap: 4px; }
-  .section { display: grid; gap: 4px; margin-top: 20px; }
-  .lan-title { padding: 0 14px 4px; }
-  .empty { display: grid; gap: 10px; justify-items: start; padding: 24px 14px; }
+  .list { display: grid; gap: 2px; }
+  .section { display: grid; gap: 2px; margin-top: 12px; }
+  .lan-title { padding: 0 8px 2px; }
+  .empty { display: grid; gap: 8px; justify-items: start; padding: 16px 8px; }
 
   .foot {
     position: absolute;
-    left: 28px;
-    right: 452px;
-    bottom: 20px;
-    height: 44px;
+    left: 16px;
+    right: 348px;
+    bottom: 18px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
   }
   .direct { position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
   .direct-field {
     display: flex;
     align-items: center;
-    gap: 10px;
-    height: 36px;
-    padding: 0 14px 0 16px;
+    gap: 8px;
+    height: 28px;
+    padding: 0 12px;
     border-radius: 18px;
     background: var(--fill);
     box-shadow: inset 0 0 0 0.5px var(--line);
-    width: 360px;
+    width: 300px;
     min-width: 0;
   }
   .direct-field span { white-space: nowrap; }
-  .direct-field input { flex: 1; min-width: 0; height: 100%; font-size: 14px; }
+  .direct-field input { flex: 1; min-width: 0; height: 100%; font-size: 13px; }
   .direct-field input::placeholder { color: var(--label-3); }
   .direct-field input:focus-visible { outline: none; }
   .direct-field:focus-within { box-shadow: inset 0 0 0 0.5px var(--line), 0 0 0 2px var(--accent); }
   .direct-field.invalid { box-shadow: inset 0 0 0 1px #ff9a96; }
-  .direct .cg-pill { height: 32px; padding: 0 14px; }
+  .direct .cg-pill { height: 28px; padding: 0 12px; }
   .cg-pill:disabled { opacity: 0.45; }
-  .problem { position: absolute; left: 16px; top: calc(100% + 2px); color: #ffb4b0; white-space: nowrap; }
-  .protocol { height: 32px; gap: 8px; padding: 0 12px 0 14px; flex: none; }
+  .problem { position: absolute; left: 12px; top: calc(100% + 1px); color: #ffb4b0; white-space: nowrap; }
+  .protocol { height: 28px; gap: 6px; padding: 0 10px 0 12px; flex: none; }
   .chev { color: var(--label-2); font-size: 17px; margin-top: -2px; }
-  .head .cg-pill { height: 32px; padding: 0 14px; }
+  .head .cg-pill { height: 28px; padding: 0 12px; }
 
-  .pane { position: absolute; top: 20px; bottom: 20px; right: 16px; width: 412px; border-radius: var(--r-pane); overflow: hidden; }
+  .pane { position: absolute; top: 12px; bottom: 12px; right: 12px; width: 320px; border-radius: var(--r-pane); overflow: hidden; }
   .pane-inner { position: absolute; inset: 0; }
 
-  .bottom { position: absolute; top: calc(100% + 14px); left: 50%; translate: -50% 0; }
+  .bottom { position: absolute; top: calc(100% + 12px); left: 50%; translate: -50% 0; }
   .closer { width: 30px; height: 30px; border-radius: 15px; display: grid; place-items: center; font-size: 17px; line-height: 1; padding-bottom: 2px; }
   .closer:active { transform: scale(0.92); }
 </style>

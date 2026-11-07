@@ -132,23 +132,23 @@
     left: 50%;
     bottom: 32px;
     translate: -50% 0;
-    width: 760px;
+    width: 640px;
     max-width: calc(100% - 64px);
-    padding: 20px;
+    padding: 16px;
     border-radius: var(--r-pane);
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
   }
-  .top { display: flex; align-items: center; gap: 16px; min-height: 40px; }
+  .top { display: flex; align-items: center; gap: 12px; min-height: 30px; }
   .primary {
     flex: none;
-    height: 40px;
-    padding: 0 22px;
-    border-radius: 20px;
+    height: 30px;
+    padding: 0 16px;
+    border-radius: 15px;
     background: var(--accent-fill);
     color: #fff;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 600;
     text-shadow: none;
     transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
@@ -171,20 +171,20 @@
     text-shadow: none;
   }
 
-  .columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 16px; align-items: start; }
-  .column { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 12px; align-items: start; }
+  .column { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   h2 { font-weight: 600; color: var(--label-2); padding: 0 4px; }
-  ul { list-style: none; padding: 4px; }
-  .row { display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 8px 0 8px; border-radius: var(--r-control); }
+  ul { list-style: none; padding: 2px; }
+  .row { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 6px; border-radius: var(--r-control); }
   .icon { width: 32px; height: 32px; border-radius: 6px; overflow: hidden; flex: none; }
   .text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .name { font-size: 14px; line-height: 18px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .name { font-size: 13px; line-height: 18px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sub { color: var(--label-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .small {
     flex: none;
-    height: 28px;
-    padding: 0 14px;
-    border-radius: 14px;
+    height: 26px;
+    padding: 0 12px;
+    border-radius: 13px;
     background: var(--fill-2);
     box-shadow: inset 0 0 0 0.5px var(--line);
     font-size: 13px;

@@ -83,9 +83,9 @@
 {/each}
 
 <style>
-  .sec { margin-top: 20px; }
-  .sec:first-child { margin-top: 4px; }
-  .title { display: flex; align-items: center; justify-content: space-between; min-height: 22px; margin: 0 4px 8px 4px; }
+  .sec { margin-top: 12px; }
+  .sec:first-child { margin-top: 2px; }
+  .title { display: flex; align-items: center; justify-content: space-between; min-height: 24px; margin: 0 2px 4px 4px; }
   h3 { font-weight: 600; color: var(--label-2); }
   .off { padding: 0 4px; color: var(--label-3); }
 </style>

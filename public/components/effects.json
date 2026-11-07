@@ -1,0 +1,13 @@
+{
+  "name": "Effects",
+  "description": "Every active effect with its time left, in place of the Island's effect row",
+  "enabled": false,
+  "singleton": true,
+  "alignment": {
+    "horizontalAlignment": "Left",
+    "horizontalOffset": 12,
+    "verticalAlignment": "Top",
+    "verticalOffset": 12
+  },
+  "tweaks": ["DISABLE_STATUS_EFFECT_OVERLAY"]
+}

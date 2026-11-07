@@ -9,7 +9,6 @@
   import { play } from "../../lib/sound";
   import { isTextField, typingFocus } from "../../lib/typing";
   import ConfirmPopover from "../../lib/ui/ConfirmPopover.svelte";
-  import ItemIcon from "../../lib/ui/ItemIcon.svelte";
   import Keycap from "../../lib/ui/Keycap.svelte";
   import SearchField from "../../lib/ui/SearchField.svelte";
   import { difficultyLabel, gameModeLabel, modeLine, notices } from "./format";
@@ -282,7 +281,6 @@
         </div>
       {:else if list && list.length === 0}
         <div class="empty on-glass" in:fade={{ duration: 160 }}>
-          <span class="hero"><ItemIcon id="minecraft:grass_block" size={64} /></span>
           <h2 class="t-title2">No worlds yet</h2>
           <p class="t-callout l2">Worlds you create on this computer show up here.</p>
           <button class="pill primary" bind:this={createButton} aria-keyshortcuts="N Enter" onclick={create}>Create world</button>
@@ -309,10 +307,9 @@
                   onclick={() => select(world)}
                   ondblclick={() => join(world)}
                 >
-                  <WorldIcon icon={world.icon} />
+                  <WorldIcon icon={world.icon} size={32} />
                   <span class="card-text">
                     <span class="name t-headline">{world.displayName}</span>
-                    {#if world.name !== world.displayName}<span class="folder t-footnote l3">{world.name}</span>{/if}
                     <span class="meta t-callout l2 num">
                       {#if world.hardcore}<span class="hardcore">Hardcore</span>{/if}
                       <span>{world.hardcore ? gameModeLabel(world) : modeLine(world)}</span>
@@ -320,13 +317,12 @@
                       <span>{world.version || "Unknown version"}</span>
                     </span>
                   </span>
-                  <span class="when t-footnote l2 num">
-                    {relativeTime(world.lastPlayed, now)}
-                    <span class="tip glass deep t-footnote" aria-hidden="true">{absoluteTime(world.lastPlayed)}</span>
+                  <span class="side">
+                    <span class="t-footnote l2 num">{relativeTime(world.lastPlayed, now)}</span>
+                    {#if flags.length}
+                      <span class="flag t-footnote" aria-hidden="true">{flags.some((f) => f.blocks) ? "Can't open" : "Check first"}</span>
+                    {/if}
                   </span>
-                  {#if flags.length}
-                    <span class="flag t-footnote" aria-hidden="true">{flags.some((f) => f.blocks) ? "Can't open" : "Check first"}</span>
-                  {/if}
                 </button>
               {/each}
             </div>
@@ -339,7 +335,7 @@
               {#key selected.name}
                 <div class="details-in" in:fade={{ duration: 160 }}>
                   <div class="hero-row">
-                    <WorldIcon icon={selected.icon} size={128} />
+                    <WorldIcon icon={selected.icon} size={64} />
                     <div class="hero-text">
                       <h2 class="t-title2">{selected.displayName}</h2>
                       {#if selected.name !== selected.displayName}
@@ -435,101 +431,92 @@
 
 <style>
   .stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-  .frame { position: relative; width: min(1180px, calc(100% - 160px)); height: min(720px, calc(100% - 140px)); margin-bottom: 44px; }
+  .frame { position: relative; width: min(940px, calc(100% - 160px)); margin-bottom: 40px; }
   .window {
-    position: absolute; inset: 0; border-radius: var(--r-window); overflow: hidden; display: flex; flex-direction: column;
+    position: relative; max-height: min(600px, calc(100vh - 140px)); border-radius: var(--r-window); overflow: hidden;
+    display: flex; flex-direction: column;
   }
-  .head { display: flex; align-items: center; gap: 12px; height: 44px; margin: 24px 28px 0; flex: none; }
-  .titles { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 14px; white-space: nowrap; }
-  .search { width: 260px; }
+  .head { display: flex; align-items: center; gap: 8px; height: 32px; margin: 14px 16px 0; flex: none; }
+  .titles { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; white-space: nowrap; }
+  .search { width: 220px; }
   .search :global(input:focus-visible) { outline: none; }
 
   .pill {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 8px 0 16px;
-    border-radius: 18px; background: var(--fill-2); font-size: 14px; font-weight: 500; white-space: nowrap;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 28px; padding: 0 6px 0 12px;
+    border-radius: 14px; background: var(--fill-2); font-size: 13px; font-weight: 500; white-space: nowrap;
     transition: transform var(--t-press) var(--ease), background-color var(--t-pop) var(--ease);
   }
   .pill:hover { background: var(--fill-3); }
   .pill:active { transform: scale(0.97); }
-  .pill.primary { padding: 0 20px; color: #fff; background: var(--accent-fill); font-weight: 600; }
+  .pill.primary { padding: 0 14px; color: #fff; background: var(--accent-fill); font-weight: 600; }
   .pill.primary:hover { background: var(--accent-strong); }
 
-  .body { flex: 1; min-height: 0; display: flex; gap: 16px; padding: 20px 16px 0 28px; }
+  .body { flex: 0 1 auto; min-height: 0; display: flex; gap: 12px; padding: 12px 12px 0 16px; }
   .list {
-    flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; scrollbar-width: none;
-    padding: 4px; margin: -4px; padding-bottom: 24px;
+    flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; scrollbar-width: none;
+    padding: 4px; margin: -4px; padding-bottom: 16px;
   }
   .card {
-    position: relative; display: flex; align-items: center; gap: 16px; min-height: 88px; padding: 12px 20px 12px 12px;
-    border-radius: var(--r-card); text-align: left; background: var(--fill); box-shadow: inset 0 0 0 0.5px var(--line);
+    position: relative; flex: none; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px 0 4px;
+    border-radius: var(--r-group); text-align: left;
     transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
   }
-  .card:hover { background: var(--fill-2); }
+  .card:hover { background: var(--fill); }
   .card:active { transform: scale(0.99); }
-  .card.selected { background: var(--accent-tint); box-shadow: inset 0 0 0 1.5px var(--accent); }
-  .card-text { flex: 1; min-width: 0; display: grid; gap: 1px; }
-  .name, .folder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .meta { display: flex; gap: 6px; align-items: center; margin-top: 3px; white-space: nowrap; }
+  .card.selected { background: var(--accent-tint); box-shadow: inset 0 0 0 1px var(--accent); }
+  .card-text { flex: 1; min-width: 0; display: grid; }
+  .name { font-size: 13px; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .meta { display: flex; gap: 6px; align-items: center; font-size: 12px; line-height: 16px; white-space: nowrap; }
   .hardcore {
-    padding: 0 7px; border-radius: 9px; font-size: 12px; line-height: 18px; font-weight: 600; color: var(--label);
+    padding: 0 6px; border-radius: 8px; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--label);
     box-shadow: inset 0 0 0 1px var(--label-3);
   }
   .dot { color: var(--label-3); }
-  .when { position: relative; flex: none; align-self: flex-start; margin-top: 4px; }
-  .tip {
-    position: absolute; right: -8px; top: calc(100% + 8px); padding: 6px 10px; border-radius: var(--r-control);
-    white-space: nowrap; color: var(--label); opacity: 0; pointer-events: none; z-index: 3;
-    transition: opacity var(--t-pop) var(--ease);
-  }
-  .card:hover .tip, .card:focus-visible .tip { opacity: 1; transition-delay: 400ms; }
-  .flag {
-    position: absolute; right: 20px; bottom: 14px; padding: 0 8px; border-radius: 9px; line-height: 18px;
-    font-weight: 600; background: var(--fill-3);
-  }
-  .none { flex: 1; padding: 12px 0; }
+  .side { flex: none; display: grid; justify-items: end; }
+  .flag { padding: 0 6px; border-radius: 8px; line-height: 16px; font-weight: 600; background: var(--fill-3); }
+  .none { flex: 1; padding: 8px 4px; }
 
   .details {
-    flex: none; width: 400px; margin-bottom: 16px; border-radius: var(--r-pane); overflow: hidden; display: flex;
+    flex: none; width: 300px; margin-bottom: 12px; border-radius: var(--r-pane); overflow: hidden; display: flex;
   }
-  .details-in { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 20px; gap: 16px; overflow-y: auto; scrollbar-width: none; }
-  .hero-row { display: flex; align-items: center; gap: 16px; }
+  .details-in { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 12px; gap: 12px; overflow-y: auto; scrollbar-width: none; }
+  .hero-row { display: flex; align-items: center; gap: 12px; }
   .hero-text { min-width: 0; display: grid; gap: 2px; }
   .hero-text h2, .hero-text span { overflow-wrap: anywhere; }
-  .facts { padding: 0 14px; }
-  .facts div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; }
+  .facts { padding: 0 12px; font-size: 13px; }
+  .facts div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; }
   .facts div + div { box-shadow: 0 -0.5px 0 var(--line); }
-  dt { color: var(--label-2); }
+  dt { color: var(--label-2); white-space: nowrap; }
   dd { text-align: right; }
-  .notices { list-style: none; display: grid; gap: 8px; }
-  .notices li { padding: 10px 12px; border-radius: var(--r-control); background: var(--fill); box-shadow: inset 3px 0 0 var(--label-3); }
+  .notices { list-style: none; display: grid; gap: 6px; }
+  .notices li { padding: 8px 10px; border-radius: var(--r-control); background: var(--fill); box-shadow: inset 3px 0 0 var(--label-3); }
   .notices li.blocks { box-shadow: inset 3px 0 0 var(--negative); }
   .kind { font-weight: 600; }
-  .actions { margin-top: auto; display: grid; gap: 10px; }
+  .actions { margin-top: auto; display: grid; gap: 8px; }
   .play {
-    height: 44px; border-radius: 22px; font-size: 15px; font-weight: 600; color: #fff; background: var(--accent-fill);
+    height: 30px; border-radius: 15px; font-size: 13px; font-weight: 600; color: #fff; background: var(--accent-fill);
     transition: transform var(--t-press) var(--ease), background-color var(--t-pop) var(--ease);
   }
   .play:hover:not(:disabled) { background: var(--accent-strong); }
   .play:active:not(:disabled) { transform: scale(0.98); }
   .play:disabled { background: var(--fill-2); color: var(--label-2); }
-  .row-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .row-actions .pill { width: 100%; padding: 0 8px 0 16px; justify-content: space-between; }
+  .row-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row-actions .pill { width: 100%; justify-content: space-between; }
   .anchor { position: relative; }
 
-  .empty { flex: 1; display: grid; place-content: center; justify-items: center; gap: 8px; text-align: center; }
-  .empty .hero { margin-bottom: 8px; }
-  .empty .pill { margin-top: 12px; }
+  .empty { flex: none; display: grid; place-content: center; justify-items: center; gap: 6px; padding: 40px 16px 32px; text-align: center; }
+  .empty .pill { margin-top: 8px; }
 
   .foot {
-    flex: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 48px; padding: 0 28px;
+    flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 36px; padding: 0 16px;
     box-shadow: 0 -0.5px 0 var(--line);
   }
-  .keys { display: flex; gap: 18px; }
+  .keys { display: flex; gap: 14px; }
   .keys span { display: inline-flex; align-items: center; gap: 4px; }
   .live { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .closer {
-    position: absolute; left: 50%; top: calc(100% + 14px); translate: -50% 0;
+    position: absolute; left: 50%; top: calc(100% + 12px); translate: -50% 0;
     width: 30px; height: 30px; border-radius: 15px; display: grid; place-items: center; font-size: 17px;
     line-height: 1; padding-bottom: 2px;
   }

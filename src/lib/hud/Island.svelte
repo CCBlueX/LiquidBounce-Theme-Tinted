@@ -1,22 +1,31 @@
 <script lang="ts">
+  import { getContext, untrack } from "svelte";
   import type { TransitionConfig } from "svelte/transition";
-  import { moduleStore } from "../../lib/modules.svelte";
-  import { isReducedMotion, rise, spring, tween } from "../../lib/motion";
-  import ItemIcon from "../../lib/ui/ItemIcon.svelte";
+  import { moduleStore } from "../modules.svelte";
+  import { isReducedMotion, rise, spring, tween } from "../motion";
+  import ItemIcon from "../ui/ItemIcon.svelte";
+  import { EDITING, hud } from "./components.svelte";
   import { IslandState } from "./island.svelte";
+  import { live } from "./live.svelte";
   import NoteView from "./NoteView.svelte";
   import ScaffoldView from "./ScaffoldView.svelte";
   import TargetView from "./TargetView.svelte";
   import ToggleView from "./ToggleView.svelte";
 
   const MORPH_MS = 560;
-  const MAX_RADIUS = 28;
+  const MAX_RADIUS = 26;
 
-  const island = new IslandState();
+  const island = new IslandState(getContext<boolean>(EDITING) ?? false);
   $effect(() => island.start());
+  // The Effects and Target components take over what the capsule would show
+  $effect(() => {
+    const show = !hud.isOn("Target");
+    untrack(() => (island.showTarget = show));
+  });
+  const effects = $derived(hud.isOn("Effects") ? [] : live.effects);
 
   const enabledCount = $derived(moduleStore.list.filter((module) => module.enabled && !module.hidden).length);
-  const compact = $derived(island.effects.length > 0 || enabledCount > 0);
+  const compact = $derived(effects.length > 0 || enabledCount > 0);
   const visible = $derived(!!island.kind || compact);
 
   const view = $derived.by(() => {
@@ -83,20 +92,20 @@
     clearTimeout(snap);
   });
 
-  // Outgoing content is nearly gone before the incoming fades in, so two layers never read on top of each other
+  // A cross-fade inside the moving shape: the outgoing content is gone within ~90 ms while the incoming already
+  // shows from ~30 ms, so the capsule never morphs empty
   function contentIn(_: Element): TransitionConfig {
-    if (isReducedMotion()) return { delay: 80, duration: 160, css: (t) => `opacity: ${t}` };
+    if (isReducedMotion()) return { duration: 160, css: (t) => `opacity: ${Math.min(1, Math.max(0, (t - 0.15) / 0.6))}` };
     return {
-      delay: 90,
-      duration: 260,
-      easing: spring,
-      css: (t) => `opacity: ${Math.min(1, t * 1.4)}; transform: scale(${0.94 + 0.06 * t})`,
+      duration: 300,
+      css: (t) =>
+        `opacity: ${Math.min(1, Math.max(0, (t - 0.1) / 0.45))}; transform: scale(${0.94 + 0.06 * spring(t)})`,
     };
   }
 
   function contentOut(_: Element): TransitionConfig {
-    if (isReducedMotion()) return { duration: 100, css: (t) => `opacity: ${t * t}` };
-    return { duration: 110, css: (t) => `opacity: ${t * t}; transform: scale(${0.96 + 0.04 * t})` };
+    if (isReducedMotion()) return { duration: 80, css: (t) => `opacity: ${t * t}` };
+    return { duration: 90, css: (t) => `opacity: ${t * t}; transform: scale(${0.96 + 0.04 * t})` };
   }
 </script>
 
@@ -122,14 +131,14 @@
           <ToggleView toggle={island.toggle} />
         {:else}
           <div class="compact">
-            {#each island.effects as effect (effect.id)}
+            {#each effects as effect (effect.id)}
               <span class="effect">
                 <ItemIcon id={effect.id} kind="effect" size={18} label={effect.name} />
                 {#if effect.level}<span class="l2">{effect.level}</span>{/if}
                 <span class="num">{effect.time}</span>
               </span>
             {/each}
-            {#if island.effects.length && enabledCount}<span class="sep"></span>{/if}
+            {#if effects.length && enabledCount}<span class="sep"></span>{/if}
             {#if enabledCount}
               <span class="count"><span class="num">{enabledCount}</span> <span class="l2">{enabledCount === 1 ? "module on" : "modules on"}</span></span>
             {/if}
@@ -162,9 +171,9 @@
   .compact {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     height: 36px;
-    padding: 0 16px;
+    padding: 0 14px;
     font-size: 13px;
     line-height: 16px;
     font-weight: 500;

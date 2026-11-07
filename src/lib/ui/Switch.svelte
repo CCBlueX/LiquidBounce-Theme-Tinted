@@ -26,35 +26,44 @@
 ></button>
 
 <style>
+  /* The button is the 24px-tall hit area; the track and knob are drawn inside it */
   .switch {
-    width: 44px;
-    height: 26px;
-    border-radius: 13px;
-    background: var(--fill-3);
-    box-shadow: inset 0 0 0 0.5px var(--line);
+    --w: 32px;
+    --h: 18px;
+    width: calc(var(--w) + 4px);
+    height: 24px;
     position: relative;
     flex: none;
-    transition: background-color var(--t-pop) var(--ease);
+    border-radius: 12px;
   }
+  .switch::before,
   .switch::after {
     content: "";
     position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 22px;
-    height: 22px;
-    border-radius: 11px;
-    background: #fff;
-    box-shadow: 0 2px 5px rgb(0 0 0 / 0.25);
-    transition: transform var(--t-enter) var(--spring);
+    top: 50%;
+    translate: 0 -50%;
   }
-  .switch.on { background: var(--accent); box-shadow: none; }
-  .switch.on::after { transform: translateX(18px); }
-  .switch:active::after { width: 26px; }
-  .switch.on:active::after { transform: translateX(14px); }
-  .small { width: 36px; height: 22px; border-radius: 11px; }
-  .small::after { width: 18px; height: 18px; border-radius: 9px; }
-  .small.on::after { transform: translateX(14px); }
-  .small:active::after { width: 22px; }
-  .small.on:active::after { transform: translateX(10px); }
+  .switch::before {
+    left: 2px;
+    width: var(--w);
+    height: var(--h);
+    border-radius: calc(var(--h) / 2);
+    background: var(--fill-3);
+    box-shadow: inset 0 0 0 0.5px var(--line);
+    transition: background-color var(--t-pop) var(--ease);
+  }
+  .switch::after {
+    left: 4px;
+    width: calc(var(--h) - 4px);
+    height: calc(var(--h) - 4px);
+    border-radius: var(--h);
+    background: #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+    transition: transform var(--t-enter) var(--spring), width var(--t-press) var(--ease);
+  }
+  .switch.on::before { background: var(--accent); box-shadow: none; }
+  .switch.on::after { transform: translateX(calc(var(--w) - var(--h))); }
+  .switch:active::after { width: calc(var(--h) + 1px); }
+  .switch.on:active::after { transform: translateX(calc(var(--w) - var(--h) - 5px)); }
+  .small { --w: 28px; --h: 16px; }
 </style>

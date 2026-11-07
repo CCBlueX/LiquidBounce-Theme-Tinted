@@ -54,7 +54,7 @@
 
 <div class="details on-glass">
   <header class="top">
-    <ServerIcon icon={server.icon} size={64} />
+    <ServerIcon icon={server.icon} />
     <div class="grow">
       <h2 class="t-title2" title={server.name}>{server.name}</h2>
       <p class="t-callout l2 num address">{server.address}</p>
@@ -158,13 +158,13 @@
 
 <style>
   .details { position: absolute; inset: 0; display: flex; flex-direction: column; }
-  .top { display: flex; align-items: center; gap: 16px; padding: 24px 24px 16px; }
+  .top { display: flex; align-items: center; gap: 12px; padding: 16px 16px 12px; }
   .grow { flex: 1; min-width: 0; }
   .address { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   h2 { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-  .join { padding: 0 20px 16px; display: grid; gap: 8px; }
+  .join { padding: 0 16px 12px; display: grid; gap: 6px; }
   .primary {
-    height: 44px; border-radius: 22px; color: #fff; background: var(--accent-fill); font-size: 15px; font-weight: 600;
+    height: 30px; border-radius: 15px; color: #fff; background: var(--accent-fill); font-size: 13px; font-weight: 600;
     transition: transform var(--t-press) var(--ease), background-color var(--t-pop) var(--ease);
   }
   .primary:hover { background: var(--accent-strong); }
@@ -175,19 +175,19 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 4px 20px 24px;
+    padding: 4px 16px 16px;
     scrollbar-width: none;
     display: grid;
     align-content: start;
-    gap: 18px;
+    gap: 12px;
     mask-image: linear-gradient(180deg, transparent 0, #000 8px, #000 calc(100% - 24px), transparent);
   }
   .state { display: inline-flex; align-items: center; gap: 7px; color: var(--label); }
   .version { max-width: 60%; overflow: hidden; text-overflow: ellipsis; }
-  .note { margin: -10px 4px 0; }
+  .note { margin: -6px 4px 0; }
   section { display: grid; gap: 6px; }
   h3 { padding: 0 4px; font-weight: 500; }
-  .block { padding: 10px 14px; color: rgb(255 255 255 / 0.85); }
+  .block { padding: 8px 12px; color: rgb(255 255 255 / 0.85); }
   .block > :global(.line + .line) { margin-top: 2px; }
   .dot { width: 8px; height: 8px; border-radius: 4px; flex: none; }
   .dot.good { background: var(--positive); }
@@ -195,7 +195,7 @@
   .dot.poor, .dot.down { background: var(--negative); }
   .dot.waiting { box-shadow: inset 0 0 0 1.5px var(--label-3); }
   .actions {
-    display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 20px 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 16px 12px;
     border-top: 0.5px solid var(--line);
   }
   .move, .edit { display: flex; gap: 6px; }

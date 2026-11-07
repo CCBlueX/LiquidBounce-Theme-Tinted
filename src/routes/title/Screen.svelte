@@ -8,9 +8,7 @@
   import { rise } from "../../lib/motion";
   import { livePings } from "../../lib/pings.svelte";
   import { play } from "../../lib/sound";
-  import Base64Icon from "../../lib/ui/Base64Icon.svelte";
   import ConfirmPopover from "../../lib/ui/ConfirmPopover.svelte";
-  import ItemIcon from "../../lib/ui/ItemIcon.svelte";
   import PlayerHead from "../../lib/ui/PlayerHead.svelte";
 
   let world = $state<World | undefined>();
@@ -53,7 +51,6 @@
   const reachable = $derived(known.filter((s) => s.status === "SUCCESSFUL"));
   const playersOnline = $derived(reachable.reduce((sum, s) => sum + (s.players.online ?? 0), 0));
   const pinging = $derived(known.some((s) => s.status === "INITIAL" || s.status === "PINGING"));
-  const serverIcons = $derived(known.filter((s) => s.icon).slice(0, 3));
 
   const multiplayerLine = $derived.by(() => {
     if (!serverList) return "Loading servers";
@@ -203,9 +200,8 @@
           onclick={() => open("singleplayer")}
           onkeydown={(e) => (e.key === "Enter" || e.key === " ") && e.target === e.currentTarget && (e.preventDefault(), open("singleplayer"))}
         >
-          <ItemIcon id="minecraft:grass_block" size={48} />
           <div class="grow">
-            <div class="t-title3 on-glass">Singleplayer</div>
+            <div class="t-headline on-glass">Singleplayer</div>
             <div class="t-callout sub num on-glass">
               {#if world}<span class="world-name">{world.displayName}</span><span class="sep">·</span>{/if}<span class="meta">{singleplayerLine}</span>
             </div>
@@ -228,18 +224,10 @@
           onclick={() => open("multiplayer")}
           onkeydown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), open("multiplayer"))}
         >
-          <ItemIcon id="minecraft:compass" size={48} />
           <div class="grow">
-            <div class="t-title3 on-glass">Multiplayer</div>
+            <div class="t-headline on-glass">Multiplayer</div>
             <div class="t-callout sub num on-glass">{multiplayerLine}</div>
           </div>
-          {#if serverIcons.length}
-            <div class="icons" aria-hidden="true">
-              {#each serverIcons as server (server.address)}
-                <Base64Icon icon={server.icon} size={32} />
-              {/each}
-            </div>
-          {/if}
           <span class="chev" aria-hidden="true">›</span>
         </div>
       </div>
@@ -255,9 +243,8 @@
           onclick={() => open("multiplayer_realms")}
           onkeydown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), open("multiplayer_realms"))}
         >
-          <ItemIcon id="minecraft:nether_star" size={48} />
           <div class="grow">
-            <div class="t-title3 on-glass">Realms</div>
+            <div class="t-headline on-glass">Realms</div>
             <div class="t-callout sub on-glass">Worlds hosted by Mojang</div>
           </div>
           <span class="chev" aria-hidden="true">›</span>
@@ -316,10 +303,10 @@
   .logo { position: absolute; left: 48px; top: 44px; height: 32px; }
   .logo img { height: 32px; display: block; }
 
-  .stack { position: absolute; left: 50%; top: 50%; width: 600px; transform: translate(-50%, -50%); margin-top: 24px; }
-  .row-wrap + .row-wrap { margin-top: 12px; }
+  .stack { position: absolute; left: 50%; top: 50%; width: 360px; transform: translate(-50%, -50%); margin-top: 16px; }
+  .row-wrap + .row-wrap { margin-top: 8px; }
   .row {
-    display: flex; align-items: center; gap: 20px; height: 96px; padding: 0 24px; border-radius: var(--r-card);
+    display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 12px 0 16px; border-radius: var(--r-card);
     cursor: default; outline: none;
     transition: transform var(--t-press) var(--ease), background-color var(--t-pop) var(--ease);
   }
@@ -327,39 +314,37 @@
   .row:active { transform: scale(0.98); }
   .row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .grow { flex: 1; min-width: 0; }
-  .sub { display: flex; color: var(--label-2); margin-top: 2px; white-space: nowrap; min-width: 0; }
+  .sub { display: flex; color: var(--label-2); white-space: nowrap; min-width: 0; }
+  .sub, .row .t-headline { line-height: 18px; }
   .world-name { overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
   .sep { flex: none; padding: 0 0.3em; }
   .meta { flex: none; }
   .sub:not(:has(.meta)) { overflow: hidden; text-overflow: ellipsis; }
-  .chev { color: var(--label-3); font-size: 22px; line-height: 22px; margin-left: 4px; }
-  .icons { display: flex; gap: 6px; margin-right: 4px; }
-  .icons :global(img) { border-radius: 6px; }
+  .chev { color: var(--label-3); font-size: 20px; line-height: 20px; }
 
   .play {
-    flex: none; height: 32px; padding: 0 16px; border: 0; border-radius: 16px; font: inherit; font-size: 14px; font-weight: 600;
+    flex: none; height: 26px; padding: 0 12px; border: 0; border-radius: 13px; font: inherit; font-size: 13px; font-weight: 600;
     color: #fff; background: var(--accent-fill); cursor: default; transition: transform var(--t-press) var(--ease), background var(--t-pop);
   }
   .play:hover { background: var(--accent-strong); }
   .play:active { transform: scale(0.96); }
   .play:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  .secondary { display: flex; justify-content: center; gap: 12px; margin-top: 28px; }
+  .secondary { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
   .pill {
-    display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border: 0; border-radius: 20px;
-    font: inherit; font-size: 14px; font-weight: 500; color: var(--label); cursor: default; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border: 0; border-radius: 15px;
+    font: inherit; font-size: 13px; font-weight: 500; color: var(--label); cursor: default; white-space: nowrap;
     text-shadow: var(--text-shadow); transition: transform var(--t-press) var(--ease);
   }
   .pill:active { transform: scale(0.98); }
   .pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .pill.with-head { padding-left: 8px; }
-  .quiet { font-weight: 400; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
-
+  .pill.with-head { padding-left: 3px; }
+  .quiet { font-weight: 400; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
 
   .quit-anchor { position: relative; }
 
   .version {
-    position: absolute; right: 48px; bottom: 40px; display: flex; align-items: center; height: 28px; padding: 0 12px;
+    position: absolute; right: 32px; bottom: 28px; display: flex; align-items: center; height: 26px; padding: 0 10px;
     border-radius: 999px; font-size: 12px; line-height: 16px; color: var(--label-2);
   }
 </style>

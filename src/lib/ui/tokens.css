@@ -21,7 +21,7 @@
   /* Liquid glass */
   /* The page is composited over Minecraft, so backdrop-filter never reaches the world. Screens sit on Minecraft's
      own menu blur; the darkening the mockups got from brightness() is baked into the tint instead. The filter only
-     blurs page content under layered panes. */
+     blurs page content under layered panes (popovers, sheets and menus over a window), so only those carry it. */
   --glass: rgb(30 32 38 / 0.78);
   --glass-deep: rgb(26 28 34 / 0.86);
   --glass-filter: blur(24px) saturate(1.4);
@@ -38,11 +38,11 @@
   --line: rgb(255 255 255 / 0.10);
   --text-shadow: 0 0.5px 1px rgb(0 0 0 / 0.18);
 
-  --r-window: 32px;
-  --r-pane: 28px;
-  --r-card: 20px;
-  --r-group: 14px;
-  --r-control: 10px;
+  --r-window: 22px;
+  --r-pane: 18px;
+  --r-card: 12px;
+  --r-group: 10px;
+  --r-control: 7px;
 
   /* Motion: one spring, a few durations; reduce motion zeroes movement and keeps short fades */
   --spring: linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121,
@@ -52,7 +52,7 @@
   --t-press: 120ms;
   --t-pop: 200ms;
   --t-enter: 360ms;
-  --rise: 12px;
+  --rise: 8px;
 
   --scale: 1;
   color-scheme: dark;
@@ -99,8 +99,8 @@ body {
   font-family: "Inter", system-ui, sans-serif;
   font-optical-sizing: auto;
   font-feature-settings: "cv05", "ss03";
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 13px;
+  line-height: 18px;
   color: var(--label);
   -webkit-font-smoothing: antialiased;
   user-select: none;
@@ -116,10 +116,10 @@ input { font: inherit; color: inherit; background: none; border: 0; outline: 0; 
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-.t-large { font-size: 34px; line-height: 40px; font-weight: 650; letter-spacing: -0.022em; }
-.t-title2 { font-size: 22px; line-height: 28px; font-weight: 620; letter-spacing: -0.016em; }
-.t-title3 { font-size: 18px; line-height: 24px; font-weight: 600; letter-spacing: -0.01em; }
-.t-headline { font-size: 15px; line-height: 22px; font-weight: 600; }
+.t-large { font-size: 25px; line-height: 30px; font-weight: 650; letter-spacing: -0.02em; }
+.t-title2 { font-size: 17px; line-height: 22px; font-weight: 620; letter-spacing: -0.012em; }
+.t-title3 { font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: -0.008em; }
+.t-headline { font-size: 14px; line-height: 20px; font-weight: 600; }
 .t-callout { font-size: 13px; line-height: 18px; }
 .t-footnote { font-size: 12px; line-height: 16px; }
 .l2 { color: var(--label-2); }
@@ -129,12 +129,14 @@ input { font: inherit; color: inherit; background: none; border: 0; outline: 0; 
 
 .glass {
   background: var(--sheen), var(--glass);
-  backdrop-filter: var(--glass-filter);
   box-shadow: var(--specular), var(--float-soft);
 }
 .glass.deep {
   background: var(--sheen), var(--glass-deep);
-  backdrop-filter: var(--glass-filter-deep);
   box-shadow: var(--specular), var(--float-deep);
 }
+/* A pane over transparent page has nothing to blur, yet its filter would redraw the whole pane on every change in it,
+   down to a caret blink */
+.glass:is(.layered, [popover]) { backdrop-filter: var(--glass-filter); }
+.glass.deep:is(.layered, [popover]) { backdrop-filter: var(--glass-filter-deep); }
 .group { background: rgb(255 255 255 / 0.06); border-radius: var(--r-group); box-shadow: inset 0 0 0 0.5px var(--line); }

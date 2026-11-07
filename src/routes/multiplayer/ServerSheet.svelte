@@ -98,7 +98,7 @@
 
 <div class="scrim" aria-hidden="true"></div>
 <div
-  class="sheet glass deep on-glass"
+  class="sheet glass deep layered on-glass"
   role="dialog"
   aria-modal="true"
   aria-labelledby="sheet-title"
@@ -153,25 +153,25 @@
   .sheet {
     position: absolute;
     z-index: 5;
-    top: 96px;
+    top: 64px;
     left: 50%;
     translate: -50% 0;
-    width: 440px;
-    padding: 24px;
+    width: 380px;
+    padding: 16px;
     border-radius: var(--r-pane);
     display: grid;
-    gap: 18px;
+    gap: 14px;
   }
-  .fields { display: grid; gap: 16px; }
+  .fields { display: grid; gap: 12px; }
   .field { display: grid; gap: 6px; justify-items: start; }
   .input {
     width: 100%;
-    height: 40px;
-    padding: 0 14px;
-    border-radius: 10px;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: var(--r-control);
     background: var(--fill);
     box-shadow: inset 0 0 0 0.5px var(--line);
-    font-size: 14px;
+    font-size: 13px;
   }
   .input:focus { box-shadow: inset 0 0 0 0.5px var(--line), 0 0 0 2px var(--accent); }
   .input::placeholder { color: var(--label-3); }
@@ -181,7 +181,7 @@
   .problem span { font-weight: 700; }
   .actions { display: flex; justify-content: flex-end; gap: 8px; }
   .btn {
-    height: 34px; padding: 0 18px; border-radius: 17px; font-size: 14px; font-weight: 500; background: var(--fill-2);
+    height: 28px; padding: 0 14px; border-radius: 14px; font-size: 13px; font-weight: 500; background: var(--fill-2);
     transition: transform var(--t-press) var(--ease), background-color var(--t-pop) var(--ease);
   }
   .btn:hover { background: var(--fill-3); }

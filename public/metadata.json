@@ -5,7 +5,7 @@
   "authors": ["CCBlueX"],
   "screens": ["title", "clickgui", "multiplayer", "singleplayer", "altmanager", "proxymanager", "viafabricplus_protocol_selection"],
   "overlays": ["hud", "game_menu", "disconnected", "inventory", "container", "browser", "basicmenu"],
-  "components": ["Island", "Modules"],
+  "components": ["Island", "Modules", "Scoreboard", "Armor", "Effects", "Target"],
   "fonts": [],
   "backgrounds": [],
   "values": [

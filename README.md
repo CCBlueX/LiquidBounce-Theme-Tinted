@@ -1,7 +1,8 @@
 # Tinted
 
-A glass theme for LiquidBounce. The world stays visible behind every screen, items show their real textures, and
-the HUD keeps your enabled modules and their key binds in view.
+A compact glass theme for LiquidBounce. The world stays visible behind every screen, and the HUD keeps your enabled
+modules and their key binds in view. Scoreboard, Armor, Effects and Target are optional HUD pieces; move them with
+Edit HUD in the ClickGUI.
 
 Reduce motion, reduce sound, increase contrast, reduce transparency, sound captions and interface scale are in the
 theme's settings.

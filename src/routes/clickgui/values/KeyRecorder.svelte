@@ -151,20 +151,20 @@
 
 <style>
   .recorder {
-    height: 28px;
-    min-width: 28px;
+    height: 24px;
+    min-width: 24px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0 3px;
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 13px;
     transition: background-color var(--t-pop) var(--ease);
   }
   .recorder:hover { background: var(--fill); }
-  .empty { padding: 0 10px; }
+  .empty { padding: 0 8px; }
   .none { color: var(--label-2); }
-  .recording { padding: 0 10px; background: var(--accent-tint); box-shadow: inset 0 0 0 1px rgb(70 119 255 / 0.6); }
+  .recording { padding: 0 8px; background: var(--accent-tint); box-shadow: inset 0 0 0 1px rgb(70 119 255 / 0.6); }
   .prompt { color: var(--label); font-weight: 500; animation: blink 1.2s var(--ease) infinite; }
   @keyframes blink {
     50% { opacity: 0.55; }

@@ -1,26 +1,25 @@
 <script lang="ts">
   import "../../lib/ui/values.css";
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { flip } from "svelte/animate";
   import { cubicOut } from "svelte/easing";
   import { fade } from "svelte/transition";
+  import { request } from "../../lib/api/client";
   import { on } from "../../lib/api/events";
   import { modules, screen } from "../../lib/api/routes";
   import type { Module } from "../../lib/api/types";
-  import { moduleItem } from "../../lib/icons";
+  import HudEditor from "../../lib/hud/Editor.svelte";
   import { flipDuration, rise, slideIn } from "../../lib/motion";
   import { play } from "../../lib/sound";
   import { typingFocus } from "../../lib/typing";
-  import ItemIcon from "../../lib/ui/ItemIcon.svelte";
   import SearchField from "../../lib/ui/SearchField.svelte";
   import Segmented from "../../lib/ui/Segmented.svelte";
+  import Categories from "./Categories.svelte";
   import Inspector from "./Inspector.svelte";
-  import ModuleCard from "./ModuleCard.svelte";
-  import Ornament from "./Ornament.svelte";
+  import ModuleRow from "./ModuleRow.svelte";
   import { moduleScore, settingEntries, settingScore, type SettingHit } from "./tree";
 
   const STORAGE_KEY = "tinted.clickgui";
-  const COLUMNS = 3;
   const SETTING_RESULTS = 40;
 
   let list = $state<Module[]>([]);
@@ -38,10 +37,17 @@
   let searchBox = $state<HTMLDivElement>();
   let grid = $state<HTMLDivElement>();
   let frame = $state<HTMLDivElement>();
+  let editingHud = $state(false);
 
-  const counts = $derived(
+  const totals = $derived(
     list.reduce<Record<string, number>>((all, module) => {
       all[module.category] = (all[module.category] ?? 0) + 1;
+      return all;
+    }, {}),
+  );
+  const enabledCounts = $derived(
+    list.reduce<Record<string, number>>((all, module) => {
+      if (module.enabled) all[module.category] = (all[module.category] ?? 0) + 1;
       return all;
     }, {}),
   );
@@ -124,6 +130,8 @@
     ready = true;
     play("open");
     load();
+    // A page reload or disconnect while the HUD editor was open leaves the client hiding the HUD; nothing else resets it
+    request("PUT", "/hud-editor", { body: { selected: false } }).catch(() => {});
     // ClickGUI's own setting decides whether the search field takes focus when the screen opens
     modules
       .settings("ClickGUI")
@@ -221,11 +229,14 @@
       toggle(module, !module.enabled);
       return;
     }
+    // The list fills as many columns as fit, so a row's length comes from the layout
+    const rows = grid?.querySelector(".grid");
+    const columns = rows ? getComputedStyle(rows).gridTemplateColumns.split(" ").length : 1;
     const moves: Record<string, number> = {
       ArrowRight: index + 1,
       ArrowLeft: index - 1,
-      ArrowDown: index + COLUMNS,
-      ArrowUp: index - COLUMNS,
+      ArrowDown: index + columns,
+      ArrowUp: index - columns,
       Home: 0,
       End: visible.length - 1,
     };
@@ -249,7 +260,7 @@
 
   // Esc clears the search first and closes the screen second; typing anywhere starts a search
   function windowKey(event: KeyboardEvent) {
-    if (event.defaultPrevented) return;
+    if (event.defaultPrevented || editingHud) return;
     const target = event.target as HTMLElement;
     const inField = target.matches?.("input:not([type=range]), textarea, [contenteditable]");
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
@@ -305,84 +316,83 @@
 
 <div class="stage" role="presentation" {...typingFocus}>
   {#if ready}
-    <div class="frame" bind:this={frame} style:translate="{offset.x}px {offset.y}px">
-      <Ornament {categories} {counts} current={searching ? "" : category} onselect={chooseCategory} />
+    <div class="frame" class:away={editingHud} inert={editingHud} bind:this={frame} style:translate="{offset.x}px {offset.y}px">
+      <div class="glass window" in:rise>
+        <Categories {categories} {totals} enabled={enabledCounts} current={searching ? "" : category} onselect={chooseCategory} onedithud={() => (editingHud = true)} />
 
-      <main class="glass window" in:rise aria-label="ClickGUI">
-        <header class="head on-glass">
-          <div class="titles">
-            <h1 class="t-large">{title}</h1>
-            {#if list.length}<span class="t-callout l2 num">{subtitle}</span>{/if}
-          </div>
-          <div class="tools">
-            <Segmented options={["All", "Enabled"]} value={filter} label="Show" onchange={(value) => (filter = value)} />
+        <main class="list" aria-label="ClickGUI">
+          <header class="head on-glass">
+            <div class="titles">
+              <h1 class="t-large">{title}</h1>
+              {#if list.length}<span class="t-callout l2 num">{subtitle}</span>{/if}
+            </div>
+            <Segmented options={["All", "Enabled"]} value={filter} label="Show" small onchange={(value) => (filter = value)} />
             <!-- svelte-ignore a11y_no_noninteractive_element_interactions (arrow keys and Enter from the field inside) -->
             <div class="search" bind:this={searchBox} onkeydown={searchKey} role="search">
               <SearchField bind:value={query} placeholder="Search modules and settings" shortcut="Ctrl K" {autofocus} />
             </div>
-          </div>
-        </header>
+          </header>
 
-        <div class="grid-wrap" bind:this={grid}>
-          {#if failed}
-            <div class="empty">
-              <p class="t-callout l2">Modules could not be loaded from the client.</p>
-              <button class="cg-pill" onclick={load}>Try again</button>
-            </div>
-          {:else}
-            {#key searching ? "search" : category}
-              <div class="grid on-glass" role="list" aria-label={searching ? "Matching modules" : `${category} modules`} in:fade={{ duration: 160 }}>
-                {#each visible as module, index (module.name)}
-                  <div class="cell" role="listitem" animate:flip={{ duration: flipDuration(320), easing: cubicOut }}>
-                    <ModuleCard
-                      {module}
-                      selected={module.name === selectedName}
-                      focusable={module.name === focusTarget}
-                      onselect={() => select(module)}
-                      ontoggle={(enabled) => toggle(module, enabled)}
-                      onkeydown={(event) => gridKey(event, index)}
-                    />
-                  </div>
-                {/each}
+          <div class="grid-wrap" bind:this={grid}>
+            {#if failed}
+              <div class="empty">
+                <p class="t-callout l2">Modules could not be loaded from the client.</p>
+                <button class="cg-pill" onclick={load}>Try again</button>
               </div>
-            {/key}
-            {#if list.length && visible.length === 0 && !settingResults.length}
-              <p class="empty t-callout l2">
-                {searching
-                  ? `No ${filter === "Enabled" ? "enabled " : ""}modules or settings match “${query.trim()}”`
-                  : `No modules in ${category} are on`}
-              </p>
-            {/if}
-            {#if settingResults.length}
-              <section class="settings-results on-glass" aria-label="Matching settings">
-                <h2 class="t-headline">Settings</h2>
-                <div class="cg-group">
-                  {#each settingResults as hit (hit.where + hit.names.join("/"))}
-                    <button class="cg-row hit" onclick={() => select(hit.module, hit.names)}>
-                      <ItemIcon id={moduleItem(hit.module.name, hit.module.category)} size={16} />
-                      <span class="cg-label">{hit.label}</span>
-                      <span class="cg-val t-footnote">{hit.where}</span>
-                    </button>
+            {:else}
+              {#key searching ? "search" : category}
+                <div class="grid on-glass" role="list" aria-label={searching ? "Matching modules" : `${category} modules`} in:fade={{ duration: 160 }}>
+                  {#each visible as module, index (module.name)}
+                    <div role="listitem" animate:flip={{ duration: flipDuration(260), easing: cubicOut }}>
+                      <ModuleRow
+                        {module}
+                        selected={module.name === selectedName}
+                        focusable={module.name === focusTarget}
+                        onselect={() => select(module)}
+                        ontoggle={(enabled) => toggle(module, enabled)}
+                        onkeydown={(event) => gridKey(event, index)}
+                      />
+                    </div>
                   {/each}
                 </div>
-              </section>
+              {/key}
+              {#if list.length && visible.length === 0 && !settingResults.length}
+                <p class="empty t-callout l2">
+                  {searching
+                    ? `No ${filter === "Enabled" ? "enabled " : ""}modules or settings match “${query.trim()}”`
+                    : `No modules in ${category} are on`}
+                </p>
+              {/if}
+              {#if settingResults.length}
+                <section class="settings-results on-glass" aria-label="Matching settings">
+                  <h2 class="t-footnote">Settings</h2>
+                  <div class="cg-group">
+                    {#each settingResults as hit (hit.where + hit.names.join("/"))}
+                      <button class="cg-row hit" onclick={() => select(hit.module, hit.names)}>
+                        <span class="cg-label">{hit.label}</span>
+                        <span class="cg-val t-footnote">{hit.where}</span>
+                      </button>
+                    {/each}
+                  </div>
+                </section>
+              {/if}
             {/if}
-          {/if}
-        </div>
-      </main>
+          </div>
+        </main>
 
-      {#if selected}
-        <aside class="glass deep inspector" in:slideIn={{ delay: 80, x: 12 }}>
-          {#key selected.name}
-            <Inspector
-              module={selected}
-              {reveal}
-              ontoggle={(enabled) => toggle(selected, enabled)}
-              onbind={(boundKey) => (selected.keyBind.boundKey = boundKey)}
-            />
-          {/key}
-        </aside>
-      {/if}
+        {#if selected}
+          <aside class="glass deep inspector" in:slideIn={{ delay: 80, x: 12 }}>
+            {#key selected.name}
+              <Inspector
+                module={selected}
+                {reveal}
+                ontoggle={(enabled) => toggle(selected, enabled)}
+                onbind={(boundKey) => (selected.keyBind.boundKey = boundKey)}
+              />
+            {/key}
+          </aside>
+        {/if}
+      </div>
 
       <div class="bottom" in:rise={{ delay: 120 }}>
         <button class="glass closer" aria-label="Close" onclick={close}>×</button>
@@ -400,84 +410,101 @@
   {/if}
 </div>
 
+{#if editingHud}
+  <HudEditor
+    onclose={() => {
+      editingHud = false;
+      tick().then(() => frame?.querySelector<HTMLElement>(".edit")?.focus());
+    }}
+  />
+{/if}
+
 <style>
   .stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-  /* The window and its ornament are centred as one group; the bottom controls sit under the window */
+  /* The bottom controls sit under the window and move with it */
   .frame {
     position: relative;
-    width: min(1360px, calc(100% - 224px));
-    height: min(776px, calc(100% - 124px));
-    margin: 0 0 44px 92px;
+    width: min(1240px, calc(100% - 48px));
+    height: min(560px, calc(100% - 104px));
+    margin-bottom: 40px;
   }
-  .window { position: absolute; inset: 0; border-radius: var(--r-window); overflow: hidden; }
-  .head {
+  /* Hidden, not unmounted, while the HUD editor is open, so the window comes back as it was */
+  .frame.away { visibility: hidden; }
+  .window {
     position: absolute;
-    left: 28px;
-    right: 492px;
-    top: 24px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
+    inset: 0;
+    border-radius: var(--r-window);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 148px minmax(0, 1fr) 360px;
   }
-  .titles { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 14px; }
+  .window > :global(.sidebar) { box-shadow: inset -0.5px 0 0 var(--line); }
+  .list { grid-column: 2; min-width: 0; display: flex; flex-direction: column; container-type: inline-size; }
+  .head { display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px; }
+  .titles { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; }
   h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .titles span { white-space: nowrap; }
-  .tools { display: flex; align-items: center; gap: 12px; }
-  .search { width: 280px; }
+  @container (width < 620px) {
+    .titles span { display: none; }
+  }
+  .search { width: 256px; flex: 0 1 256px; min-width: 150px; }
   /* The field draws its ring around the whole capsule; the input's own outline would double it */
   .search :global(input:focus-visible) { outline: none; }
   .grid-wrap {
-    position: absolute;
-    left: 28px;
-    right: 492px;
-    top: 92px;
-    bottom: 0;
-    padding: 2px 2px 48px;
-    margin: -2px;
+    flex: 1;
+    min-height: 0;
+    padding: 3px 16px 40px;
     overflow-y: auto;
     scrollbar-width: none;
-    mask-image: linear-gradient(180deg, #000 calc(100% - 64px), transparent calc(100% - 8px));
+    mask-image: linear-gradient(180deg, #000 calc(100% - 48px), transparent calc(100% - 8px));
   }
-  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-  .empty { display: grid; gap: 12px; justify-items: start; padding: 24px 4px; }
-  .settings-results { margin-top: 24px; }
-  .settings-results h2 { margin: 0 4px 8px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(208px, 1fr)); gap: 2px 8px; }
+  .empty { display: grid; gap: 8px; justify-items: start; padding: 16px 4px; }
+  .settings-results { margin-top: 16px; }
+  .settings-results h2 { margin: 0 4px 6px; font-weight: 600; color: var(--label-2); }
   .hit { width: 100%; text-align: left; border-radius: inherit; }
   .hit:hover { background: rgb(255 255 255 / 0.04); }
   .hit .cg-val { max-width: 50%; overflow: hidden; text-overflow: ellipsis; }
 
-  .inspector { position: absolute; top: 20px; bottom: 20px; right: 16px; width: 448px; border-radius: var(--r-pane); overflow: hidden; }
+  .inspector { grid-column: 3; margin: 8px; border-radius: var(--r-pane); overflow: hidden; position: relative; }
 
   .bottom {
     position: absolute;
-    top: calc(100% + 14px);
+    top: calc(100% + 10px);
     left: 50%;
     translate: -50% 0;
     display: flex;
     align-items: center;
-    gap: 22px;
+    gap: 18px;
   }
   .closer {
-    width: 30px;
-    height: 30px;
-    border-radius: 15px;
+    width: 28px;
+    height: 28px;
+    border-radius: 14px;
     display: grid;
     place-items: center;
-    font-size: 17px;
+    font-size: 16px;
     line-height: 1;
     padding-bottom: 2px;
   }
   .closer:active { transform: scale(0.92); }
+  /* A 24px tall hit area around the thin bar */
   .grabber {
-    width: 160px;
-    height: 10px;
-    border-radius: 5px;
+    width: 140px;
+    height: 24px;
+    border-radius: 12px;
+    display: grid;
+    align-items: center;
+    touch-action: none;
+  }
+  .grabber::after {
+    content: "";
+    height: 8px;
+    border-radius: 4px;
     background: rgb(255 255 255 / 0.55);
     box-shadow: 0 1px 4px rgb(0 0 0 / 0.18);
     transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
-    touch-action: none;
   }
-  .grabber:hover { background: rgb(255 255 255 / 0.75); }
-  .grabber:active { transform: scaleY(1.2); }
+  .grabber:hover::after { background: rgb(255 255 255 / 0.75); }
+  .grabber:active::after { transform: scaleY(1.2); }
 </style>

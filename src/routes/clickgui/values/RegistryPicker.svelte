@@ -100,7 +100,7 @@
 </div>
 
 <style>
-  .picker { width: 260px; }
-  .search { width: 100%; margin-bottom: 6px; height: 30px; }
+  .picker { width: 240px; }
+  .search { width: 100%; margin-bottom: 4px; height: 26px; }
   .note { padding: 8px 10px; }
 </style>

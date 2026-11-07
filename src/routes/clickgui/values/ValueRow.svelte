@@ -371,18 +371,18 @@
 {/if}
 
 <style>
-  .chips { margin-top: 10px; }
+  .chips { margin-top: 6px; }
   .on-text { color: var(--label); }
   .ellipsis { overflow: hidden; text-overflow: ellipsis; }
-  .text { width: 180px; }
-  .add { width: 96px; height: 28px; border-radius: 14px; }
+  .text { width: 160px; }
+  .add { width: 88px; height: 24px; border-radius: 12px; }
   .line { display: flex; gap: 8px; align-items: center; }
   .grow { flex: 1; }
-  .axes { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px; }
-  .axis { display: flex; align-items: center; gap: 8px; }
+  .axes { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 6px; }
+  .axis { display: flex; align-items: center; gap: 6px; }
   .axis input { flex: 1; width: 0; }
-  .points { display: grid; grid-template-columns: 20px 1fr 1fr 28px; gap: 6px 8px; align-items: center; margin-top: 8px; }
+  .points { display: grid; grid-template-columns: 20px 1fr 1fr 24px; gap: 4px 6px; align-items: center; margin-top: 4px; }
   .points input { width: 100%; }
-  .remove { padding: 0; width: 28px; justify-content: center; }
+  .remove { padding: 0; width: 24px; height: 24px; justify-content: center; }
   .remove:disabled { opacity: 0.35; }
 </style>

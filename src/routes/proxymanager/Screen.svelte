@@ -12,7 +12,6 @@
   import { play } from "../../lib/sound";
   import { isTextField, typingFocus } from "../../lib/typing";
   import ConfirmPopover from "../../lib/ui/ConfirmPopover.svelte";
-  import ItemIcon from "../../lib/ui/ItemIcon.svelte";
   import Keycap from "../../lib/ui/Keycap.svelte";
   import ProxySheet, { type FieldErrors, type ProxyForm, type ProxyRow } from "./ProxySheet.svelte";
 
@@ -501,7 +500,6 @@
 
           <section class="group mg-current on-glass" aria-label="Connection">
             {#if active}
-              <ItemIcon id="minecraft:ender_pearl" size={48} />
               <div class="grow">
                 <div class="t-footnote mg-kicker">In use for new connections</div>
                 <div class="t-title3 name num">{address(active)}</div>
@@ -512,7 +510,6 @@
               <button class="mg-pill large" aria-label="Check {active.host}" disabled={activeCheck?.state === "checking"} onclick={() => active && check(active)}>Check</button>
               <button class="mg-pill large" aria-label="Disconnect from {active.host}" onclick={disconnect}>Disconnect</button>
             {:else}
-              <ItemIcon id="minecraft:grass_block" size={48} />
               <div class="grow">
                 <div class="t-footnote mg-kicker">Connection</div>
                 <div class="t-title3 name">Direct</div>
@@ -638,11 +635,11 @@
 <style>
   .type {
     flex: none;
-    width: 64px;
-    height: 24px;
+    width: 52px;
+    height: 20px;
     display: grid;
     place-items: center;
-    border-radius: 8px;
+    border-radius: 6px;
     background: var(--fill);
     box-shadow: inset 0 0 0 0.5px var(--line);
     font-size: 12px;
@@ -651,6 +648,6 @@
     pointer-events: none;
   }
   .fav span { font-size: 12px; }
-  .use { min-width: 56px; }
-  .in-use { min-width: 56px; justify-content: center; height: 30px; border-radius: 15px; }
+  .use { min-width: 48px; }
+  .in-use { min-width: 48px; justify-content: center; height: 26px; border-radius: 13px; }
 </style>

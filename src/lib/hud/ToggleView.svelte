@@ -1,12 +1,10 @@
 <script lang="ts">
-  import ItemIcon from "../../lib/ui/ItemIcon.svelte";
   import type { ToggleActivity } from "./island.svelte";
 
   let { toggle }: { toggle: ToggleActivity } = $props();
 </script>
 
 <div class="activity">
-  <span class="badge"><ItemIcon id={toggle.item} size={32} /></span>
   <span class="text">
     <span class="t-headline">{toggle.name}</span>
     <span class="t-footnote l2">
@@ -20,24 +18,14 @@
   .activity {
     display: flex;
     align-items: center;
-    gap: 12px;
-    height: 56px;
-    padding: 0 12px 0 8px;
-  }
-  .badge {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 20px;
-    background: var(--fill-2);
-    flex: none;
+    gap: 16px;
+    height: 52px;
+    padding: 0 12px 0 20px;
   }
   .text {
     display: flex;
     flex-direction: column;
-    min-width: 96px;
-    padding-right: 12px;
+    min-width: 88px;
     white-space: nowrap;
   }
   .state {

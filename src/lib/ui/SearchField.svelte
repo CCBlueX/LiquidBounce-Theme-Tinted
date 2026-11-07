@@ -23,13 +23,13 @@
   .search {
     display: flex;
     align-items: center;
-    gap: 10px;
-    height: 36px;
-    padding: 0 8px 0 16px;
-    border-radius: 18px;
+    gap: 8px;
+    height: 28px;
+    padding: 0 5px 0 12px;
+    border-radius: 14px;
     background: var(--fill);
     box-shadow: inset 0 0 0 0.5px var(--line);
-    font-size: 14px;
+    font-size: 13px;
   }
   .search:focus-within { box-shadow: inset 0 0 0 0.5px var(--line), 0 0 0 2px var(--accent); }
   input { flex: 1; min-width: 0; height: 100%; }

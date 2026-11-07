@@ -88,20 +88,20 @@
 
 <style>
   .corner { position: absolute; top: 16px; right: 16px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-  .pill { display: flex; align-items: center; gap: 2px; height: 44px; padding: 0 4px; border-radius: 22px; }
+  .pill { display: flex; align-items: center; gap: 2px; height: 36px; padding: 0 3px; border-radius: 18px; }
   .item {
     display: flex;
     align-items: center;
     gap: 8px;
-    height: 36px;
-    padding: 0 14px;
-    border-radius: 18px;
+    height: 30px;
+    padding: 0 12px;
+    border-radius: 15px;
     font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
     transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
   }
-  .item.with-head { padding-left: 6px; }
+  .item.with-head { padding-left: 3px; }
   .item:hover { background: var(--fill); }
   .item:active { transform: scale(0.97); }
   .state { font-weight: 400; }

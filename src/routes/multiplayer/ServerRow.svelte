@@ -50,11 +50,11 @@
   ondblclick={onjoin}
   {onkeydown}
 >
-  <ServerIcon icon={server.icon} size={32} />
+  <ServerIcon icon={server.icon} />
   <div class="main">
     <span class="name">{server.name}</span>
     <span class="motd">
-      {#if hasMotd}<McText text={motd} max={2} />{:else}<span class="address num">{server.address}</span>{/if}
+      {#if hasMotd}<McText text={motd} max={1} />{:else}<span class="address num">{server.address}</span>{/if}
     </span>
   </div>
   <div class="players num" aria-hidden="true">
@@ -72,13 +72,13 @@
 <style>
   .row {
     display: grid;
-    grid-template-columns: 32px minmax(0, 1fr) 120px 120px;
+    grid-template-columns: 32px minmax(0, 1fr) 96px 104px;
     align-items: center;
-    column-gap: 14px;
-    /* Name plus two MOTD lines; every row keeps this height whether or not its server has answered */
-    height: 68px;
-    padding: 8px 16px 8px 14px;
-    border-radius: 14px;
+    column-gap: 12px;
+    /* Name plus one MOTD line; every row keeps this height whether or not its server has answered */
+    height: 40px;
+    padding: 3px 12px 3px 4px;
+    border-radius: var(--r-group);
     outline: none;
     transition: background-color var(--t-pop) var(--ease);
   }
@@ -86,12 +86,12 @@
   .row.selected { background: var(--accent-tint); box-shadow: inset 0 0 0 1px rgb(70 119 255 / 0.75); }
   .row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .main { min-width: 0; display: grid; }
-  .name { font-size: 15px; line-height: 20px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .name { font-size: 13px; line-height: 18px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .motd { font-size: 12px; line-height: 16px; color: rgb(255 255 255 / 0.8); min-height: 16px; }
   .address { color: var(--label-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
   .players, .status { display: grid; justify-items: end; text-align: right; }
   .status { justify-items: start; text-align: left; }
-  .value { font-size: 14px; line-height: 20px; font-weight: 500; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .value { font-size: 13px; line-height: 18px; font-weight: 500; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
   .sub { font-size: 12px; line-height: 16px; color: var(--label-2); white-space: nowrap; }
   .status .sub { padding-left: 15px; }
   .dot { width: 8px; height: 8px; border-radius: 4px; flex: none; }

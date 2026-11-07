@@ -78,16 +78,16 @@
 </Ornament>
 
 <style>
-  .armor { padding: 4px 6px 6px; }
-  h2 { font-weight: 600; color: var(--label-2); padding: 2px 2px 6px; }
-  ul { list-style: none; display: flex; flex-direction: column; gap: 4px; }
-  .piece { display: flex; align-items: center; gap: 10px; height: 44px; }
-  .meter { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .armor { padding: 4px 10px 6px; }
+  h2 { font-weight: 600; color: var(--label-2); padding: 2px 0 4px; }
+  ul { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+  .piece { display: flex; align-items: center; gap: 10px; height: 36px; }
+  .meter { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
   .value { font-size: 12px; line-height: 14px; }
   .value b { font-weight: 600; }
   .bar { height: 4px; border-radius: 2px; background: var(--fill-2); overflow: hidden; }
   .fill { display: block; height: 100%; border-radius: 2px; background: var(--label); transition: width var(--t-enter) var(--ease); }
   .low .fill { background: var(--negative); }
   .low .value b { color: #ff8a8d; }
-  .none { padding: 0 2px 6px; }
+  .none { padding: 0 0 6px; }
 </style>

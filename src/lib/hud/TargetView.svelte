@@ -1,8 +1,8 @@
 <script lang="ts">
-  import PlayerHead from "../../lib/ui/PlayerHead.svelte";
-  import type { TargetActivity } from "./island.svelte";
+  import PlayerHead from "../ui/PlayerHead.svelte";
+  import type { TargetInfo } from "./live.svelte";
 
-  let { target }: { target: TargetActivity } = $props();
+  let { target }: { target: TargetInfo } = $props();
 
   const fraction = $derived(Math.max(0, Math.min(1, target.health / target.maxHealth)));
   const hp = (value: number) => String(Math.round(value * 10) / 10);
@@ -13,9 +13,7 @@
 </script>
 
 <div class="activity">
-  <span class="badge">
-    <PlayerHead uuid={target.uuid} size={32} radius={4} />
-  </span>
+  <PlayerHead uuid={target.uuid} size={32} radius={8} />
   <span class="text">
     <span class="t-headline name">{target.name}</span>
     <span class="meta">
@@ -31,38 +29,28 @@
   .activity {
     display: flex;
     align-items: center;
-    gap: 12px;
-    height: 56px;
-    padding: 0 20px 0 8px;
-  }
-  .badge {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    background: var(--fill-2);
-    flex: none;
+    gap: 10px;
+    height: 52px;
+    padding: 0 18px 0 10px;
   }
   .text {
     display: flex;
     flex-direction: column;
-    gap: 2px;
   }
   .name {
     white-space: nowrap;
-    max-width: 280px;
+    max-width: 240px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .meta {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     white-space: nowrap;
   }
   .bar {
-    width: 96px;
+    width: 80px;
     height: 4px;
     border-radius: 2px;
     background: var(--fill-2);

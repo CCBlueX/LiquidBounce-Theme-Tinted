@@ -12,8 +12,8 @@
   // of the bottom. The toolbar lives in that bottom strip, so it is sized from the GUI scale and the page zoom.
   const BAND_GUI = 50;
   const OFFSET_PX = 20;
-  const BAR = 44;
-  const BAR_COMPACT = 36;
+  const BAR = 38;
+  const BAR_COMPACT = 32;
 
   let url = $state("");
   let draft = $state("");
@@ -146,7 +146,7 @@
     position: absolute;
     left: 50%;
     translate: -50% 0;
-    width: min(960px, calc(100% - 48px));
+    width: min(800px, calc(100% - 48px));
     display: flex;
     align-items: center;
     gap: 8px;
@@ -155,12 +155,12 @@
   }
   .buttons { display: flex; gap: 2px; flex: none; }
   .round {
-    width: 32px;
-    height: 32px;
-    border-radius: 16px;
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
     display: grid;
     place-items: center;
-    font-size: 26px;
+    font-size: 24px;
     line-height: 1;
     padding-bottom: 2px;
     color: var(--label);
@@ -169,12 +169,12 @@
   .round.reload { font-size: 18px; padding-bottom: 0; }
   .round:hover { background: var(--fill); }
   .round:active { transform: scale(0.92); }
-  .address { flex: 1; min-width: 0; height: 32px; }
+  .address { flex: 1; min-width: 0; height: 30px; }
   .address input {
     width: 100%;
     height: 100%;
     padding: 0 14px;
-    border-radius: 16px;
+    border-radius: 15px;
     background: var(--fill);
     box-shadow: inset 0 0 0 0.5px var(--line);
     font-size: 13px;
@@ -186,9 +186,9 @@
   .error { flex: none; max-width: 220px; color: var(--label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .close {
     flex: none;
-    height: 32px;
+    height: 30px;
     padding: 0 14px 0 10px;
-    border-radius: 16px;
+    border-radius: 15px;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -200,8 +200,8 @@
   .close span:first-child { font-size: 17px; font-weight: 400; line-height: 1; padding-bottom: 2px; }
   .close:hover { background: var(--fill-2); }
   .close:active { transform: scale(0.96); }
-  .compact .round, .compact .address, .compact .close { height: 28px; }
-  .compact .round { width: 28px; }
+  .compact .round, .compact .address, .compact .close { height: 26px; }
+  .compact .round { width: 26px; }
   .compact .close-label { display: none; }
   .compact .close { padding: 0 9px; }
 </style>

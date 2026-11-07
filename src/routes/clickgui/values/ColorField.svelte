@@ -82,12 +82,12 @@
 
 <style>
   .swatch-button {
-    height: 28px;
+    height: 24px;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 0 8px 0 4px;
-    border-radius: 8px;
+    padding: 0 6px 0 3px;
+    border-radius: 6px;
   }
   .swatch-button:hover { background: var(--fill); }
   .swatch,
@@ -97,14 +97,14 @@
     box-shadow: inset 0 0 0 0.5px rgb(255 255 255 / 0.3);
     background: rgb(20 20 24);
   }
-  .swatch { width: 28px; height: 20px; border-radius: 6px; }
+  .swatch { width: 24px; height: 16px; border-radius: 4px; }
   .swatch > span,
   .preview > span { flex: 1; }
-  .editor { width: 240px; padding: 14px; gap: 8px; }
+  .editor { width: 228px; padding: 10px; gap: 6px; }
   /* Only while open: an author display value would override the popover's hidden state */
   .editor:popover-open { display: grid; }
-  .preview { height: 40px; border-radius: 10px; margin-bottom: 4px; }
-  .line { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .preview { height: 32px; border-radius: 8px; margin-bottom: 2px; }
+  .line { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .hex { width: 130px; font-variant-numeric: tabular-nums; font-family: inherit; }
   .invalid { box-shadow: inset 0 0 0 1px var(--negative); }
   .error { color: var(--negative); }

@@ -20,12 +20,25 @@ const FILES: Record<SoundRole, { file: string; pitch: number; gain: number; esse
 const PITCH_JITTER = 0.03;
 // Overlapping taps from fast keyboard navigation turn into a buzz; drop repeats inside this window
 const MIN_GAP_MS = 35;
+// A running context keeps an audio thread and the output stream busy even in silence, and the theme's pages stay
+// loaded, hidden, for hours; it sleeps once nothing has played for this long
+const IDLE_SUSPEND_MS = 10_000;
 
 let context: AudioContext | undefined;
 let master: GainNode | undefined;
 const buffers = new Map<string, Promise<AudioBuffer | undefined>>();
 const lastPlayed = new Map<SoundRole, number>();
 const captionListeners = new Set<(caption: string) => void>();
+let playing = 0;
+let idleTimer: ReturnType<typeof setTimeout> | undefined;
+let suspending: Promise<void> | undefined;
+
+function sleepSoon() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    if (playing === 0) suspending = context?.suspend();
+  }, IDLE_SUSPEND_MS);
+}
 
 const state = { volume: 0.6, reduceSound: false, captions: false };
 
@@ -45,6 +58,7 @@ function audio() {
     master = context.createGain();
     master.gain.value = state.volume;
     master.connect(context.destination);
+    sleepSoon();
   }
   return context;
 }
@@ -76,15 +90,27 @@ export async function play(role: SoundRole) {
     for (const listener of captionListeners) listener(sound.caption);
   }
 
-  const buffer = await load(sound.file);
-  if (!buffer || !master) return;
-  const ctx = audio();
-  if (ctx.state === "suspended") await ctx.resume();
-  const source = ctx.createBufferSource();
-  source.buffer = buffer;
-  source.playbackRate.value = sound.pitch * (1 + (Math.random() * 2 - 1) * PITCH_JITTER);
-  const gain = ctx.createGain();
-  gain.gain.value = sound.gain;
-  source.connect(gain).connect(master);
-  source.start();
+  playing++;
+  clearTimeout(idleTimer);
+  let started = false;
+  try {
+    const buffer = await load(sound.file);
+    if (!buffer || !master) return;
+    const ctx = audio();
+    await suspending;
+    if (ctx.state === "suspended") await ctx.resume();
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = sound.pitch * (1 + (Math.random() * 2 - 1) * PITCH_JITTER);
+    const gain = ctx.createGain();
+    gain.gain.value = sound.gain;
+    source.connect(gain).connect(master);
+    source.onended = () => {
+      if (--playing === 0) sleepSoon();
+    };
+    source.start();
+    started = true;
+  } finally {
+    if (!started && --playing === 0) sleepSoon();
+  }
 }

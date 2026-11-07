@@ -3,10 +3,8 @@
   import { on } from "../../lib/api/events";
   import { modules } from "../../lib/api/routes";
   import type { BindValue, ChoiceGroup, Module, ToggleableGroup, ValueGroup } from "../../lib/api/types";
-  import { moduleItem } from "../../lib/icons";
   import { slideIn } from "../../lib/motion";
   import { play } from "../../lib/sound";
-  import ItemIcon from "../../lib/ui/ItemIcon.svelte";
   import Switch from "../../lib/ui/Switch.svelte";
   import { SettingsEditor } from "./editor.svelte";
   import { contents, enabledOf, humanize, isGroup, locate, pathKey, type Trail } from "./tree";
@@ -170,10 +168,9 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions (Esc goes back a page from any control inside) -->
 <div class="inspector" in:slideIn={{ x: 12 }} onkeydown={keydown} role="region" aria-label="{module.name} settings">
   <header class="top on-glass">
-    <ItemIcon id={moduleItem(module.name, module.category)} size={48} />
     <div class="grow">
-      <h2 class="t-title2">{module.name}</h2>
-      <p class="t-footnote l2 desc">{module.description}</p>
+      <h2 class="t-title3">{module.name}</h2>
+      <p class="t-footnote l2 desc" title={module.description}>{module.description}</p>
     </div>
     <KeyRecorder boundKey={module.keyBind.boundKey} label="{module.name} bind" onchange={setBind} />
     <Switch checked={module.enabled} label={module.name} onchange={ontoggle} />
@@ -237,37 +234,36 @@
 
 <style>
   .inspector { position: absolute; inset: 0; display: flex; flex-direction: column; }
-  .top { display: flex; align-items: center; gap: 16px; padding: 24px 24px 16px; }
+  .top { display: flex; align-items: center; gap: 8px; padding: 14px 12px 8px 16px; }
   .grow { flex: 1; min-width: 0; }
-  h2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .desc { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  h2, .desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .scroll {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 8px 20px 40px;
+    padding: 4px 12px 32px;
     scrollbar-width: none;
-    mask-image: linear-gradient(180deg, transparent 0, #000 12px, #000 calc(100% - 40px), transparent);
+    mask-image: linear-gradient(180deg, transparent 0, #000 8px, #000 calc(100% - 32px), transparent);
   }
   .page { padding-top: 4px; }
   .back {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    height: 28px;
-    padding: 0 10px 0 6px;
+    height: 26px;
+    padding: 0 8px 0 6px;
     margin-left: -2px;
-    border-radius: 14px;
+    border-radius: 13px;
     color: var(--label-2);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
   }
   .back:hover { background: var(--fill); color: var(--label); }
-  .back span { font-size: 20px; margin-top: -2px; }
-  .page-title { display: flex; align-items: center; justify-content: space-between; margin: 8px 4px 12px; gap: 12px; }
+  .back span { font-size: 18px; margin-top: -2px; }
+  .page-title { display: flex; align-items: center; justify-content: space-between; margin: 4px 4px 8px; gap: 8px; }
   .mode { margin-bottom: 4px; }
-  .failed { display: grid; gap: 12px; justify-items: start; padding: 12px 4px; }
-  .inspector :global(.flash) { animation: flash 1.4s var(--ease); border-radius: 10px; }
+  .failed { display: grid; gap: 8px; justify-items: start; padding: 8px 4px; }
+  .inspector :global(.flash) { animation: flash 1.4s var(--ease); border-radius: var(--r-group); }
   @keyframes flash {
     0%, 30% { background-color: var(--accent-tint); }
   }

@@ -16,7 +16,7 @@ export function setReducedMotion(value: boolean) {
 export const isReducedMotion = () => reduced;
 
 /** Glass surfaces arrive by rising a few pixels and settling; under reduce motion they only fade. */
-export function rise(_: Element, { delay = 0, duration = 360, y = 12, scale = 0.98 } = {}): TransitionConfig {
+export function rise(_: Element, { delay = 0, duration = 320, y = 8, scale = 0.985 } = {}): TransitionConfig {
   if (reduced) return { delay, duration: 160, css: (t) => `opacity: ${t}` };
   return {
     delay,
@@ -27,7 +27,7 @@ export function rise(_: Element, { delay = 0, duration = 360, y = 12, scale = 0.
 }
 
 /** Sheets and panes arrive sideways with the spring; under reduce motion they fade. */
-export function slideIn(_: Element, { delay = 0, x = 16 } = {}): TransitionConfig {
+export function slideIn(_: Element, { delay = 0, x = 12 } = {}): TransitionConfig {
   if (reduced) return { delay, duration: 160, css: (t) => `opacity: ${t}` };
   return {
     delay,

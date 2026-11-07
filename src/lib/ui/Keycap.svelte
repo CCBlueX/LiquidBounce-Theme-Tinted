@@ -11,13 +11,13 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 22px;
-    height: 22px;
-    padding: 0 7px;
-    border-radius: 6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 5px;
     background: var(--fill);
     box-shadow: inset 0 0 0 0.5px var(--line), inset 0 -1px 0 rgb(0 0 0 / 0.2);
-    font: 500 11px/1 "Inter", system-ui, sans-serif;
+    font: 500 12px/1 "Inter", system-ui, sans-serif;
     color: var(--label);
     white-space: nowrap;
   }

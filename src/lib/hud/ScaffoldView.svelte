@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { moduleItem } from "../../lib/icons";
-  import ItemIcon from "../../lib/ui/ItemIcon.svelte";
+  import ItemIcon from "../ui/ItemIcon.svelte";
   import type { ScaffoldActivity } from "./island.svelte";
 
   let { scaffold }: { scaffold: ScaffoldActivity } = $props();
@@ -11,40 +10,28 @@
   );
 </script>
 
-<div class="activity" aria-label="Scaffold, {scaffold.count} blocks left">
-  <div class="top">
-    <span class="badge"><ItemIcon id={scaffold.block ?? moduleItem("Scaffold", "World")} size={32} /></span>
-    <span class="text">
-      <span class="t-headline">Scaffold</span>
-      <span class="t-footnote l2">{detail}</span>
-    </span>
-    <span class="count">
-      <span class="t-title2 num">{scaffold.count}</span>
-      <span class="t-footnote l2">{scaffold.count === 1 ? "block left" : "blocks left"}</span>
-    </span>
-  </div>
+<div class="activity" role="group" aria-label="Scaffold, {scaffold.count} blocks left">
+  {#if scaffold.block}<ItemIcon id={scaffold.block} size={32} label={scaffold.blockName} />{/if}
+  <span class="text">
+    <span class="t-headline">Scaffold</span>
+    <span class="t-footnote l2">{detail}</span>
+  </span>
+  <span class="count">
+    <span class="t-headline num">{scaffold.count}</span>
+    <span class="t-footnote l2">{scaffold.count === 1 ? "block left" : "blocks left"}</span>
+  </span>
   <div class="bar"><i style:transform="scaleX({fraction})"></i></div>
 </div>
 
 <style>
   .activity {
-    width: 360px;
-    padding: 8px 20px 14px 8px;
-  }
-  .top {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 12px;
-    height: 48px;
-  }
-  .badge {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 20px;
-    background: var(--fill-2);
-    flex: none;
+    gap: 10px;
+    width: 300px;
+    height: 52px;
+    padding: 0 20px 4px 12px;
   }
   .text {
     display: flex;
@@ -59,8 +46,11 @@
     white-space: nowrap;
   }
   .bar {
-    height: 4px;
-    margin: 6px 0 0 12px;
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: 5px;
+    height: 3px;
     border-radius: 2px;
     background: var(--fill-2);
     overflow: hidden;

@@ -115,15 +115,24 @@
   .slider { position: relative; height: 24px; display: flex; align-items: center; touch-action: none; }
   .track { position: absolute; left: 0; right: 0; height: 4px; border-radius: 2px; background: var(--fill-3); }
   .fill { position: absolute; left: 0; height: 4px; border-radius: 2px; background: var(--accent); }
+  /* A 24px hit area around a 16px knob */
   .knob {
     position: absolute;
-    width: 22px;
-    height: 22px;
-    margin-left: -11px;
-    border-radius: 11px;
-    background: #fff;
-    box-shadow: 0 2px 6px rgb(0 0 0 / 0.35), 0 0 0 0.5px rgb(0 0 0 / 0.1);
+    width: 24px;
+    height: 24px;
+    margin-left: -12px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
     transition: transform var(--t-press) var(--ease);
+  }
+  .knob::after {
+    content: "";
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.35), 0 0 0 0.5px rgb(0 0 0 / 0.1);
   }
   .dragging .knob:hover,
   .knob:active { transform: scale(1.12); }

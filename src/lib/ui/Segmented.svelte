@@ -40,15 +40,15 @@
 <style>
   .seg {
     display: inline-flex;
-    padding: 3px;
-    gap: 2px;
+    padding: 2px;
+    gap: 1px;
     border-radius: 999px;
     background: var(--fill);
     box-shadow: inset 0 0 0 0.5px var(--line);
   }
   button {
-    height: 30px;
-    padding: 0 16px;
+    height: 24px;
+    padding: 0 12px;
     border-radius: 999px;
     font-size: 13px;
     font-weight: 500;
@@ -60,5 +60,5 @@
     color: #fff;
     box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.3);
   }
-  .small button { height: 26px; padding: 0 12px; font-size: 12px; }
+  .small button { height: 24px; padding: 0 10px; font-size: 12px; }
 </style>

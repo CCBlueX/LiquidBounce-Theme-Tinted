@@ -22,7 +22,6 @@
 
 <script lang="ts">
   import { onMount } from "svelte";
-  import ItemIcon from "../../lib/ui/ItemIcon.svelte";
   import Segmented from "../../lib/ui/Segmented.svelte";
   import Switch from "../../lib/ui/Switch.svelte";
 
@@ -105,7 +104,6 @@
 </script>
 
 <div class="mg-sheet-head on-glass">
-  <ItemIcon id="minecraft:ender_pearl" size={32} />
   <div class="grow">
     <h2 class="t-title3" id="mg-sheet-title">{start ? "Edit proxy" : "Add proxy"}</h2>
     <p class="t-callout l2">{start ? `${start.host}:${start.port}` : "LiquidBounce checks it before saving."}</p>

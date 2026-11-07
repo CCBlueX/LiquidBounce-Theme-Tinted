@@ -1,0 +1,13 @@
+{
+  "name": "Scoreboard",
+  "description": "The server's sidebar in glass, with its colours",
+  "enabled": true,
+  "singleton": true,
+  "alignment": {
+    "horizontalAlignment": "Left",
+    "horizontalOffset": 12,
+    "verticalAlignment": "CenterTranslated",
+    "verticalOffset": 0
+  },
+  "tweaks": ["DISABLE_SCOREBOARD"]
+}
