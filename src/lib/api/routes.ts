@@ -2,6 +2,7 @@
 // Gotchas: validation errors are mostly 403 (ApiError.status), ids are list indices, colors are signed ARGB ints.
 
 import { ApiError, apiUrl, request, type HttpMethod, type QueryValue } from "./client";
+import { closeScreen } from "./screen";
 import type {
   Account,
   ApiRoutes,
@@ -85,8 +86,8 @@ export const accounts = {
 export const screen = {
   /** 403 for an unknown route name. */
   open: (name: ScreenRoute): Promise<void> => call("PUT /screen", { body: { name } }),
-  /** Back to the parent theme screen, else the game or title screen. 403 when no screen is open. */
-  close: (): Promise<void> => call("DELETE /screen"),
+  /** Back to the screen this one was opened from, else the game or title screen. 403 when no screen is open. */
+  close: closeScreen,
 };
 
 export const client = {
