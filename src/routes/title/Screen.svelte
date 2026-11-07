@@ -288,7 +288,7 @@
 
   {#if info}
     <div class="version glass num on-glass">
-      {info.clientName} {info.clientVersion} · {info.gameVersion}{#if protocol} · Minecraft {protocol.name}{/if}
+      {info.clientName} {info.clientVersion} · {info.gameVersion}{protocol ? ` · Minecraft ${protocol.name}` : ""}
     </div>
   {/if}
 </main>
