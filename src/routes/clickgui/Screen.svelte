@@ -8,7 +8,7 @@
   import { on, onReconnect } from "../../lib/api/events";
   import { modules, screen } from "../../lib/api/routes";
   import { onScreenChange, readLocation } from "../../lib/api/screen";
-  import type { Module } from "../../lib/api/types";
+  import type { Module, ScreenInfo } from "../../lib/api/types";
   import HudEditor from "../../lib/hud/Editor.svelte";
   import { flipDuration, rise, slideIn } from "../../lib/motion";
   import { play } from "../../lib/sound";
@@ -151,13 +151,25 @@
     // A page reload or disconnect while the HUD editor was open leaves the client hiding the HUD; nothing else resets it
     request("PUT", "/hud-editor", { body: { selected: false } }).catch(() => {});
     // ClickGUI's own setting decides whether the search field takes focus when the screen opens
-    modules
+    const settingsLoaded = modules
       .settings("ClickGUI")
       .then((tree) => {
         const node = tree.value.find((value) => value.name === "SearchBarAutoFocus");
         autofocus = node?.valueType === "BOOLEAN" && node.value;
       })
       .catch(() => {});
+    // The cached page mostly loads hidden when a world is joined, but after a theme switch the client creates it as
+    // the ClickGUI opens, after the toggle that shows it was sent
+    if (cached) {
+      Promise.all([request<ScreenInfo>("GET", "/screen"), settingsLoaded])
+        .then(([info]) => {
+          if (shown || info?.name !== STANDALONE_SCREEN) return;
+          shown = true;
+          play("open");
+          if (autofocus) focusSearch();
+        })
+        .catch(() => {});
+    }
     // The client closes the ClickGUI on Esc before this page sees the key; what floats over the window closes with it,
     // and focus leaves so no caret keeps the page drawing while it fades out
     const offScreen = onScreenChange(({ name, action }) => {
@@ -411,7 +423,8 @@
             <Segmented options={["All", "Enabled"]} value={filter} label="Show" small onchange={(value) => (filter = value)} />
             <!-- svelte-ignore a11y_no_noninteractive_element_interactions (arrow keys and Enter from the field inside) -->
             <div class="search" bind:this={searchBox} onkeydown={searchKey} role="search">
-              <SearchField bind:value={query} placeholder="Search modules and settings" shortcut="Ctrl K" {autofocus} />
+              <!-- The cached page loads hidden; it focuses the field itself when the ClickGUI shows -->
+              <SearchField bind:value={query} placeholder="Search modules and settings" shortcut="Ctrl K" autofocus={autofocus && !cached} />
             </div>
           </header>
 
