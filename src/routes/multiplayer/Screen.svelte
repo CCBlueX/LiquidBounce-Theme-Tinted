@@ -370,7 +370,8 @@
     }
   }
 
-  // Single-letter shortcuts work outside text fields; Esc clears the search first and closes the screen second
+  // Single-letter shortcuts work outside text fields. Esc closes the screen in the client itself, whatever the page
+  // does with it; a close from here as well would also close the screen the client went back to.
   function windowKey(event: KeyboardEvent) {
     if (event.defaultPrevented || sheet || confirming) return;
     const target = event.target as HTMLElement;
@@ -380,17 +381,7 @@
       focusSearch();
       return;
     }
-    if (event.key === "Escape") {
-      event.preventDefault();
-      if (query) {
-        query = "";
-        play("tap");
-        tick().then(() => focusRow(current?.id));
-      } else if (inField) {
-        focusRow(current?.id);
-      } else close();
-      return;
-    }
+    if (event.key === "Escape") return;
     if (inField || event.ctrlKey || event.metaKey || event.altKey) return;
     const key = event.key.toLowerCase();
     if (key === "n") {

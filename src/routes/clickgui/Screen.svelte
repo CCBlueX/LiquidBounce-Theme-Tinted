@@ -333,7 +333,8 @@
     hide();
   }
 
-  // Esc clears the search first and closes the screen second; typing anywhere starts a search
+  // Esc clears the search; typing anywhere starts a search. The client closes the screen on Esc by itself, and a close
+  // from here as well would also close the screen it went back to.
   function windowKey(event: KeyboardEvent) {
     if (event.defaultPrevented || editingHud) return;
     const target = event.target as HTMLElement;
@@ -347,8 +348,6 @@
       if (query) {
         query = "";
         play("tap");
-      } else {
-        close();
       }
     } else if (
       !inField &&

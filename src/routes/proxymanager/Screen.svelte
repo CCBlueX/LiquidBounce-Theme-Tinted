@@ -444,13 +444,13 @@
     }
   }
 
+  // The client closes the screen on Esc by itself; a close from here as well would also close the screen it went back to
   function windowKey(event: KeyboardEvent) {
     if (event.defaultPrevented || removing) return;
     const inField = isTextField(event.target);
     if (event.key === "Escape") {
       event.preventDefault();
       if (sheetOpen) closeSheet();
-      else close();
     } else if (!inField && !event.ctrlKey && !event.metaKey && !event.altKey) {
       const key = event.key.toLowerCase();
       if (key === "n" && !sheetOpen) {

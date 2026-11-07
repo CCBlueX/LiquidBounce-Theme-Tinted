@@ -188,18 +188,18 @@
     }
   }
 
-  // Esc clears the search first and closes second; typing anywhere starts a search
+  // Esc clears the search; typing anywhere starts a search. The client closes the screen on Esc by itself, and a close
+  // from here as well would also close the screen it went back to.
   function windowKey(event: KeyboardEvent) {
     if (event.defaultPrevented) return;
     const target = event.target as HTMLElement;
     const inField = target.matches?.("input");
     if (event.key === "Escape") {
+      if (!query) return;
       event.preventDefault();
-      if (query) {
-        query = "";
-        play("tap");
-        tick().then(() => focusRow(current?.version, "center"));
-      } else close();
+      query = "";
+      play("tap");
+      tick().then(() => focusRow(current?.version, "center"));
     } else if ((event.ctrlKey || event.metaKey) && (event.key.toLowerCase() === "k" || event.key.toLowerCase() === "f")) {
       event.preventDefault();
       focusSearch();

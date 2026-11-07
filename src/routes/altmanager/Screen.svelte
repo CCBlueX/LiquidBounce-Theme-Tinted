@@ -519,7 +519,8 @@
     }
   }
 
-  // Esc closes the innermost layer: menu and dialog handle their own, then the sheet, the search, the screen
+  // Esc closes the innermost layer: menu and dialog handle their own, then the sheet and the search. The client closes
+  // the screen on Esc by itself; a close from here as well would also close the screen the client went back to.
   function windowKey(event: KeyboardEvent) {
     if (event.defaultPrevented || removing) return;
     const inField = isTextField(event.target);
@@ -535,7 +536,7 @@
       else if (query) {
         query = "";
         play("tap");
-      } else close();
+      }
     } else if (!inField && !event.ctrlKey && !event.metaKey && !event.altKey && event.key.toLowerCase() === "n") {
       event.preventDefault();
       menu?.open();
