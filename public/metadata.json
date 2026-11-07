@@ -27,6 +27,15 @@
       "values": [
         { "type": "INT", "name": "Volume", "value": 60, "range": { "min": 0, "max": 100 }, "suffix": "%" }
       ]
+    },
+    {
+      "type": "CONFIGURABLE",
+      "name": "ModuleList",
+      "values": [
+        { "type": "CHOOSE", "name": "Show", "value": "Toggled", "choices": ["Toggled", "Bound", "All"] },
+        { "type": "BOOLEAN", "name": "BindsWhenOff", "value": true },
+        { "type": "INT", "name": "MaxRows", "value": 12, "range": { "min": 3, "max": 40 } }
+      ]
     }
   ]
 }

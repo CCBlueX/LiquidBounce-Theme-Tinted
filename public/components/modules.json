@@ -1,6 +1,6 @@
 {
   "name": "Modules",
-  "description": "Enabled modules and every key bind, with its state",
+  "description": "The modules you toggle with their binds; the rest that are on as a count",
   "enabled": true,
   "singleton": true,
   "alignment": {

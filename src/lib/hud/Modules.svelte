@@ -4,45 +4,66 @@
   import { bindLabel } from "../keys";
   import { moduleStore } from "../modules.svelte";
   import { isReducedMotion, spring } from "../motion";
+  import { settings } from "../settings.svelte";
   import Keycap from "../ui/Keycap.svelte";
   import { slotOf } from "./layout.svelte";
 
   const ROW = 22;
   const PADDING = 8;
+  // Its key opens the ClickGUI, so it is never on and its bind is no state worth a row
+  const UNLISTED = new Set(["ClickGUI"]);
 
   type Row = { name: string; enabled: boolean; key: string | null; hold: boolean };
 
   const slot = slotOf();
   slot?.claim("y", 2);
 
-  // Everything that is on, then everything a key can turn on; modules hidden from the module list stay hidden unless
-  // they carry a bind
-  const rows = $derived.by(() => {
-    const result: Row[] = [];
+  // Modules the player reaches for get rows: those on with a bind or (Toggled) switched this session, then the binds
+  // of modules that are off. Modules that are simply always on only add to the count row. Hidden modules never show.
+  const groups = $derived.by(() => {
+    const { show, bindsWhenOff } = settings.moduleList;
+    const on: Row[] = [];
+    const off: Row[] = [];
+    let quiet = 0;
     for (const module of moduleStore.list) {
+      if (module.hidden || UNLISTED.has(module.name)) continue;
       const key = bindLabel(module.keyBind);
-      if (!(module.enabled && !module.hidden) && !key) continue;
-      result.push({ name: module.name, enabled: module.enabled, key, hold: module.keyBind?.action === "Hold" });
+      const row = { name: module.name, enabled: module.enabled, key, hold: module.keyBind?.action === "Hold" };
+      if (module.enabled) {
+        if (show === "All" || key || (show === "Toggled" && moduleStore.toggled.has(module.name))) on.push(row);
+        else quiet++;
+      } else if (key && bindsWhenOff) {
+        off.push(row);
+      }
     }
-    return result.sort((a, b) => Number(b.enabled) - Number(a.enabled) || a.name.localeCompare(b.name));
+    const byName = (a: Row, b: Row) => a.name.localeCompare(b.name);
+    return { rows: [...on.sort(byName), ...off.sort(byName)], quiet, enabled: on.length + quiet };
   });
 
-  const enabledCount = $derived(rows.filter((row) => row.enabled).length);
-
-  // Rows past the room the list has end in one summary row; binds go before modules that are on
-  const capacity = $derived(Math.max(1, Math.floor(((slot?.height ?? Infinity) - PADDING) / ROW)));
-  const cut = $derived(rows.length > capacity ? capacity - 1 : rows.length);
-  const hiddenOn = $derived(rows.slice(cut).filter((row) => row.enabled).length);
-  const hiddenBinds = $derived(rows.length - cut - hiddenOn);
+  // Rows past the setting's cap or the room the list has end in the count row, binds of modules that are off first
+  const capacity = $derived(
+    Math.max(1, Math.min(settings.moduleList.maxRows, Math.floor(((slot?.height ?? Infinity) - PADDING) / ROW))),
+  );
+  const cut = $derived.by(() => {
+    const { rows, quiet } = groups;
+    return rows.length + (quiet ? 1 : 0) > capacity ? capacity - 1 : rows.length;
+  });
+  const moreOn = $derived(groups.quiet + groups.rows.slice(cut).filter((row) => row.enabled).length);
+  const moreBinds = $derived(groups.rows.length - cut - (moreOn - groups.quiet));
+  const summary = $derived(
+    [moreOn && `${moreOn} more on`, moreBinds && `${moreBinds} more ${moreBinds === 1 ? "bind" : "binds"}`]
+      .filter(Boolean)
+      .join(" · "),
+  );
 
   const move = (node: Element, fromTo: { from: DOMRect; to: DOMRect }) =>
     flip(node, fromTo, { duration: isReducedMotion() ? 0 : 320, easing: spring });
   const appear = (node: Element) => fade(node, { duration: isReducedMotion() ? 120 : 180 });
 </script>
 
-{#if rows.length}
-  <section class="list glass on-glass" aria-label="Modules, {enabledCount} on" transition:fade={{ duration: 160 }}>
-    {#each rows.slice(0, cut) as row (row.name)}
+{#if cut || summary}
+  <section class="list glass on-glass" aria-label="Modules, {groups.enabled} on" transition:fade={{ duration: 160 }}>
+    {#each groups.rows.slice(0, cut) as row (row.name)}
       <div class="row" class:on={row.enabled} class:bound={!!row.key} animate:move transition:appear>
         <span class="name">{row.name}</span>
         {#if !row.enabled}<span class="off">Off</span>{/if}
@@ -52,12 +73,8 @@
         {/if}
       </div>
     {/each}
-    {#if cut < rows.length}
-      <div class="row more">
-        {[hiddenOn && `${hiddenOn} more on`, hiddenBinds && `${hiddenBinds} ${hiddenOn ? "binds" : "more binds"}`]
-          .filter(Boolean)
-          .join(" · ")}
-      </div>
+    {#if summary}
+      <div class="row more">{summary}</div>
     {/if}
   </section>
 {/if}

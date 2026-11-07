@@ -19,7 +19,11 @@ interface ThemeSettings {
     scale?: number;
   };
   sound?: { volume?: number };
+  moduleList?: { show?: ModuleListShow; bindsWhenOff?: boolean; maxRows?: number };
 }
+
+/** Which modules that are on get a row of their own; the rest share one count row. */
+export type ModuleListShow = "Toggled" | "Bound" | "All";
 
 export const settings = $state({
   reduceMotion: false,
@@ -29,6 +33,7 @@ export const settings = $state({
   soundCaptions: false,
   scale: 1,
   volume: 0.6,
+  moduleList: { show: "Toggled" as ModuleListShow, bindsWhenOff: true, maxRows: 12 },
 });
 
 let raw: ThemeSettings = {};
@@ -48,6 +53,12 @@ function apply() {
   settings.soundCaptions = a.soundCaptions ?? false;
   settings.scale = a.scale ?? 1;
   settings.volume = (raw.sound?.volume ?? 60) / 100;
+  const list = raw.moduleList ?? {};
+  settings.moduleList = {
+    show: list.show === "Bound" || list.show === "All" ? list.show : "Toggled",
+    bindsWhenOff: list.bindsWhenOff ?? true,
+    maxRows: list.maxRows ?? 12,
+  };
 
   const root = document.documentElement;
   setReducedMotion(settings.reduceMotion);

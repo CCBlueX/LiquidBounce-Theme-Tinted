@@ -5,17 +5,23 @@ import { modules as api } from "./api/routes";
 import type { Module } from "./api/types";
 
 const REFETCH_DEBOUNCE_MS = 300;
+// A config load or a module that switches others flips many modules at once; those are not the player's toggles
+const BURST_MS = 250;
+const BURST_SIZE = 4;
 
 type ToggleState = { enabled: boolean; hidden: boolean };
 
 class ModuleStore {
   list = $state.raw<Module[]>([]);
   byName = $derived(new Map(this.list.map((module) => [module.name, module])));
+  /** Modules switched on or off since this page loaded, one at a time. */
+  toggled = $state.raw<ReadonlySet<string>>(new Set());
 
   #timer: number | undefined;
   #loading = 0;
   // Toggles that land while a fetch is in flight; the fetched list may predate them
   #pending = new Map<string, ToggleState>();
+  #recent: { name: string; at: number }[] = [];
 
   async load() {
     const run = ++this.#loading;
@@ -39,11 +45,22 @@ class ModuleStore {
     this.#timer = setTimeout(() => this.load(), REFETCH_DEBOUNCE_MS);
   }
 
+  #touch(name: string) {
+    const now = performance.now();
+    this.#recent = this.#recent.filter((toggle) => now - toggle.at < BURST_MS);
+    this.#recent.push({ name, at: now });
+    const next = new Set(this.toggled);
+    if (this.#recent.length >= BURST_SIZE) for (const toggle of this.#recent) next.delete(toggle.name);
+    else next.add(name);
+    this.toggled = next;
+  }
+
   #toggle(name: string, state: ToggleState) {
     this.#pending.set(name, state);
     const index = this.list.findIndex((module) => module.name === name);
     if (index < 0) return;
     const current = this.list[index];
+    if (current.enabled !== state.enabled) this.#touch(name);
     if (current.enabled === state.enabled && current.hidden === state.hidden) return;
     const next = this.list.slice();
     next[index] = { ...current, ...state };
