@@ -24,6 +24,7 @@
   let list = $state<HTMLDivElement>();
   let searchBox = $state<HTMLDivElement>();
   let closeButton = $state<HTMLButtonElement>();
+  let retryButton = $state<HTMLButtonElement>();
 
   // The client's own version is the newest entry; DELETE returns to it
   const native = $derived(protocols.reduce<Protocol | undefined>((best, p) => (!best || p.version > best.version ? p : best), undefined));
@@ -66,8 +67,10 @@
     play("open");
     client
       .info()
-      .then(async (info) => {
-        available = info.viaFabricPlus;
+      .then((info) => (available = info.viaFabricPlus))
+      // The client opens this screen only with ViaFabricPlus installed; the protocol list tells whether it answers
+      .catch(() => (available = true))
+      .then(async () => {
         if (!available) {
           await tick();
           closeButton?.focus();
@@ -76,24 +79,27 @@
         await load();
         await tick();
         if (document.activeElement === document.body) focusRow(current?.version, "center");
-      })
-      .catch(() => {
-        available = undefined;
-        failed = true;
       });
   });
+
+  async function retry() {
+    await load();
+    await tick();
+    focusRow(current?.version, "center");
+  }
 
   function say(text: string) {
     announcement = "";
     tick().then(() => (announcement = text));
   }
 
+  // Without rows (the list failed to load) Try again takes focus, so it never falls back to the page
   function focusRow(version: number | undefined, block: ScrollLogicalPosition = "nearest") {
-    if (version === undefined) return;
+    const row = version === undefined ? undefined : list?.querySelector<HTMLElement>(`[data-version="${version}"]`);
+    if (!row) return retryButton?.focus();
     focusVersion = version;
-    const row = list?.querySelector<HTMLElement>(`[data-version="${version}"]`);
-    row?.focus({ preventScroll: true });
-    row?.scrollIntoView({ block });
+    row.focus({ preventScroll: true });
+    row.scrollIntoView({ block });
   }
 
   async function choose(protocol: Protocol) {
@@ -217,13 +223,15 @@
       </p>
       <button class="cg-pill" bind:this={closeButton} onclick={close} aria-keyshortcuts="Escape">Close</button>
     </main>
-  {:else if available || failed}
+  {:else}
     <main class="glass window on-glass" in:rise aria-labelledby="vfp-title">
       <header class="head">
         <div class="titles">
           <h1 id="vfp-title" class="t-large">Protocol</h1>
           {#if current}
             <span class="t-callout l2 num">Joining as {current.name}{isNative ? ", the client's own version" : ""}</span>
+          {:else if !failed}
+            <span class="t-callout l2">Loading</span>
           {/if}
         </div>
         <!-- svelte-ignore a11y_no_noninteractive_element_interactions (arrow keys and Enter from the field inside) -->
@@ -236,7 +244,7 @@
         {#if failed}
           <div class="empty">
             <p class="t-callout l2">The protocol list could not be loaded from the client.</p>
-            <button class="cg-pill" onclick={load}>Try again</button>
+            <button class="cg-pill" bind:this={retryButton} onclick={retry}>Try again</button>
           </div>
         {:else}
           <div class="cg-group" role="listbox" aria-label="Minecraft versions, {visible.length} {visible.length === 1 ? 'entry' : 'entries'}">
@@ -317,8 +325,10 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 4px 16px 16px;
+    padding: 4px 16px 28px;
     scrollbar-width: none;
+    /* Rows scrolled to by keys stop clear of the fades */
+    scroll-padding: 6px 0 28px;
     mask-image: linear-gradient(180deg, transparent 0, #000 6px, #000 calc(100% - 28px), transparent);
   }
   .row {

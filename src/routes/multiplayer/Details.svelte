@@ -178,6 +178,7 @@
     padding: 4px 16px 16px;
     scrollbar-width: none;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-content: start;
     gap: 12px;
     mask-image: linear-gradient(180deg, transparent 0, #000 8px, #000 calc(100% - 24px), transparent);
@@ -185,9 +186,11 @@
   .state { display: inline-flex; align-items: center; gap: 7px; color: var(--label); }
   .version { max-width: 60%; overflow: hidden; text-overflow: ellipsis; }
   .note { margin: -6px 4px 0; }
-  section { display: grid; gap: 6px; }
+  section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
   h3 { padding: 0 4px; font-weight: 500; }
   .block { padding: 8px 12px; color: rgb(255 255 255 / 0.85); }
+  /* The pane shows the whole message; the row keeps one ellipsized line */
+  .block > :global(.line) { white-space: normal; overflow-wrap: anywhere; }
   .block > :global(.line + .line) { margin-top: 2px; }
   .dot { width: 8px; height: 8px; border-radius: 4px; flex: none; }
   .dot.good { background: var(--positive); }

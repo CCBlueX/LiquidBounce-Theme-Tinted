@@ -1,7 +1,7 @@
 // Theme settings declared in metadata.json live in the HUD module (HUD > Themes > Tinted). They are read from
 // GET /theme and re-read whenever a value under this theme changes.
 import { request } from "./api/client";
-import { on } from "./api/events";
+import { on, onReconnect } from "./api/events";
 import { setReducedMotion } from "./motion";
 import { configureSound } from "./sound";
 
@@ -77,5 +77,6 @@ export function startSettings() {
     clearTimeout(timer);
     timer = setTimeout(load, RELOAD_DEBOUNCE_MS);
   });
+  onReconnect(load);
   return load();
 }

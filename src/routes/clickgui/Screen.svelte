@@ -1,12 +1,13 @@
 <script lang="ts">
   import "../../lib/ui/values.css";
-  import { onMount, tick } from "svelte";
+  import { onMount, tick, untrack } from "svelte";
   import { flip } from "svelte/animate";
   import { cubicOut } from "svelte/easing";
   import { fade } from "svelte/transition";
   import { request } from "../../lib/api/client";
-  import { on } from "../../lib/api/events";
+  import { on, onReconnect } from "../../lib/api/events";
   import { modules, screen } from "../../lib/api/routes";
+  import { onScreenChange, readLocation } from "../../lib/api/screen";
   import type { Module } from "../../lib/api/types";
   import HudEditor from "../../lib/hud/Editor.svelte";
   import { flipDuration, rise, slideIn } from "../../lib/motion";
@@ -69,6 +70,22 @@
       visible.find((module) => module.name === selectedName)?.name ??
       visible[0]?.name,
   );
+
+  // A focused card that leaves the list (filtered out, search cleared) takes focus with it; the card it was, or the
+  // one now in its place, gets it back
+  let cardNames: string[] = [];
+  let refocusAt: number | undefined;
+  $effect.pre(() => {
+    void visible;
+    const active = document.activeElement;
+    refocusAt = active instanceof HTMLElement && grid?.contains(active) ? Math.max(0, cardNames.indexOf(active.dataset.module ?? "")) : undefined;
+  });
+  $effect(() => {
+    cardNames = visible.map((module) => module.name);
+    if (refocusAt === undefined || document.activeElement !== document.body) return;
+    const at = refocusAt;
+    untrack(() => focusCard(visible.find((module) => module.name === focusName)?.name ?? visible[Math.min(at, visible.length - 1)]?.name));
+  });
 
   // Setting names come from every module's tree; they are fetched once, the first time a search starts
   let settingIndex = $state.raw<SettingHit[]>([]);
@@ -140,6 +157,18 @@
         autofocus = node?.valueType === "BOOLEAN" && node.value;
       })
       .catch(() => {});
+    // The client closes the ClickGUI on Esc before this page sees the key; what floats over the window closes with it,
+    // and focus leaves so no caret keeps the page drawing while it fades out. The in-game ClickGUI is a cached page
+    // the client only hides, without a screen event, so there the page's own Esc handling is all that runs.
+    return onScreenChange(({ name, action }) => {
+      if (name !== "clickgui") return;
+      if (action === "close") {
+        dropLayers();
+      } else {
+        play("open");
+        if (autofocus) focusSearch();
+      }
+    });
   });
 
   $effect(() => {
@@ -168,9 +197,12 @@
       clearTimeout(reload);
       reload = window.setTimeout(load, 500);
     });
+    // Toggles sent while the event socket was down are lost
+    const offReconnect = onReconnect(load);
     return () => {
       offToggle();
       offActivation();
+      offReconnect();
       clearTimeout(timer);
       clearTimeout(reload);
     };
@@ -232,11 +264,15 @@
     // The list fills as many columns as fit, so a row's length comes from the layout
     const rows = grid?.querySelector(".grid");
     const columns = rows ? getComputedStyle(rows).gridTemplateColumns.split(" ").length : 1;
+    const rowHeight = (event.currentTarget as HTMLElement).offsetHeight + (rows ? parseFloat(getComputedStyle(rows).rowGap) || 0 : 0);
+    const page = Math.max(1, Math.floor((grid?.clientHeight ?? 0) / rowHeight) - 1) * columns;
     const moves: Record<string, number> = {
       ArrowRight: index + 1,
       ArrowLeft: index - 1,
       ArrowDown: index + columns,
       ArrowUp: index - columns,
+      PageDown: index + page,
+      PageUp: index - page,
       Home: 0,
       End: visible.length - 1,
     };
@@ -258,6 +294,22 @@
     }
   }
 
+  function dropLayers() {
+    editingHud = false;
+    for (const layer of document.querySelectorAll<HTMLElement>(":popover-open")) layer.hidePopover();
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  }
+
+  // The client hides the in-game ClickGUI on every Esc, whatever is open in it, and tells this cached page nothing;
+  // the page drops all of it at once (search, menus, the HUD editor, a key being recorded) so it comes back clean
+  const cached = readLocation().isStatic;
+  function cachedEscape(event: KeyboardEvent) {
+    if (!cached || event.key !== "Escape") return;
+    event.preventDefault();
+    query = "";
+    dropLayers();
+  }
+
   // Esc clears the search first and closes the screen second; typing anywhere starts a search
   function windowKey(event: KeyboardEvent) {
     if (event.defaultPrevented || editingHud) return;
@@ -275,7 +327,15 @@
       } else {
         close();
       }
-    } else if (!inField && event.key.length === 1 && event.key !== " " && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    } else if (
+      !inField &&
+      event.key.length === 1 &&
+      event.key !== " " &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey &&
+      !document.querySelector(":popover-open")
+    ) {
       event.preventDefault();
       query += event.key;
       focusSearch();
@@ -312,7 +372,7 @@
   });
 </script>
 
-<svelte:window onkeydown={windowKey} />
+<svelte:window onkeydown={windowKey} onkeydowncapture={cachedEscape} />
 
 <div class="stage" role="presentation" {...typingFocus}>
   {#if ready}
@@ -387,7 +447,7 @@
                 module={selected}
                 {reveal}
                 ontoggle={(enabled) => toggle(selected, enabled)}
-                onbind={(boundKey) => (selected.keyBind.boundKey = boundKey)}
+                onbind={(bind) => (selected.keyBind = bind)}
               />
             {/key}
           </aside>
@@ -437,6 +497,7 @@
     overflow: hidden;
     display: grid;
     grid-template-columns: 148px minmax(0, 1fr) 360px;
+    grid-template-rows: minmax(0, 1fr);
   }
   .window > :global(.sidebar) { box-shadow: inset -0.5px 0 0 var(--line); }
   .list { grid-column: 2; min-width: 0; display: flex; flex-direction: column; container-type: inline-size; }
@@ -459,7 +520,7 @@
     mask-image: linear-gradient(180deg, #000 calc(100% - 48px), transparent calc(100% - 8px));
   }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(208px, 1fr)); gap: 2px 8px; }
-  .empty { display: grid; gap: 8px; justify-items: start; padding: 16px 4px; }
+  .empty { display: grid; gap: 8px; justify-items: start; padding: 16px 4px; overflow-wrap: anywhere; }
   .settings-results { margin-top: 16px; }
   .settings-results h2 { margin: 0 4px 6px; font-weight: 600; color: var(--label-2); }
   .hit { width: 100%; text-align: left; border-radius: inherit; }

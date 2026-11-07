@@ -38,5 +38,9 @@ export function ackScreen(name: ScreenRoute | "none" | (string & {})): Promise<v
 
 /** Calls `handler` whenever the client opens or closes a virtual screen. */
 export function onScreenChange(handler: (change: ScreenChange) => void): Unsubscribe {
-  return on("virtualScreen", (event) => handler({ name: event.screenName, action: event.action, type: event.type }));
+  return on("virtualScreen", (event) => {
+    if (typeof event.screenName === "string" && event.screenName) {
+      handler({ name: event.screenName, action: event.action, type: event.type });
+    }
+  });
 }

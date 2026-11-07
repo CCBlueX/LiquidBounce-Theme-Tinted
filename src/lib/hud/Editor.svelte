@@ -1,6 +1,15 @@
+<script module lang="ts">
+  import { request } from "../api/client";
+
+  // Opening and closing in quick succession must reach the client in order, or the HUD stays hidden
+  let hudEditorWrites: Promise<unknown> = Promise.resolve();
+  function setHudEditor(selected: boolean) {
+    hudEditorWrites = hudEditorWrites.then(() => request("PUT", "/hud-editor", { body: { selected } })).catch(() => {});
+  }
+</script>
+
 <script lang="ts">
   import { setContext, tick } from "svelte";
-  import { request } from "../api/client";
   import { on } from "../api/events";
   import type { Alignment, HorizontalAlignment, HudComponent, VerticalAlignment } from "../api/types";
   import { rise } from "../motion";
@@ -56,7 +65,7 @@
 
   $effect(() => {
     document.documentElement.classList.add("ctx-hud");
-    request("PUT", "/hud-editor", { body: { selected: true } }).catch(() => {});
+    setHudEditor(true);
     const stop = hud.start();
     const off = on("keyboardKey", (event) => {
       if (event.key === "key.keyboard.left.shift") leftShift = event.action !== 0;
@@ -69,7 +78,7 @@
         hud.saveAlignment(id, save.alignment).catch(() => {});
       }
       saves.clear();
-      request("PUT", "/hud-editor", { body: { selected: false } }).catch(() => {});
+      setHudEditor(false);
       document.documentElement.classList.remove("ctx-hud");
     };
   });
@@ -278,12 +287,16 @@
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
   }
 
+  // The whole panel stays on screen, so Done can always be reached
   function movePanel(event: PointerEvent) {
     if (!panelGrab) return;
     const { width, height } = metrics();
+    const box = event.currentTarget as HTMLElement;
+    const spareX = Math.max(0, (width - box.offsetWidth) / 2);
+    const top = height * 0.26;
     panel = {
-      x: clamp(event.clientX / panelGrab.zoom - panelGrab.x, -width / 2, width / 2),
-      y: clamp(event.clientY / panelGrab.zoom - panelGrab.y, -height * 0.26, height * 0.7),
+      x: clamp(event.clientX / panelGrab.zoom - panelGrab.x, -spareX, spareX),
+      y: clamp(event.clientY / panelGrab.zoom - panelGrab.y, -top, height - box.offsetHeight - top),
     };
   }
 

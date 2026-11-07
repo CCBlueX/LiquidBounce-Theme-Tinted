@@ -1,6 +1,6 @@
 // The theme's HUD components with their user-set alignment, shared by the HUD browser and the HUD editor.
 import { request } from "../api/client";
-import { on } from "../api/events";
+import { on, onReconnect } from "../api/events";
 import type { Alignment, HudComponent } from "../api/types";
 import { moduleStore } from "../modules.svelte";
 import { live } from "./live.svelte";
@@ -13,19 +13,24 @@ export const EDITING = Symbol("hud-editing");
 
 type Declaration = { name: string; description?: string; enabled: boolean; alignment: Alignment };
 
-/** Inline style that puts a component where the client's alignment says; the HUD and the editor both use it. */
-export function place({ horizontalAlignment: h, horizontalOffset: x, verticalAlignment: v, verticalOffset: y }: Alignment) {
+/**
+ * Inline style that puts a component where the client's alignment says, moved by `shiftX`/`shiftY` to stay inside
+ * the window; the HUD and the editor both use it.
+ */
+export function place(
+  { horizontalAlignment: h, horizontalOffset: x, verticalAlignment: v, verticalOffset: y }: Alignment,
+  shiftX = 0,
+  shiftY = 0,
+) {
   const style: string[] = [];
-  let tx = "0";
-  let ty = "0";
   if (h === "Left") style.push(`left: ${x}px`);
   else if (h === "Right") style.push(`right: ${x}px`);
   else style.push(`left: calc(50% + ${x}px)`);
-  if (h === "CenterTranslated") tx = "-50%";
   if (v === "Top") style.push(`top: ${y}px`);
   else if (v === "Bottom") style.push(`bottom: ${y}px`);
   else style.push(`top: calc(50% + ${y}px)`);
-  if (v === "CenterTranslated") ty = "-50%";
+  const tx = h === "CenterTranslated" ? `calc(-50% + ${shiftX}px)` : `${shiftX}px`;
+  const ty = v === "CenterTranslated" ? `calc(-50% + ${shiftY}px)` : `${shiftY}px`;
   style.push(`translate: ${tx} ${ty}`);
   // The anchored edge decides which way a component grows when its content changes
   style.push(`align-items: ${h === "Right" ? "flex-end" : h === "Left" ? "flex-start" : "center"}`);
@@ -96,15 +101,19 @@ class HudComponents {
   /** Loads the components and keeps them, the module list and the live game state current; returns the stop. */
   start() {
     let running = true;
-    this.#load()
-      .then((list) => {
-        if (running) this.list = list;
-      })
-      .catch(() => {});
+    // Moves and switches made while the event socket was down are lost, so a reconnect loads the list again
+    const load = () =>
+      this.#load()
+        .then((list) => {
+          if (running) this.list = list;
+        })
+        .catch(() => {});
+    load();
     const offs = [
       on("componentsUpdate", (event) => {
         if (event.source === "theme" && (event.themeId ?? THEME_ID) === THEME_ID) this.list = event.components;
       }),
+      onReconnect(load),
       moduleStore.start(),
       live.start(),
     ];

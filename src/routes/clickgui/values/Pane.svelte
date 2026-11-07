@@ -75,6 +75,8 @@
           {/if}
           <Rows items={inner} level={1} path={[...path, section.name]} {editor} {drill} />
         </div>
+      {:else if !enabled}
+        <p class="off t-footnote">No settings</p>
       {/if}
     {:else}
       <p class="off t-footnote" transition:expand>Off · {inner.length === 1 ? "1 setting" : `${inner.length} settings`}</p>

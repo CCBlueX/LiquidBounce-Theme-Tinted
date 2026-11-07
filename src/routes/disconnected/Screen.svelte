@@ -1,9 +1,11 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import { reasonOf, request } from "../../lib/api/client";
-  import { servers, worlds } from "../../lib/api/routes";
+  import { onReconnect } from "../../lib/api/events";
+  import { client, servers, worlds } from "../../lib/api/routes";
   import type { Server, ServerData, World } from "../../lib/api/types";
   import { capitalize, relativeTime } from "../../lib/format";
+  import { plainText } from "../../lib/mctext";
   import { rise } from "../../lib/motion";
   import { livePings } from "../../lib/pings.svelte";
   import { play } from "../../lib/sound";
@@ -22,13 +24,33 @@
   let busy = $state<string | undefined>();
   let reconnectButton: HTMLButtonElement | undefined = $state();
 
+  const loadServers = () => servers.list().then((all) => (list = all.slice(0, SHOWN))).catch(() => (list = []));
+
+  // The client adds a second "Back to server list" button 140 GUI units from the right edge and 30 from the bottom, so
+  // servers that cover vanilla's button can't trap a player; the card keeps clear of it at every GUI scale
+  let scaledWidth = $state<number | undefined>();
+  let resizeTimer: number | undefined;
+  const measure = () => client.window().then((info) => (scaledWidth = info.scaledWidth)).catch(() => {});
+  const remeasure = () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(measure, 200);
+  };
+
   onMount(() => {
     tick().then(() => reconnectButton?.focus());
-    servers.list().then((all) => (list = all.slice(0, SHOWN))).catch(() => (list = []));
+    loadServers();
+    measure();
     worlds.list().then((all) => (world = [...all].sort((a, b) => b.lastPlayed - a.lastPlayed)[0])).catch(() => {});
+    return () => clearTimeout(resizeTimer);
   });
 
-  const shown = $derived((list ?? []).map((server) => ({ ...server, ...pings.current[server.address], id: server.id })));
+  // Pings sent while the event socket was down are lost; loading the list pings again
+  $effect(() => onReconnect(loadServers));
+
+  // Names can hold § codes; they show as plain text
+  const shown = $derived(
+    (list ?? []).map((server) => ({ ...server, ...pings.current[server.address], id: server.id, name: plainText(server.name) })),
+  );
 
   function status(server: ServerData) {
     switch (server.status) {
@@ -68,78 +90,87 @@
   const playWorld = (target: World) => run("world", () => worlds.join(target.name), () => `${target.displayName} did not open.`);
 </script>
 
-<section class="card glass on-glass" aria-labelledby="disconnected-title" in:rise={{ delay: 80 }}>
-  <h1 id="disconnected-title" class="sr-only">Play again</h1>
-  <div class="top">
-    <button class="primary" bind:this={reconnectButton} onclick={reconnect} disabled={busy === "reconnect"} aria-describedby={error ? "reconnect-error" : undefined}>
-      Reconnect
-    </button>
-    {#if error}
-      <p id="reconnect-error" class="error t-callout" role="alert"><span class="mark" aria-hidden="true">!</span>{error}</p>
-    {/if}
-  </div>
+<svelte:window onresize={remeasure} />
 
-  {#if shown.length || world}
-    <div class="columns">
-      {#if shown.length}
-        <div class="column">
-          <h2 class="t-footnote">Servers</h2>
-          <ul class="group">
-            {#each shown as server (server.id)}
+<div class="stage" style:--scaled-width={scaledWidth}>
+  <section class="card glass on-glass" aria-labelledby="disconnected-title" in:rise={{ delay: 80 }}>
+    <h1 id="disconnected-title" class="sr-only">Play again</h1>
+    <div class="top">
+      <button class="primary" bind:this={reconnectButton} onclick={reconnect} disabled={busy === "reconnect"} aria-describedby={error ? "reconnect-error" : undefined}>
+        Reconnect
+      </button>
+      {#if error}
+        <p id="reconnect-error" class="error t-callout" role="alert"><span class="mark" aria-hidden="true">!</span>{error}</p>
+      {/if}
+    </div>
+
+    {#if shown.length || world}
+      <div class="columns">
+        {#if shown.length}
+          <div class="column">
+            <h2 class="t-footnote">Servers</h2>
+            <ul class="group servers">
+              {#each shown as server (server.id)}
+                <li class="row">
+                  <span class="icon">
+                    <Base64Icon icon={server.icon} size={32}>
+                      {#snippet fallback()}<ItemIcon id="minecraft:compass" size={32} />{/snippet}
+                    </Base64Icon>
+                  </span>
+                  <div class="text">
+                    <span class="name">{server.name}</span>
+                    <span class="sub t-footnote num">{status(server)}</span>
+                  </div>
+                  <button class="small" onclick={() => join(server)} disabled={busy !== undefined} aria-label="Join {server.name}">Join</button>
+                </li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
+        {#if world}
+          <div class="column">
+            <h2 class="t-footnote">Singleplayer</h2>
+            <ul class="group">
               <li class="row">
                 <span class="icon">
-                  <Base64Icon icon={server.icon} size={32}>
-                    {#snippet fallback()}<ItemIcon id="minecraft:compass" size={32} />{/snippet}
+                  <Base64Icon icon={world.icon} size={32}>
+                    {#snippet fallback()}<ItemIcon id="minecraft:grass_block" size={32} />{/snippet}
                   </Base64Icon>
                 </span>
                 <div class="text">
-                  <span class="name">{server.name}</span>
-                  <span class="sub t-footnote num">{status(server)}</span>
+                  <span class="name">{world.displayName}</span>
+                  <span class="sub t-footnote num">{capitalize(world.gameMode)}{world.hardcore ? " · Hardcore" : ""} · {relativeTime(world.lastPlayed)}</span>
                 </div>
-                <button class="small" onclick={() => join(server)} disabled={busy !== undefined} aria-label="Join {server.name}">Join</button>
+                <button class="small" onclick={() => world && playWorld(world)} disabled={busy !== undefined} aria-label="Play {world.displayName}">Play</button>
               </li>
-            {/each}
-          </ul>
-        </div>
-      {/if}
-      {#if world}
-        <div class="column">
-          <h2 class="t-footnote">Singleplayer</h2>
-          <ul class="group">
-            <li class="row">
-              <span class="icon">
-                <Base64Icon icon={world.icon} size={32} smooth>
-                  {#snippet fallback()}<ItemIcon id="minecraft:grass_block" size={32} />{/snippet}
-                </Base64Icon>
-              </span>
-              <div class="text">
-                <span class="name">{world.displayName}</span>
-                <span class="sub t-footnote num">{capitalize(world.gameMode)}{world.hardcore ? " · Hardcore" : ""} · {relativeTime(world.lastPlayed)}</span>
-              </div>
-              <button class="small" onclick={() => world && playWorld(world)} disabled={busy !== undefined} aria-label="Play {world.displayName}">Play</button>
-            </li>
-          </ul>
-        </div>
-      {/if}
-    </div>
-  {/if}
-</section>
+            </ul>
+          </div>
+        {/if}
+      </div>
+    {/if}
+  </section>
+</div>
 
 <style>
-  /* Lower third only: vanilla's text and button end around 63% of the height at GUI scale 4 */
+  /* Vanilla centres its title, reason and button; with GUI scale auto they reach about 27% of the height below the
+     middle for a four-line reason. The card keeps to the strip under that and lists fewer servers on short canvases. */
+  .stage { position: absolute; inset: 0; container-type: size; pointer-events: none; }
   .card {
+    --quit: calc(100% * 140 / var(--scaled-width, 1000000) + 16px);
+    --width: min(640px, calc(100% - 64px), calc(100% - var(--quit) - 32px));
     position: absolute;
-    left: 50%;
+    right: max(calc((100% - var(--width)) / 2), var(--quit));
     bottom: 32px;
-    translate: -50% 0;
-    width: 640px;
-    max-width: calc(100% - 64px);
+    width: var(--width);
     padding: 16px;
     border-radius: var(--r-pane);
     display: flex;
     flex-direction: column;
     gap: 12px;
+    pointer-events: auto;
   }
+  @container (max-height: 860px) { .servers li:nth-child(n + 3) { display: none; } }
+  @container (max-height: 700px) { .servers li:nth-child(n + 2) { display: none; } }
   .top { display: flex; align-items: center; gap: 12px; min-height: 30px; }
   .primary {
     flex: none;

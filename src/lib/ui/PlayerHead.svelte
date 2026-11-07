@@ -31,7 +31,7 @@
     {/if}
   </span>
 {:else}
-  <ItemIcon id="minecraft:player_head" size={size === 24 ? 16 : size} />
+  <ItemIcon id="minecraft:player_head" size={size === 24 ? 16 : size} fallback />
 {/if}
 
 <style>

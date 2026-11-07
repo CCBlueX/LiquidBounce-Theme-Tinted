@@ -59,7 +59,7 @@
             class:low
             aria-label="{piece.name}, {piece.max > 0 ? `${piece.left} of ${piece.max} durability${low ? ', low' : ''}` : 'does not wear out'}"
           >
-            <ItemIcon id={piece.id} size={32} />
+            <ItemIcon id={piece.id} size={32} fallback />
             <div class="meter" aria-hidden="true">
               {#if piece.max > 0}
                 <span class="value num"><b>{piece.left}</b><span class="l2">/{piece.max}</span></span>

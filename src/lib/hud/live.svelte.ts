@@ -1,7 +1,7 @@
 // Live game state shared by the HUD components: the own armor, scoreboard and effects, and the last attacked player.
 // The client sends player data up to 20 times a second; it applies at most every THROTTLE_MS, and only parts that
 // changed are written, so standing still re-renders nothing.
-import { on } from "../api/events";
+import { on, onReconnect } from "../api/events";
 import { player } from "../api/routes";
 import type { ItemStack, MobEffect, PlayerData, Scoreboard, Vec3 } from "../api/types";
 
@@ -21,20 +21,27 @@ export type TargetInfo = {
   distance?: number;
 };
 
+// Vanilla's format: minutes and seconds, with hours in front once there are any
 function clock(ticks: number) {
   const seconds = Math.max(0, Math.floor(ticks / 20));
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  const hours = Math.floor(seconds / 3600);
+  const mmss = `${Math.floor(seconds / 60) % 60}:${String(seconds % 60).padStart(2, "0")}`;
+  return hours ? `${hours}:${mmss.padStart(5, "0")}` : mmss;
 }
 
 function chipsOf(effects: MobEffect[]): EffectChip[] {
   return effects
     .filter((effect) => effect.showIcon)
-    .map((effect) => ({
-      id: effect.effect,
-      name: LEVELS[effect.amplifier] ? `${effect.localizedName} ${LEVELS[effect.amplifier]}` : effect.localizedName,
-      level: LEVELS[effect.amplifier] ?? String(effect.amplifier + 1),
-      time: effect.infinite ? "∞" : clock(effect.duration),
-    }));
+    .map((effect) => {
+      // Levels past X are numbers, as the client sends amplifiers up to 255
+      const level = LEVELS[effect.amplifier] ?? String(effect.amplifier + 1);
+      return {
+        id: effect.effect,
+        name: level ? `${effect.localizedName} ${level}` : effect.localizedName,
+        level,
+        time: effect.infinite ? "∞" : clock(effect.duration),
+      };
+    });
 }
 
 export function throttle<T>(ms: number, apply: (value: T) => void) {
@@ -126,14 +133,18 @@ class LiveState {
   }
 
   start() {
-    player
-      .data()
-      .then((data) => {
-        if (data && !this.#position) this.#updatePlayer(data);
-      })
-      .catch(() => {});
+    // Player data only arrives by event; after a dropped socket the current state comes from the REST route again
+    const fetchPlayer = (always: boolean) =>
+      player
+        .data()
+        .then((data) => {
+          if (data && (always || !this.#position)) this.#updatePlayer(data);
+        })
+        .catch(() => {});
+    fetchPlayer(false);
 
     const offs = [
+      onReconnect(() => fetchPlayer(true)),
       on("clientPlayerData", (event) => this.#applyPlayer(event.playerData)),
       on("targetChange", (event) => {
         clearTimeout(this.#targetTimer);

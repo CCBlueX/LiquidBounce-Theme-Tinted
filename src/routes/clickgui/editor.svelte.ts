@@ -6,7 +6,7 @@ import type { ChoiceGroup, JsonValue, ValueNode } from "../../lib/api/types";
 import { play } from "../../lib/sound";
 import { choicePatches, pathKey, patchFor, type Trail } from "./tree";
 
-type Burst = { timer: number; before: JsonValue };
+type Burst = { timer: number; before: JsonValue; write: () => void };
 /** Every ValueNode holds its value in `value`; the union just cannot be assigned through without narrowing. */
 type Writable = { value: JsonValue };
 
@@ -42,7 +42,7 @@ export class SettingsEditor {
 
     let settle!: (written: boolean) => void;
     const promise = new Promise<boolean>((done) => (settle = done));
-    const timer = window.setTimeout(async () => {
+    const write = async () => {
       this.#bursts.delete(key);
       try {
         await modules.putSettings(this.module, patchFor(trail, { name: node.name, value: snapshot(target.value) }));
@@ -54,8 +54,8 @@ export class SettingsEditor {
       } finally {
         this.pending--;
       }
-    }, delay);
-    this.#bursts.set(key, { timer, before });
+    };
+    this.#bursts.set(key, { timer: window.setTimeout(write, delay), before, write });
     return promise;
   }
 
@@ -75,8 +75,11 @@ export class SettingsEditor {
     }
   }
 
+  /** Sends what is still waiting for its delay, so switching modules mid-drag keeps the last value. */
   dispose() {
-    for (const burst of this.#bursts.values()) clearTimeout(burst.timer);
-    this.#bursts.clear();
+    for (const burst of [...this.#bursts.values()]) {
+      clearTimeout(burst.timer);
+      burst.write();
+    }
   }
 }

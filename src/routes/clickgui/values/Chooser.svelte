@@ -13,7 +13,9 @@
   const segmented = $derived(options.length <= 3 && options.join("").length <= 22);
 </script>
 
-{#if segmented}
+{#if options.length === 0}
+  <span class="cg-val">None</span>
+{:else if segmented}
   <Segmented {options} {value} {label} small {onchange} />
 {:else}
   <Menu {options} {value} {label} {onchange} />

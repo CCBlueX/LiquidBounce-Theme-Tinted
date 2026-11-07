@@ -1,17 +1,31 @@
 <script lang="ts">
   import ItemIcon from "../ui/ItemIcon.svelte";
+  import { slotOf } from "./layout.svelte";
   import { live } from "./live.svelte";
+
+  const ROW = 24;
+  const PADDING = 8;
+
+  const slot = slotOf();
+  slot?.claim("y", 3);
+
+  // Effects past the room the list has end in one summary row
+  const capacity = $derived(Math.max(1, Math.floor(((slot?.height ?? Infinity) - PADDING) / ROW)));
+  const cut = $derived(live.effects.length > capacity ? capacity - 1 : live.effects.length);
 </script>
 
 {#if live.effects.length}
   <ul class="effects glass on-glass" aria-label="Effects">
-    {#each live.effects as effect (effect.id)}
+    {#each live.effects.slice(0, cut) as effect (effect.id)}
       <li class="effect">
-        <ItemIcon id={effect.id} kind="effect" size={18} />
+        <ItemIcon id={effect.id} kind="effect" size={18} fallback />
         <span class="name">{effect.name}</span>
         <span class="time num l2">{effect.time}</span>
       </li>
     {/each}
+    {#if cut < live.effects.length}
+      <li class="effect more l2">{live.effects.length - cut} more</li>
+    {/if}
   </ul>
 {/if}
 
@@ -37,7 +51,16 @@
   }
   .name {
     flex: 1;
-    white-space: nowrap;
+    min-width: 0;
+    max-width: 180px;
     margin-right: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .more {
+    padding-left: 10px;
+    font-size: 12px;
+    font-weight: 400;
   }
 </style>

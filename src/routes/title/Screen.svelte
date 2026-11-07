@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import { request } from "../../lib/api/client";
-  import { on } from "../../lib/api/events";
+  import { on, onReconnect } from "../../lib/api/events";
   import { client, screen, servers, session, worlds } from "../../lib/api/routes";
   import type { ActiveProxy, ClientInfo, Protocol, ScreenRoute, Server, Session, World } from "../../lib/api/types";
   import { capitalize, relativeTime } from "../../lib/format";
@@ -13,7 +13,9 @@
 
   let world = $state<World | undefined>();
   let worldsLoaded = $state(false);
+  let worldsFailed = $state(false);
   let serverList = $state<Server[] | undefined>();
+  let serversFailed = $state(false);
   const pings = livePings();
   let user = $state<Session | undefined>();
   let proxy = $state<ActiveProxy | undefined>();
@@ -28,24 +30,35 @@
     if (quitButton) pillEls[3] = quitButton;
   });
 
+  const loadProxy = () => request<ActiveProxy | undefined>("GET", "/proxy").then((p) => (proxy = p ?? undefined)).catch(() => {});
+
+  // The parts kept current by events (pings, session, proxy checks); fetched again when the socket comes back
+  function loadLive() {
+    servers
+      .list()
+      .then((list) => {
+        serverList = list;
+        serversFailed = false;
+      })
+      .catch(() => (serversFailed = true));
+    session.get().then((s) => (user = s)).catch(() => {});
+    loadProxy();
+  }
+
   onMount(() => {
     ready = true;
     worlds.list().then((list) => {
       world = [...list].sort((a, b) => b.lastPlayed - a.lastPlayed)[0];
-    }).catch(() => (world = undefined)).finally(() => (worldsLoaded = true));
-    servers.list().then((list) => (serverList = list)).catch(() => (serverList = []));
-    session.get().then((s) => (user = s)).catch(() => {});
-    request<ActiveProxy | undefined>("GET", "/proxy").then((p) => (proxy = p ?? undefined)).catch(() => {});
+    }).catch(() => (worldsFailed = true)).finally(() => (worldsLoaded = true));
+    loadLive();
     client.info().then((i) => (info = i)).catch(() => {});
     request<Protocol>("GET", "/protocols/protocol").then((p) => (protocol = p)).catch(() => {});
     tick().then(() => rowEls[0]?.focus({ preventScroll: true }));
   });
 
   $effect(() => on("session", ({ session: s }) => (user = s)));
-
-  $effect(() => on("proxyCheckResult", () => {
-    request<ActiveProxy | undefined>("GET", "/proxy").then((p) => (proxy = p ?? undefined)).catch(() => {});
-  }));
+  $effect(() => on("proxyCheckResult", loadProxy));
+  $effect(() => onReconnect(loadLive));
 
   const known = $derived((serverList ?? []).map((s) => pings.current[s.address] ?? s));
   const reachable = $derived(known.filter((s) => s.status === "SUCCESSFUL"));
@@ -53,6 +66,7 @@
   const pinging = $derived(known.some((s) => s.status === "INITIAL" || s.status === "PINGING"));
 
   const multiplayerLine = $derived.by(() => {
+    if (serversFailed) return "Could not load servers";
     if (!serverList) return "Loading servers";
     const total = serverList.length;
     if (total === 0) return "No servers added";
@@ -62,9 +76,11 @@
     return `${reachable.length} of ${servers} online · ${players}`;
   });
 
-  const singleplayerLine = $derived(
-    !worldsLoaded ? "Loading worlds" : world ? `${world.gameMode ? capitalize(world.gameMode) : "Survival"}${world.hardcore ? " · Hardcore" : ""} · ${relativeTime(world.lastPlayed)}` : "Create a world",
-  );
+  const singleplayerLine = $derived.by(() => {
+    if (!worldsLoaded) return "Loading worlds";
+    if (world) return `${world.gameMode ? capitalize(world.gameMode) : "Survival"}${world.hardcore ? " · Hardcore" : ""} · ${relativeTime(world.lastPlayed)}`;
+    return worldsFailed ? "Could not load worlds" : "Create a world";
+  });
 
   const cracked = $derived(user ? user.type === "legacy" || !user.online : false);
   const proxyLabel = $derived(proxy ? `${proxy.host}:${proxy.port}` : "Off");

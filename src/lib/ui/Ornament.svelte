@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, tick, type Snippet } from "svelte";
-  import { keyLabel } from "../keys";
+  import { bindLabel } from "../keys";
   import { isOn, startModules } from "../moduleToggles.svelte";
   import { moduleStore } from "../modules.svelte";
   import { rise } from "../motion";
@@ -46,7 +46,7 @@
     {#if rows.length}
       <ModuleSwitchList modules={rows} label="Modules" bind:this={switches}>
         {#snippet row(module, toggle)}
-          {@const key = keyLabel(module.keyBind.boundKey)}
+          {@const key = bindLabel(module.keyBind)}
           {@const active = isOn(module)}
           <div class="row" class:off={!active} role="listitem">
             <span class="name">{module.name}</span>

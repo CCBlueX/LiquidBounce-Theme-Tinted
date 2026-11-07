@@ -85,7 +85,8 @@
   .row:hover { background: var(--fill); }
   .row.selected { background: var(--accent-tint); box-shadow: inset 0 0 0 1px rgb(70 119 255 / 0.75); }
   .row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .main { min-width: 0; display: grid; }
+  /* One column as wide as the cell: a nowrap MOTD line must not widen it past the name */
+  .main { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
   .name { font-size: 13px; line-height: 18px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .motd { font-size: 12px; line-height: 16px; color: rgb(255 255 255 / 0.8); min-height: 16px; }
   .address { color: var(--label-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }

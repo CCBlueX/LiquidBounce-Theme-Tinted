@@ -11,7 +11,7 @@
 </script>
 
 <div class="activity" role="group" aria-label="Scaffold, {scaffold.count} blocks left">
-  {#if scaffold.block}<ItemIcon id={scaffold.block} size={32} label={scaffold.blockName} />{/if}
+  {#if scaffold.block}<ItemIcon id={scaffold.block} size={32} label={scaffold.blockName} fallback />{/if}
   <span class="text">
     <span class="t-headline">Scaffold</span>
     <span class="t-footnote l2">{detail}</span>
@@ -30,6 +30,7 @@
     align-items: center;
     gap: 10px;
     width: 300px;
+    max-width: 100%;
     height: 52px;
     padding: 0 20px 4px 12px;
   }
@@ -37,7 +38,12 @@
     display: flex;
     flex-direction: column;
     flex: 1;
+    min-width: 0;
     white-space: nowrap;
+  }
+  .text > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .count {
     display: flex;

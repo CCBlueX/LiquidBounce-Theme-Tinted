@@ -5,8 +5,10 @@
   import { cubicOut } from "svelte/easing";
   import { fade } from "svelte/transition";
   import { request } from "../../lib/api/client";
+  import { onReconnect } from "../../lib/api/events";
   import { client, screen, servers } from "../../lib/api/routes";
   import type { ClientInfo, LanServer, Protocol, Server, ServerAddRequest, ServerData } from "../../lib/api/types";
+  import { plainText } from "../../lib/mctext";
   import { flipDuration, rise } from "../../lib/motion";
   import { livePings } from "../../lib/pings.svelte";
   import { play } from "../../lib/sound";
@@ -45,13 +47,17 @@
   let list = $state<HTMLDivElement>();
   let searchBox = $state<HTMLDivElement>();
   let directInput = $state<HTMLInputElement>();
+  let stateButton = $state<HTMLButtonElement>();
   let joinTimer: number | undefined;
 
+  // Names can hold § codes (servers.dat is edited by hand or by tools); the list shows them as plain text, the edit
+  // sheet keeps the raw name
   function merge(server: ServerData): ServerData {
+    const name = plainText(server.name);
     const ping = pings.current[server.address];
-    if (!ping) return server;
+    if (!ping) return { ...server, name };
     // Two saved entries can share an address; the ping describes the address, the entry keeps its own name
-    return { ...ping, name: server.name, address: server.address, resourcePackPolicy: server.resourcePackPolicy, icon: ping.icon ?? server.icon };
+    return { ...ping, name, address: server.address, resourcePackPolicy: server.resourcePackPolicy, icon: ping.icon ?? server.icon };
   }
 
   /** Keys stay with an entry across reorders and removals, where ids (list indices) shift. */
@@ -131,15 +137,27 @@
     };
   });
 
+  // Pings sent while the event socket was down are lost; loading the list pings every server again
+  $effect(() => onReconnect(load));
+
   function say(text: string) {
     announcement = "";
     tick().then(() => (announcement = text));
   }
 
+  // Without rows (empty list, load failed) the state's own button takes focus, so it never falls back to the page
   function focusRow(id: number | undefined) {
     const element = id === undefined ? undefined : list?.querySelector<HTMLElement>(`[data-server="${id}"]`);
-    element?.focus({ preventScroll: true });
-    element?.scrollIntoView({ block: "nearest" });
+    if (!element) return stateButton?.focus();
+    element.focus({ preventScroll: true });
+    element.scrollIntoView({ block: "nearest" });
+  }
+
+  async function retry() {
+    await load();
+    selectedId ??= saved[0]?.id;
+    await tick();
+    focusRow(selectedId);
   }
 
   function select(id: number, focus = false) {
@@ -398,11 +416,11 @@
 <div class="stage" role="presentation" {...typingFocus}>
   {#if ready}
     <div class="frame">
-      <main class="glass window" in:rise aria-label="Multiplayer" inert={!!sheet}>
+      <main class="glass window" class:solo={!current && !searching} in:rise aria-label="Multiplayer" inert={!!sheet}>
         <header class="head on-glass">
           <div class="titles">
             <h1 class="t-large">Multiplayer</h1>
-            {#if loaded && !failed}<span class="t-callout l2 num">{subtitle}</span>{/if}
+            {#if !loaded}<span class="t-callout l2">Loading</span>{:else if !failed}<span class="t-callout l2 num">{subtitle}</span>{/if}
           </div>
           <div class="tools">
             <button class="cg-pill" onclick={refresh} aria-keyshortcuts="R">Refresh</button>
@@ -418,13 +436,13 @@
           {#if failed}
             <div class="empty">
               <p class="t-callout l2">Servers could not be loaded from the client.</p>
-              <button class="cg-pill" onclick={load}>Try again</button>
+              <button class="cg-pill" bind:this={stateButton} onclick={retry}>Try again</button>
             </div>
           {:else if loaded && saved.length === 0 && lanServers.length === 0}
             <div class="empty">
               <p class="t-headline">No servers yet</p>
               <p class="t-callout l2">Add a server by its address, or join one once with Direct connect below.</p>
-              <button class="cg-pill" onclick={() => openSheet()}>Add server</button>
+              <button class="cg-pill" bind:this={stateButton} onclick={() => openSheet()}>Add server</button>
             </div>
           {:else}
             <div class="list on-glass" role="listbox" aria-label="Server list, {shown.length} {shown.length === 1 ? 'entry' : 'entries'}">
@@ -524,7 +542,7 @@
 
       {#if sheet}
         <ServerSheet
-          editing={sheet.editing?.name}
+          editing={sheet.editing && plainText(sheet.editing.name)}
           initial={sheet.editing
             ? { name: sheet.editing.name, address: sheet.editing.address, resourcePackPolicy: sheet.editing.resourcePackPolicy }
             : { name: "", address: "", resourcePackPolicy: "Prompt" }}
@@ -543,16 +561,26 @@
 
 <style>
   .stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-  .frame { position: relative; width: min(1120px, calc(100% - 160px)); height: min(620px, calc(100% - 124px)); margin-bottom: 40px; }
+  /* Below 1120 px of canvas (scale 1.5) the side margins give way first, so the header keeps room for its count */
+  .frame {
+    position: relative;
+    width: min(1120px, max(calc(100% - 160px), min(980px, calc(100% - 80px))));
+    height: min(620px, calc(100% - 124px));
+    margin-bottom: 40px;
+  }
   .window { position: absolute; inset: 0; border-radius: var(--r-window); overflow: hidden; }
   .head { position: absolute; left: 16px; right: 348px; top: 14px; height: 32px; display: flex; align-items: center; gap: 12px; }
-  .titles { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; }
+  .titles { flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; gap: 10px; }
   .titles span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   h1 { white-space: nowrap; }
-  .tools { display: flex; align-items: center; gap: 8px; flex: none; }
-  .search { width: 200px; }
+  /* When the header is short of room the search field narrows before the count is cut */
+  .tools { display: flex; align-items: center; gap: 8px; flex: 0 100 auto; min-width: 0; }
+  .search { flex: 0 1 200px; min-width: 140px; }
   .search :global(input:focus-visible) { outline: none; }
   .add { color: #fff; background: var(--fill-3); }
+  /* Without a server there is no details pane; header, list and footer take its room */
+  .solo .head, .solo .foot { right: 16px; }
+  .solo .list-wrap { right: 8px; }
 
   .list-wrap {
     position: absolute;
@@ -560,9 +588,11 @@
     right: 340px;
     top: 54px;
     bottom: 52px;
-    padding: 4px 8px 24px;
+    padding: 4px 8px 28px;
     overflow-y: auto;
     scrollbar-width: none;
+    /* Rows scrolled to by keys stop clear of the fades */
+    scroll-padding: 6px 0 28px;
     mask-image: linear-gradient(180deg, transparent 0, #000 6px, #000 calc(100% - 28px), transparent);
   }
   .list { display: grid; gap: 2px; }

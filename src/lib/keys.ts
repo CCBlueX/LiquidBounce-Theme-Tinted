@@ -40,19 +40,36 @@ const NAMES: Record<string, string> = {
 };
 
 const MOUSE: Record<string, string> = { left: "Mouse 1", right: "Mouse 2", middle: "Mouse 3" };
+const KEYPAD: Record<string, string> = { add: "+", subtract: "-", multiply: "*", divide: "/", decimal: ".", equal: "=", enter: "Enter" };
+
+/** The client's modifier tags in the order keycaps show them, with their labels. */
+export const MODIFIERS: [tag: string, label: string][] = [
+  ["Control", "Ctrl"],
+  ["Alt", "Alt"],
+  ["Shift", "Shift"],
+  ["Super", "Super"],
+];
 
 /** Keycap label for a bound key, or null when nothing is bound. */
-export function keyLabel(boundKey: string | undefined | null): string | null {
+function keyLabel(boundKey: string | undefined | null): string | null {
   if (!boundKey || boundKey === "key.keyboard.unknown") return null;
   if (boundKey.startsWith("key.mouse.")) {
     const button = boundKey.slice("key.mouse.".length);
     return MOUSE[button] ?? `Mouse ${button}`;
   }
   const key = boundKey.replace(/^key\.keyboard\./, "");
-  if (key.startsWith("keypad.")) return `Num ${(NAMES[key.slice(7)] ?? key.slice(7)).toUpperCase()}`;
+  if (key.startsWith("keypad.")) return `Num ${KEYPAD[key.slice(7)] ?? key.slice(7)}`;
   if (NAMES[key]) return NAMES[key];
   return key
     .split(".")
     .map((part) => (part.length === 1 ? part.toUpperCase() : part[0].toUpperCase() + part.slice(1)))
     .join(" ");
+}
+
+/** Keycap label for a bind with the modifiers it needs, e.g. "Ctrl+Shift+R", or null when nothing is bound. */
+export function bindLabel(bind: { boundKey: string; modifiers?: string[] } | undefined): string | null {
+  const key = keyLabel(bind?.boundKey);
+  if (!key) return null;
+  const held = MODIFIERS.filter(([tag]) => bind?.modifiers?.includes(tag)).map(([, label]) => label);
+  return [...held, key].join("+");
 }

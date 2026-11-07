@@ -4,7 +4,7 @@
   import { on } from "../../lib/api/events";
   import { player, screen, session } from "../../lib/api/routes";
   import type { PlayerData, Protocol, Session } from "../../lib/api/types";
-  import { keyLabel } from "../../lib/keys";
+  import { bindLabel } from "../../lib/keys";
   import { isOn, startModules } from "../../lib/moduleToggles.svelte";
   import { moduleStore } from "../../lib/modules.svelte";
   import { rise } from "../../lib/motion";
@@ -48,7 +48,7 @@
   });
 
   $effect(() => on("session", ({ session: s }) => (user = s)));
-  $effect(() => on("gameModeChange", ({ gameMode }) => me && (me = { ...me, gameMode })));
+  $effect(() => on("gameModeChange", ({ gameMode }) => me && gameMode && (me = { ...me, gameMode })));
 
   const rows = $derived(
     moduleStore.list
@@ -56,7 +56,7 @@
       .sort((a, b) => a.name.localeCompare(b.name)),
   );
   const onCount = $derived(rows.filter((module) => isOn(module)).length);
-  const clickGuiKey = $derived(keyLabel(moduleStore.byName.get("ClickGUI")?.keyBind.boundKey));
+  const clickGuiKey = $derived(bindLabel(moduleStore.byName.get("ClickGUI")?.keyBind));
   const loaded = $derived(moduleStore.list.length > 0);
   const ready = $derived((loaded && protocolDone) || waited);
 
@@ -123,7 +123,7 @@
         <div class="group list">
           <ModuleSwitchList modules={rows} label="Modules that are on" ontoggle={keep} bind:this={switches}>
             {#snippet row(module, toggle)}
-              {@const key = keyLabel(module.keyBind.boundKey)}
+              {@const key = bindLabel(module.keyBind)}
               {@const active = isOn(module)}
               <div class="row" class:off={!active} role="listitem">
                 <span class="row-name">{module.name}</span>

@@ -34,25 +34,20 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
-  // World icons are photos: `smooth` scales them down without dropping pixels
-  let {
-    icon,
-    size,
-    smooth = false,
-    fallback,
-  }: { icon: string | undefined; size: number; smooth?: boolean; fallback?: Snippet } = $props();
+  // Favicons and world icons are 64px images shown at 32 or 64 CSS px on a zoomed canvas, so nearly always scaled
+  // down to a fractional size: smooth scaling keeps them even where nearest-neighbour would drop rows of pixels
+  let { icon, size, fallback }: { icon: string | undefined; size: number; fallback?: Snippet } = $props();
 
   let failed = $state<string>();
   const src = $derived(icon === failed ? undefined : iconUrl(icon));
 </script>
 
 {#if src}
-  <img {src} alt="" width={size} height={size} class:smooth draggable="false" onerror={() => (failed = icon)} />
+  <img {src} alt="" width={size} height={size} draggable="false" onerror={() => (failed = icon)} />
 {:else}
   {@render fallback?.()}
 {/if}
 
 <style>
-  img { display: block; flex: none; image-rendering: pixelated; }
-  img.smooth { image-rendering: auto; object-fit: cover; }
+  img { display: block; flex: none; object-fit: cover; }
 </style>

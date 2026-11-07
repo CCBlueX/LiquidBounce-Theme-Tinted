@@ -1,6 +1,6 @@
 // The module list as the HUD and the overlays show it. Enabled state follows moduleToggle
 // right away; binds have no event of their own, so bind edits refetch the list.
-import { on } from "./api/events";
+import { on, onReconnect } from "./api/events";
 import { modules as api } from "./api/routes";
 import type { Module } from "./api/types";
 
@@ -57,6 +57,7 @@ class ModuleStore {
     const offs = [
       on("moduleToggle", (event) => this.#toggle(event.moduleName, { enabled: event.enabled, hidden: event.hidden })),
       on("refreshArrayList", () => this.refetchSoon()),
+      onReconnect(() => this.load()),
       on("keybindChange", () => this.refetchSoon()),
       on("valueChanged", (event) => {
         const type = event.value?.valueType;

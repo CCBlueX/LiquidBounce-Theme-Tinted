@@ -30,7 +30,7 @@
         class:low={piece.low}
         aria-label={piece.percent === undefined ? piece.name : `${piece.name}, ${piece.percent}% durability`}
       >
-        <ItemIcon id={piece.id} size={16} />
+        <ItemIcon id={piece.id} size={16} fallback />
         {#if piece.percent !== undefined}<span class="num" aria-hidden="true">{piece.percent}%</span>{/if}
       </li>
     {/each}

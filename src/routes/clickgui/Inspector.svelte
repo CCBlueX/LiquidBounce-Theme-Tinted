@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onDestroy, tick } from "svelte";
-  import { on } from "../../lib/api/events";
+  import { on, onReconnect } from "../../lib/api/events";
   import { modules } from "../../lib/api/routes";
-  import type { BindValue, ChoiceGroup, Module, ToggleableGroup, ValueGroup } from "../../lib/api/types";
+  import type { BindValue, ChoiceGroup, InputBind, Module, ToggleableGroup, ValueGroup } from "../../lib/api/types";
   import { slideIn } from "../../lib/motion";
   import { play } from "../../lib/sound";
   import Switch from "../../lib/ui/Switch.svelte";
@@ -24,7 +24,7 @@
     /** Value to scroll to and highlight, by the names on its way down from the module root. */
     reveal?: string[];
     ontoggle: (enabled: boolean) => void;
-    onbind: (boundKey: string) => void;
+    onbind: (bind: InputBind) => void;
   } = $props();
 
   // svelte-ignore state_referenced_locally
@@ -59,8 +59,10 @@
     const off = on("valueChanged", (event) => {
       if (event.value.key?.startsWith(prefix)) scheduleRefresh();
     });
+    const offReconnect = onReconnect(scheduleRefresh);
     return () => {
       off();
+      offReconnect();
       clearTimeout(refreshTimer);
     };
   });
@@ -69,15 +71,20 @@
     tree?.value.find((node): node is BindValue => node.name === "Bind" && node.valueType === "BIND"),
   );
 
-  async function setBind(boundKey: string) {
+  async function setBind(boundKey: string, modifiers: string[]) {
     if (!tree || !bindNode) return;
-    editor.set([{ node: tree }], bindNode, { ...bindNode.value, boundKey });
+    editor.set([{ node: tree }], bindNode, { ...bindNode.value, boundKey, modifiers });
   }
 
   // The header keycap and the Bind row both edit this value; the card in the grid follows it, rollbacks included
   $effect(() => {
-    const key = bindNode?.value.boundKey;
-    if (key !== undefined && key !== module.keyBind.boundKey) onbind(key);
+    const bind = bindNode?.value;
+    if (!bind) return;
+    const shown = module.keyBind;
+    const modifiers = bind.modifiers ?? [];
+    if (bind.boundKey !== shown.boundKey || bind.action !== shown.action || modifiers.join() !== (shown.modifiers ?? []).join()) {
+      onbind({ boundKey: bind.boundKey, action: bind.action, modifiers });
+    }
   });
 
   const page = $derived.by(() => {
@@ -96,12 +103,20 @@
   function drill(names: string[]) {
     stack = [...stack, names];
     scroller?.scrollTo({ top: 0 });
+    // The row that opened the page leaves with the old page; focus goes to the way back
+    tick().then(() => scroller?.querySelector<HTMLElement>(".back")?.focus({ preventScroll: true }));
   }
 
   function back() {
     play("tap");
+    const left = stack.at(-1);
     stack = stack.slice(0, -1);
     scroller?.scrollTo({ top: 0 });
+    // Focus returns to the row that opened the page, which scrolls it back into view
+    tick().then(() => {
+      const row = left && scroller?.querySelector<HTMLElement>(`button[data-key="${CSS.escape(left.join("/"))}"]`);
+      (row ?? scroller?.querySelector<HTMLElement>(".back, button, input, [tabindex='0']"))?.focus();
+    });
   }
 
   const parentTitle = $derived(
@@ -172,7 +187,13 @@
       <h2 class="t-title3">{module.name}</h2>
       <p class="t-footnote l2 desc" title={module.description}>{module.description}</p>
     </div>
-    <KeyRecorder boundKey={module.keyBind.boundKey} label="{module.name} bind" onchange={setBind} />
+    <KeyRecorder
+      boundKey={module.keyBind.boundKey}
+      modifiers={module.keyBind.modifiers}
+      chords
+      label="{module.name} bind"
+      onchange={setBind}
+    />
     <Switch checked={module.enabled} label={module.name} onchange={ontoggle} />
   </header>
 

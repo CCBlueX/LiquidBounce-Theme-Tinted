@@ -89,7 +89,7 @@
   {:else}
     {#each matches.slice(0, LIMIT) as [entryId, name] (entryId)}
       <button class="cg-option" onclick={() => pick(entryId)}>
-        {#if kind}<ItemIcon id={entryId} size={kind === "effect" ? 18 : 16} {kind} />{/if}
+        {#if kind}<ItemIcon id={entryId} size={kind === "effect" ? 18 : 16} {kind} fallback />{/if}
         <span class="grow">{name}</span>
       </button>
     {/each}

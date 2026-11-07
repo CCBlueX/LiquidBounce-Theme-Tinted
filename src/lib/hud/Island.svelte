@@ -6,6 +6,7 @@
   import ItemIcon from "../ui/ItemIcon.svelte";
   import { EDITING, hud } from "./components.svelte";
   import { IslandState } from "./island.svelte";
+  import { slotOf } from "./layout.svelte";
   import { live } from "./live.svelte";
   import NoteView from "./NoteView.svelte";
   import ScaffoldView from "./ScaffoldView.svelte";
@@ -14,8 +15,13 @@
 
   const MORPH_MS = 560;
   const MAX_RADIUS = 26;
+  const MAX_WIDTH = 560;
 
   const island = new IslandState(getContext<boolean>(EDITING) ?? false);
+  // The capsule is the most transient component; it takes the width the others leave, up to a capsule's width
+  const slot = slotOf();
+  slot?.claim("x", 4);
+  const room = $derived(`${slot && Number.isFinite(slot.width) ? Math.min(slot.width, MAX_WIDTH) : MAX_WIDTH}px`);
   $effect(() => island.start());
   // The Effects and Target components take over what the capsule would show
   $effect(() => {
@@ -27,6 +33,39 @@
   const enabledCount = $derived(moduleStore.list.filter((module) => module.enabled && !module.hidden).length);
   const compact = $derived(effects.length > 0 || enabledCount > 0);
   const visible = $derived(!!island.kind || compact);
+
+  // Effects past the room end in a count: the chips wrap onto a hidden second line, and the chips row is narrowed to
+  // the ones left on the first. Chips change width as their times tick and once the font loads, and the count takes
+  // room too, so either measures the row again.
+  let chips = $state<HTMLElement>();
+  let hiddenEffects = $state(0);
+  function fitChips(row: HTMLElement | undefined) {
+    if (!row) return;
+    row.style.maxWidth = "";
+    const items = [...row.children] as HTMLElement[];
+    const kept = items.filter((item) => item.offsetTop === items[0].offsetTop);
+    const last = kept[kept.length - 1];
+    hiddenEffects = items.length - kept.length;
+    if (hiddenEffects && last) {
+      // Layout offsets, as the capsule's content scales in; they round, so one pixel keeps the last chip on the line
+      const end = last.offsetLeft + last.offsetWidth + parseFloat(getComputedStyle(row).paddingRight) + 1;
+      row.style.maxWidth = `${end - row.offsetLeft}px`;
+    }
+  }
+  $effect(() => {
+    void effects;
+    void room;
+    void enabledCount;
+    const row = chips;
+    if (!row) return;
+    const observer = new ResizeObserver(() => fitChips(row));
+    for (const item of row.children) observer.observe(item);
+    return () => observer.disconnect();
+  });
+  $effect(() => {
+    void hiddenEffects;
+    fitChips(untrack(() => chips));
+  });
 
   const view = $derived.by(() => {
     switch (island.kind) {
@@ -120,7 +159,7 @@
     transition:rise={{ y: -8 }}
   >
     {#key view}
-      <div class="layer" use:measure in:contentIn out:contentOut>
+      <div class="layer" style:max-width={room} use:measure in:contentIn out:contentOut>
         {#if island.kind === "target" && island.target}
           <TargetView target={island.target} />
         {:else if island.kind === "scaffold" && island.scaffold}
@@ -131,13 +170,18 @@
           <ToggleView toggle={island.toggle} />
         {:else}
           <div class="compact">
-            {#each effects as effect (effect.id)}
-              <span class="effect">
-                <ItemIcon id={effect.id} kind="effect" size={18} label={effect.name} />
-                {#if effect.level}<span class="l2">{effect.level}</span>{/if}
-                <span class="num">{effect.time}</span>
+            {#if effects.length}
+              <span class="chips" bind:this={chips}>
+                {#each effects as effect (effect.id)}
+                  <span class="effect">
+                    <ItemIcon id={effect.id} kind="effect" size={18} label={effect.name} fallback />
+                    {#if effect.level}<span class="l2">{effect.level}</span>{/if}
+                    <span class="num">{effect.time}</span>
+                  </span>
+                {/each}
               </span>
-            {/each}
+              {#if hiddenEffects}<span class="more l2 num">+{hiddenEffects}</span>{/if}
+            {/if}
             {#if effects.length && enabledCount}<span class="sep"></span>{/if}
             {#if enabledCount}
               <span class="count"><span class="num">{enabledCount}</span> <span class="l2">{enabledCount === 1 ? "module on" : "modules on"}</span></span>
@@ -182,11 +226,27 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    white-space: nowrap;
+  }
+  /* One visible line; chips that wrap to the hidden second line end in the count */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    min-width: 0;
+    height: 18px;
+    overflow: hidden;
+  }
+  .more {
+    min-width: 3ch;
+    margin-left: -4px;
+    white-space: nowrap;
   }
   .effect .l2 {
     margin-right: -2px;
   }
   .sep {
+    flex: none;
     width: 1px;
     height: 16px;
     background: var(--line);

@@ -4,9 +4,10 @@
   import { flip } from "svelte/animate";
   import { cubicOut } from "svelte/easing";
   import { reasonOf, request } from "../../lib/api/client";
-  import { on } from "../../lib/api/events";
+  import { on, onReconnect } from "../../lib/api/events";
   import { screen } from "../../lib/api/routes";
   import type { ActiveProxy, Proxy, ProxyEntry } from "../../lib/api/types";
+  import { keepRowFocus } from "../../lib/focus";
   import { fadeOut, flipDuration, rise, slideIn } from "../../lib/motion";
   import { failure, phrase } from "../../lib/phrases";
   import { play } from "../../lib/sound";
@@ -45,6 +46,7 @@
   let listEl = $state<HTMLDivElement>();
   let addButton = $state<HTMLButtonElement>();
   let pasting = $state(false);
+  let retryButton = $state<HTMLButtonElement>();
   const pending: Pending[] = [];
 
   const keyOf = (p: { host: string; port: number; username: string }) => `${p.host}:${p.port}:${p.username}`;
@@ -81,7 +83,8 @@
   // Loading
 
   async function load() {
-    const first = !loaded;
+    // A load after a failed one (Try again) lands like the first
+    const first = !loaded || loadFailed;
     try {
       const [entries, current] = await Promise.all([
         request<ProxyEntry[]>("GET", "/proxies"),
@@ -93,10 +96,11 @@
       });
       loadFailed = false;
       if (first && !entries.length) openSheet(undefined, false);
-      if (first && entries.length && document.activeElement === document.body) tick().then(() => focusRow(focusTarget));
+      if (first && entries.length) tick().then(() => document.activeElement === document.body && focusRow(focusTarget));
     } catch {
       loadFailed = true;
       if (first) play("error");
+      tick().then(() => document.activeElement === document.body && retryButton?.focus());
     } finally {
       loaded = true;
     }
@@ -206,6 +210,8 @@
   }
 
   $effect(() => on("proxyCheckResult", checkResult));
+  // Adds and edits that finished while the event socket was down only show in a fresh list
+  $effect(() => onReconnect(load));
 
   // Row actions
 
@@ -385,19 +391,18 @@
 
   // Focus and keys
 
+  function rowOf(key: string | undefined) {
+    return key ? listEl?.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`) : undefined;
+  }
+
   function focusRow(key: string | undefined) {
-    if (!key) return false;
-    const row = listEl?.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`);
+    const row = rowOf(key);
     row?.focus();
     row?.scrollIntoView({ block: "nearest" });
     return !!row;
   }
 
-  function keepFocus(change: () => void) {
-    const had = !!listEl?.contains(document.activeElement);
-    change();
-    if (had) tick().then(() => !listEl?.contains(document.activeElement) && focusRow(focusKey));
-  }
+  const keepFocus = (change: () => void) => keepRowFocus(listEl, () => rowOf(focusKey), change);
 
   function step(to: ProxyRow | undefined) {
     if (!to) return;
@@ -413,6 +418,8 @@
     const actions: Record<string, () => void> = {
       ArrowDown: () => step(shown[index + 1]),
       ArrowUp: () => step(shown[index - 1]),
+      PageDown: () => step(shown[Math.min(shown.length - 1, index + 8)]),
+      PageUp: () => step(shown[Math.max(0, index - 8)]),
       Home: () => step(shown[0]),
       End: () => step(shown[shown.length - 1]),
       Enter: () => (isActive(row) ? say(`${address(row)} is already in use.`) : use(row)),
@@ -522,7 +529,7 @@
             <div class="mg-empty on-glass">
               <h2 class="t-title3">Proxies could not be loaded</h2>
               <p class="t-callout l2">The client did not send the proxy list.</p>
-              <button class="mg-pill large" onclick={load}>Try again</button>
+              <button class="mg-pill large" bind:this={retryButton} onclick={load}>Try again</button>
             </div>
           {:else if loaded && !list.length}
             <div class="mg-empty on-glass">
@@ -551,9 +558,9 @@
                   <span class="type">{row.type}</span>
                   <div class="grow">
                     <div class="name num">{address(row)}</div>
-                    <div class="line num">
-                      {sign(row)}{row.port === 0 ? " · Port 0 is never used" : ""} ·
-                      <span class:mg-error-text={result?.state === "failed"} class:mg-pulse={result?.state === "checking"}>{checkWords(row)}</span>
+                    <div class="line num split">
+                      <span class="sign">{sign(row)}{row.port === 0 ? " · Port 0 is never used" : ""} ·</span>
+                      <span class="check" class:mg-error-text={result?.state === "failed"} class:mg-pulse={result?.state === "checking"}>{checkWords(row)}</span>
                     </div>
                   </div>
                   <div class="actions">
@@ -647,6 +654,10 @@
     color: var(--label-2);
     pointer-events: none;
   }
+  /* A long username gives way first; the check result keeps up to most of the line */
+  .split { display: flex; gap: 0.3em; }
+  .split span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .split .check { flex: none; max-width: 70%; }
   .fav span { font-size: 12px; }
   .use { min-width: 48px; }
   .in-use { min-width: 48px; justify-content: center; height: 26px; border-radius: 13px; }

@@ -40,7 +40,7 @@
   let nameInput: HTMLInputElement | undefined;
   let addressInput: HTMLInputElement | undefined;
 
-  onMount(() => (editing ? addressInput : nameInput)?.focus());
+  onMount(() => (editing !== undefined ? addressInput : nameInput)?.focus());
 
   // Once the field was left or submitted, the message follows the typing
   $effect(() => {
@@ -66,7 +66,7 @@
         addressError = "The client did not accept this address. Check the host name and port.";
         addressInput?.focus();
       } else {
-        formError = editing ? "The server could not be saved. Try again." : "The server could not be added. Try again.";
+        formError = editing !== undefined ? "The server could not be saved. Try again." : "The server could not be added. Try again.";
       }
     } finally {
       saving = false;
@@ -107,7 +107,7 @@
   onkeydown={onKey}
   in:rise={{ duration: 320, y: -10, scale: 0.98 }}
 >
-  <h2 id="sheet-title" class="t-title3">{editing ? `Edit ${editing}` : "Add server"}</h2>
+  <h2 id="sheet-title" class="t-title3">{editing !== undefined ? `Edit ${editing || "server"}` : "Add server"}</h2>
 
   <div class="fields">
     <label class="field">
@@ -144,7 +144,7 @@
 
   <div class="actions">
     <button type="button" class="btn" onclick={oncancel}>Cancel</button>
-    <button type="button" class="btn primary" disabled={saving} onclick={submit}>{saving ? "Saving" : editing ? "Save" : "Add server"}</button>
+    <button type="button" class="btn primary" disabled={saving} onclick={submit}>{saving ? "Saving" : editing !== undefined ? "Save" : "Add server"}</button>
   </div>
 </div>
 
@@ -162,6 +162,7 @@
     display: grid;
     gap: 14px;
   }
+  h2 { overflow-wrap: anywhere; }
   .fields { display: grid; gap: 12px; }
   .field { display: grid; gap: 6px; justify-items: start; }
   .input {

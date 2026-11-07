@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Module } from "../../lib/api/types";
-  import { keyLabel } from "../../lib/keys";
+  import { bindLabel } from "../../lib/keys";
   import Keycap from "../../lib/ui/Keycap.svelte";
   import Switch from "../../lib/ui/Switch.svelte";
 
@@ -22,7 +22,7 @@
     onkeydown: (event: KeyboardEvent) => void;
   } = $props();
 
-  const bind = $derived(keyLabel(module.keyBind.boundKey));
+  const bind = $derived(bindLabel(module.keyBind));
 
   function untab(node: HTMLElement) {
     node.querySelector("button")?.setAttribute("tabindex", "-1");
@@ -76,6 +76,6 @@
     text-overflow: ellipsis;
   }
   .on .name, .selected .name { color: var(--label); font-weight: 600; }
-  .bind { display: flex; pointer-events: none; }
+  .bind { display: flex; min-width: 0; max-width: 50%; pointer-events: none; }
   .controls { position: relative; z-index: 1; display: flex; }
 </style>

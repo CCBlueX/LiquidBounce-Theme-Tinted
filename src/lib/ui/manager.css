@@ -1,7 +1,8 @@
 /* The account and proxy managers: one glass window with a list, a pinned "current" card, a footer status line and a
    form sheet that floats in from the right. Global (mg- prefix) so both screens and their parts use it. */
 
-.mg-stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+/* cqh, not vh: the canvas is zoomed, and vh stays in window pixels */
+.mg-stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; container-type: size; }
 /* The window widens to make room for the sheet instead of squeezing the list, and grows with the list up to a cap */
 .mg-frame {
   position: relative;
@@ -11,15 +12,16 @@
 }
 .mg-frame.with-sheet { width: min(1080px, calc(100% - 120px)); }
 :root.reduce-motion .mg-frame { transition: none; }
-/* The minimum keeps room for the tallest sheet form */
 .mg-window {
   position: relative;
   display: flex;
-  min-height: min(460px, calc(100vh - 140px));
-  max-height: min(600px, calc(100vh - 140px));
+  min-height: min(460px, calc(100cqh - 140px));
+  max-height: min(600px, calc(100cqh - 140px));
   border-radius: var(--r-window);
   overflow: hidden;
 }
+/* Room for the tallest form (add proxy) where the canvas allows it; shorter canvases scroll the sheet body */
+.mg-window.with-sheet { min-height: min(560px, calc(100cqh - 140px)); }
 
 .mg-content {
   flex: 1;
@@ -59,8 +61,8 @@
   padding: 2px 8px 24px;
   overflow-y: auto;
   scroll-padding-block: 8px 32px;
-  scrollbar-width: thin;
-  scrollbar-color: rgb(255 255 255 / 0.22) transparent;
+  /* No scrollbar, as everywhere in the theme: the fade at the bottom shows there is more */
+  scrollbar-width: none;
   mask-image: linear-gradient(180deg, #000 calc(100% - 28px), transparent calc(100% - 4px));
 }
 .mg-section { padding: 8px 8px 2px; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--label-2); }
@@ -105,12 +107,12 @@
 :root.contrast-more .mg-error-text { color: #ffb3b5; }
 
 .mg-chip {
-  height: 22px;
+  height: 24px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 0 8px;
-  border-radius: 11px;
+  border-radius: 12px;
   background: var(--fill);
   box-shadow: inset 0 0 0 0.5px var(--line);
   font-size: 12px;
@@ -214,6 +216,16 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  /* A form taller than the sheet fades out at the bottom while more of it is below; the scroll timeline is inactive
+     when nothing scrolls, so short forms keep no fade */
+  mask-image: linear-gradient(180deg, #000 calc(100% - var(--mg-more)), transparent);
+  animation: mg-more linear both;
+  animation-timeline: scroll(self);
+}
+@property --mg-more { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@keyframes mg-more {
+  from, 90% { --mg-more: 28px; }
+  to { --mg-more: 0px; }
 }
 .mg-sheet-foot { flex: none; display: flex; gap: 8px; justify-content: flex-end; padding: 0 16px 16px; }
 .mg-close {

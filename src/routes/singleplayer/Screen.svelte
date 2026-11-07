@@ -14,6 +14,8 @@
   import { difficultyLabel, gameModeLabel, modeLine, notices } from "./format";
   import WorldIcon from "./WorldIcon.svelte";
 
+  const PAGE = 8;
+
   let list = $state<World[] | undefined>();
   let failed = $state(false);
   let query = $state("");
@@ -26,7 +28,8 @@
   let listEl = $state<HTMLElement | undefined>();
   let searchBox = $state<HTMLElement | undefined>();
   let playButton = $state<HTMLButtonElement | undefined>();
-  let createButton = $state<HTMLButtonElement | undefined>();
+  // Create world (empty) or Try again (failed): takes focus when there is no row to hold it
+  let stateButton = $state<HTMLButtonElement | undefined>();
   let deleteButton = $state<HTMLButtonElement | undefined>();
 
   // No world events exist: the list is read on open, after every action and on F5. Folder names are the identity;
@@ -47,8 +50,7 @@
     ready = true;
     load().then(async () => {
       await tick();
-      if (list?.length) focusSelected();
-      else createButton?.focus();
+      focusList();
     });
     const clock = setInterval(() => (now = Date.now()), 30_000);
     return () => clearInterval(clock);
@@ -67,6 +69,11 @@
 
   function focusSelected() {
     listEl?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus();
+  }
+
+  function focusList() {
+    if (list?.length) focusSelected();
+    else stateButton?.focus();
   }
 
   function select(world: World | undefined, focus = true) {
@@ -153,8 +160,7 @@
     await load();
     setTimeout(load, 1200);
     await tick();
-    if (list?.length) focusSelected();
-    else createButton?.focus();
+    focusList();
   }
 
   async function create() {
@@ -176,10 +182,13 @@
     }
   }
 
-  function refresh() {
+  async function refresh() {
     play("tap");
     status = "Refreshed";
-    load();
+    await load();
+    await tick();
+    // Try again leaves with the error state; its focus moves to the list
+    if (document.activeElement === document.body) focusList();
   }
 
   // Shortcuts work everywhere but in the search field, where letters type; Esc there clears the search first.
@@ -218,6 +227,14 @@
       case "arrowup":
         event.preventDefault();
         move(-1);
+        break;
+      case "pagedown":
+        event.preventDefault();
+        move(PAGE);
+        break;
+      case "pageup":
+        event.preventDefault();
+        move(-PAGE);
         break;
       case "home":
         event.preventDefault();
@@ -262,7 +279,7 @@
       <header class="head on-glass">
         <div class="titles">
           <h1 class="t-large">Singleplayer</h1>
-          {#if list?.length}<span class="t-callout l2 num">{countLabel}</span>{/if}
+          {#if list?.length}<span class="t-callout l2 num">{countLabel}</span>{:else if !list && !failed}<span class="t-callout l2">Loading</span>{/if}
         </div>
         {#if list?.length}
           <div class="search" bind:this={searchBox}>
@@ -277,13 +294,13 @@
       {#if failed && !list}
         <div class="empty on-glass" in:fade={{ duration: 160 }}>
           <p class="t-headline">Worlds could not be read from the client.</p>
-          <button class="pill primary" onclick={refresh}>Try again</button>
+          <button class="pill primary" bind:this={stateButton} onclick={refresh}>Try again</button>
         </div>
       {:else if list && list.length === 0}
         <div class="empty on-glass" in:fade={{ duration: 160 }}>
           <h2 class="t-title2">No worlds yet</h2>
           <p class="t-callout l2">Worlds you create on this computer show up here.</p>
-          <button class="pill primary" bind:this={createButton} aria-keyshortcuts="N Enter" onclick={create}>Create world</button>
+          <button class="pill primary" bind:this={stateButton} aria-keyshortcuts="N Enter" onclick={create}>Create world</button>
         </div>
       {:else if list}
         <div class="body">
@@ -334,34 +351,36 @@
             <aside class="details glass deep on-glass" aria-label="Selected world">
               {#key selected.name}
                 <div class="details-in" in:fade={{ duration: 160 }}>
-                  <div class="hero-row">
-                    <WorldIcon icon={selected.icon} size={64} />
-                    <div class="hero-text">
-                      <h2 class="t-title2">{selected.displayName}</h2>
-                      {#if selected.name !== selected.displayName}
-                        <span class="t-callout l2">Folder {selected.name}</span>
-                      {/if}
+                  <div class="details-scroll">
+                    <div class="hero-row">
+                      <WorldIcon icon={selected.icon} size={64} />
+                      <div class="hero-text">
+                        <h2 class="t-title2">{selected.displayName}</h2>
+                        {#if selected.name !== selected.displayName}
+                          <span class="t-callout l2">Folder {selected.name}</span>
+                        {/if}
+                      </div>
                     </div>
+
+                    <dl class="group facts num">
+                      <div><dt>Game mode</dt><dd>{gameModeLabel(selected)}{selected.hardcore ? ", hardcore" : ""}</dd></div>
+                      <div><dt>Difficulty</dt><dd>{selected.hardcore ? "Hard, locked" : difficultyLabel(selected)}</dd></div>
+                      <div><dt>Cheats</dt><dd>{selected.commandsAllowed ? "Allowed" : "Off"}</dd></div>
+                      <div><dt>Version</dt><dd>{selected.version || "Unknown"}</dd></div>
+                      <div><dt>Last played</dt><dd>{absoluteTime(selected.lastPlayed)}</dd></div>
+                    </dl>
+
+                    {#if selectedNotices.length}
+                      <ul class="notices" id="world-notices">
+                        {#each selectedNotices as notice (notice.text)}
+                          <li class="t-callout" class:blocks={notice.blocks}>
+                            <span class="kind">{notice.blocks ? "Can't open." : "Before playing:"}</span>
+                            {notice.text}
+                          </li>
+                        {/each}
+                      </ul>
+                    {/if}
                   </div>
-
-                  <dl class="group facts num">
-                    <div><dt>Game mode</dt><dd>{gameModeLabel(selected)}{selected.hardcore ? ", hardcore" : ""}</dd></div>
-                    <div><dt>Difficulty</dt><dd>{selected.hardcore ? "Hard, locked" : difficultyLabel(selected)}</dd></div>
-                    <div><dt>Cheats</dt><dd>{selected.commandsAllowed ? "Allowed" : "Off"}</dd></div>
-                    <div><dt>Version</dt><dd>{selected.version || "Unknown"}</dd></div>
-                    <div><dt>Last played</dt><dd>{absoluteTime(selected.lastPlayed)}</dd></div>
-                  </dl>
-
-                  {#if selectedNotices.length}
-                    <ul class="notices" id="world-notices">
-                      {#each selectedNotices as notice (notice.text)}
-                        <li class="t-callout" class:blocks={notice.blocks}>
-                          <span class="kind">{notice.blocks ? "Can't open." : "Before playing:"}</span>
-                          {notice.text}
-                        </li>
-                      {/each}
-                    </ul>
-                  {/if}
 
                   <div class="actions">
                     <button
@@ -376,30 +395,14 @@
                     </button>
                     <div class="row-actions">
                       <button class="pill" aria-keyshortcuts="E" onclick={edit}>Edit <Keycap>E</Keycap></button>
-                      <div class="anchor">
-                        <button
-                          class="pill"
-                          bind:this={deleteButton}
-                          aria-haspopup="dialog"
-                          aria-expanded={confirming}
-                          aria-keyshortcuts="Delete"
-                          onclick={askDelete}
-                        >Delete <Keycap>Del</Keycap></button>
-                        {#if confirming}
-                          <ConfirmPopover
-                            title="Delete “{selected.displayName}”?"
-                            text="The folder {selected.name} and everything in it is removed from this computer. This cannot be undone."
-                            action="Delete"
-                            tone="destructive"
-                            initialFocus="cancel"
-                            placement="end"
-                            width={320}
-                            anchor={deleteButton}
-                            onconfirm={confirmDelete}
-                            oncancel={cancelDelete}
-                          />
-                        {/if}
-                      </div>
+                      <button
+                        class="pill"
+                        bind:this={deleteButton}
+                        aria-haspopup="dialog"
+                        aria-expanded={confirming}
+                        aria-keyshortcuts="Delete"
+                        onclick={askDelete}
+                      >Delete <Keycap>Del</Keycap></button>
                     </div>
                   </div>
                 </div>
@@ -414,7 +417,7 @@
           {#if list?.length}
             <span><Keycap>↑</Keycap><Keycap>↓</Keycap> Choose</span>
             <span><Keycap>Enter</Keycap> Play</span>
-          {:else}
+          {:else if list}
             <span><Keycap>N</Keycap> Create world</span>
           {/if}
           <span><Keycap>F5</Keycap> Refresh</span>
@@ -422,6 +425,20 @@
         </span>
         <span class="live" role="status" aria-live="polite">{status}</span>
       </footer>
+
+      {#if confirming && selected}
+        <ConfirmPopover
+          title="Delete “{selected.displayName}”?"
+          text="The folder {selected.name} and everything in it is removed from this computer. This cannot be undone."
+          action="Delete"
+          tone="destructive"
+          initialFocus="cancel"
+          placement="modal"
+          width={320}
+          onconfirm={confirmDelete}
+          oncancel={cancelDelete}
+        />
+      {/if}
     </main>
 
     <button class="glass closer" aria-label="Close" onclick={leave} in:rise={{ delay: 120 }}>×</button>
@@ -430,10 +447,11 @@
 </div>
 
 <style>
-  .stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  /* cqh, not vh: the canvas is zoomed, and vh stays in window pixels */
+  .stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; container-type: size; }
   .frame { position: relative; width: min(940px, calc(100% - 160px)); margin-bottom: 40px; }
   .window {
-    position: relative; max-height: min(600px, calc(100vh - 140px)); border-radius: var(--r-window); overflow: hidden;
+    position: relative; max-height: min(600px, calc(100cqh - 140px)); border-radius: var(--r-window); overflow: hidden;
     display: flex; flex-direction: column;
   }
   .head { display: flex; align-items: center; gap: 8px; height: 32px; margin: 14px 16px 0; flex: none; }
@@ -454,7 +472,7 @@
   .body { flex: 0 1 auto; min-height: 0; display: flex; gap: 12px; padding: 12px 12px 0 16px; }
   .list {
     flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; scrollbar-width: none;
-    padding: 4px; margin: -4px; padding-bottom: 16px;
+    padding: 4px 4px 16px; margin: -4px -4px 0;
   }
   .card {
     position: relative; flex: none; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px 0 4px;
@@ -479,7 +497,18 @@
   .details {
     flex: none; width: 300px; margin-bottom: 12px; border-radius: var(--r-pane); overflow: hidden; display: flex;
   }
-  .details-in { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 12px; gap: 12px; overflow-y: auto; scrollbar-width: none; }
+  /* Play, Edit and Delete stay in view; the facts and notices above them scroll, fading out while more is below */
+  .details-in { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .details-scroll {
+    flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; padding: 12px 12px 8px; overflow-y: auto;
+    scrollbar-width: none; mask-image: linear-gradient(180deg, #000 calc(100% - var(--sp-more)), transparent);
+    animation: sp-more linear both; animation-timeline: scroll(self);
+  }
+  @property --sp-more { syntax: "<length>"; inherits: false; initial-value: 0px; }
+  @keyframes sp-more {
+    from, 90% { --sp-more: 24px; }
+    to { --sp-more: 0px; }
+  }
   .hero-row { display: flex; align-items: center; gap: 12px; }
   .hero-text { min-width: 0; display: grid; gap: 2px; }
   .hero-text h2, .hero-text span { overflow-wrap: anywhere; }
@@ -492,7 +521,7 @@
   .notices li { padding: 8px 10px; border-radius: var(--r-control); background: var(--fill); box-shadow: inset 3px 0 0 var(--label-3); }
   .notices li.blocks { box-shadow: inset 3px 0 0 var(--negative); }
   .kind { font-weight: 600; }
-  .actions { margin-top: auto; display: grid; gap: 8px; }
+  .actions { flex: none; display: grid; gap: 8px; padding: 4px 12px 12px; }
   .play {
     height: 30px; border-radius: 15px; font-size: 13px; font-weight: 600; color: #fff; background: var(--accent-fill);
     transition: transform var(--t-press) var(--ease), background-color var(--t-pop) var(--ease);
@@ -502,7 +531,6 @@
   .play:disabled { background: var(--fill-2); color: var(--label-2); }
   .row-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .row-actions .pill { width: 100%; justify-content: space-between; }
-  .anchor { position: relative; }
 
   .empty { flex: none; display: grid; place-content: center; justify-items: center; gap: 6px; padding: 40px 16px 32px; text-align: center; }
   .empty .pill { margin-top: 8px; }

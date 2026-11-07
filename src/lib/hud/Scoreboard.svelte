@@ -1,16 +1,25 @@
 <script lang="ts">
   import { plainText } from "../mctext";
+  import { slotOf } from "./layout.svelte";
   import { live } from "./live.svelte";
   import McLine from "./McLine.svelte";
 
-  // The server's sidebar in place of vanilla's (the component's tweak hides that one); the client sends up to 15 lines
+  const LINE = 20;
+  const CHROME = 34;
+
+  const slot = slotOf();
+  slot?.claim("y", 1);
+
+  // The server's sidebar in place of vanilla's (the component's tweak hides that one); the client sends up to 15
+  // lines, and lines past the room the board has are left out from the bottom like vanilla's sixteenth
   const board = $derived(live.scoreboard);
+  const capacity = $derived(Math.max(1, Math.floor(((slot?.height ?? Infinity) - CHROME) / LINE)));
 </script>
 
 {#if board}
   <section class="board glass on-glass" aria-label={plainText(board.header) || "Scoreboard"}>
     <h2 class="title"><McLine text={board.header} /></h2>
-    {#each board.entries as entry, index (index)}
+    {#each board.entries.slice(0, capacity) as entry, index (index)}
       <div class="line">
         <span class="name"><McLine text={entry?.name} /></span>
         <span class="score num"><McLine text={entry?.score} /></span>

@@ -4,9 +4,10 @@
   import { flip } from "svelte/animate";
   import { cubicOut } from "svelte/easing";
   import { request } from "../../lib/api/client";
-  import { on } from "../../lib/api/events";
+  import { on, onReconnect } from "../../lib/api/events";
   import { accounts as accountsApi, screen, session as sessionApi } from "../../lib/api/routes";
   import type { Account, RandomName, RemovedAccount, Session } from "../../lib/api/types";
+  import { keepRowFocus } from "../../lib/focus";
   import { fadeOut, flipDuration, rise, slideIn } from "../../lib/motion";
   import { failure, phrase } from "../../lib/phrases";
   import { play } from "../../lib/sound";
@@ -59,6 +60,7 @@
   let listEl = $state<HTMLDivElement>();
   let searchBox = $state<HTMLDivElement>();
   let menu = $state<AddMenu>();
+  let retryButton = $state<HTMLButtonElement>();
 
   const needle = $derived(query.trim().toLowerCase());
   const matches = $derived(
@@ -124,17 +126,19 @@
   }
 
   async function load() {
-    const first = !loaded;
+    // A load after a failed one (Try again) lands like the first
+    const first = !loaded || loadFailed;
     try {
       const next = await accountsApi.list();
       keepFocus(() => (list = next));
       loadFailed = false;
       if (first && next.length === 0) openSheet("cracked", false);
       // Keyboard users land on the list, ready for arrows and Enter
-      if (first && next.length && document.activeElement === document.body) tick().then(() => focusRow(focusTarget));
+      if (first && next.length) tick().then(() => document.activeElement === document.body && focusRow(focusTarget));
     } catch {
       loadFailed = true;
       if (first) play("error");
+      tick().then(() => document.activeElement === document.body && retryButton?.focus());
     } finally {
       loaded = true;
     }
@@ -173,6 +177,11 @@
       on("accountManagerLogin", (event) => loginResult(event)),
       on("accountManagerRemoval", () => scheduleLoad()),
       on("session", ({ session: s }) => (current = s)),
+      // Additions, removals and logins sent while the socket was down are lost
+      onReconnect(() => {
+        load();
+        loadSession();
+      }),
     ];
     return () => offs.forEach((off) => off());
   });
@@ -423,20 +432,18 @@
 
   // Focus
 
+  function rowOf(uuid: string | undefined) {
+    return uuid ? listEl?.querySelector<HTMLElement>(`[data-uuid="${CSS.escape(uuid)}"]`) : undefined;
+  }
+
   function focusRow(uuid: string | undefined) {
-    if (!uuid) return false;
-    const row = listEl?.querySelector<HTMLElement>(`[data-uuid="${CSS.escape(uuid)}"]`);
+    const row = rowOf(uuid);
     row?.focus();
     row?.scrollIntoView({ block: "nearest" });
     return !!row;
   }
 
-  // Reordering moves row nodes, and a moved node loses focus; put it back on the same account
-  function keepFocus(change: () => void) {
-    const had = !!listEl?.contains(document.activeElement);
-    change();
-    if (had) tick().then(() => !listEl?.contains(document.activeElement) && focusRow(focusUuid));
-  }
+  const keepFocus = (change: () => void) => keepRowFocus(listEl, () => rowOf(focusUuid), change);
 
   function step(to: Account | undefined) {
     if (!to) return;
@@ -579,7 +586,7 @@
             <div class="mg-empty on-glass">
               <h2 class="t-title3">Accounts could not be loaded</h2>
               <p class="t-callout l2">The client did not send the account list.</p>
-              <button class="mg-pill large" onclick={load}>Try again</button>
+              <button class="mg-pill large" bind:this={retryButton} onclick={load}>Try again</button>
             </div>
           {:else if loaded && !list.length}
             <div class="mg-empty on-glass">

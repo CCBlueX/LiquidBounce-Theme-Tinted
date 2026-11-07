@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from "svelte";
   import { request } from "../../../lib/api/client";
   import { player } from "../../../lib/api/routes";
   import type { FileDialogResult, JsonValue, MultiChooseValue, Registry, Vec2, Vec3 } from "../../../lib/api/types";
@@ -45,9 +46,15 @@
     set(on ? value.value.filter((entry) => entry !== choice) : [...value.value, choice]);
   }
 
-  function removeEntry(list: string[], entry: string) {
+  // A removed entry takes its focused button along; focus moves to the one that took its place, else the row's
+  // first control
+  async function removeAt<T>(list: T[], index: number, event: MouseEvent) {
+    const row = (event.currentTarget as HTMLElement).closest(".cg-row");
     play("tap");
-    set(list.filter((candidate) => candidate !== entry));
+    set(list.filter((_, i) => i !== index) as JsonValue);
+    await tick();
+    const remaining = [...(row?.querySelectorAll<HTMLButtonElement>("[data-remove]:not(:disabled)") ?? [])];
+    (remaining[Math.min(index, remaining.length - 1)] ?? row?.querySelector<HTMLElement>("input, button:not(:disabled)"))?.focus();
   }
 
   let draft = $state("");
@@ -186,7 +193,7 @@
         {@const index = multi.value.indexOf(choice)}
         <button class="cg-chip" class:on={index >= 0} aria-pressed={index >= 0} onclick={() => toggleChoice(multi, choice)}>
           {#if index >= 0}<span class="mark" aria-hidden="true">{multi.isOrderSensitive ? index + 1 : "✓"}</span>{/if}
-          {choice}
+          <span class="ellipsis" title={choice}>{choice}</span>
         </button>
       {/each}
     </div>
@@ -210,11 +217,17 @@
   </div>
 {:else if node.valueType === "BIND"}
   {@const bind = node.value}
-  <div class="cg-row" data-key={key} data-type={node.valueType}>
+  <div class="cg-row bind" data-key={key} data-type={node.valueType}>
     {@render field(label)}
-    <KeyRecorder boundKey={bind.boundKey} {label} onchange={(boundKey) => set({ ...bind, boundKey })} />
+    <KeyRecorder
+      boundKey={bind.boundKey}
+      modifiers={bind.modifiers}
+      chords
+      {label}
+      onchange={(boundKey, modifiers) => set({ ...bind, boundKey, modifiers })}
+    />
     <Segmented
-      options={["Toggle", "Hold"]}
+      options={["Toggle", "Hold", "Smart"]}
       value={bind.action}
       label="{label} action"
       small
@@ -230,7 +243,10 @@
   {@const file = node}
   <div class="cg-row stack" data-key={key} data-type={node.valueType}>
     {@render field(label)}
-    {#if file.supportedExtensions?.length}<span class="cg-hint">{file.supportedExtensions.join(", ")}</span>{/if}
+    {#if file.supportedExtensions?.length}
+      {@const extensions = file.supportedExtensions.join(", ")}
+      <span class="cg-hint extensions" title={extensions}>{extensions}</span>
+    {/if}
     <div class="cg-full line">
       <input
         class="cg-field grow"
@@ -251,8 +267,8 @@
     <div class="cg-full cg-chips chips" role="list" aria-labelledby="label-{key}">
       {#each list as entry, index (index)}
         <span class="cg-chip on-text" role="listitem">
-          <span class="ellipsis">{entry}</span>
-          <button class="x" aria-label="Remove {entry}" onclick={() => removeEntry(list, entry)}>×</button>
+          <span class="ellipsis" title={entry}>{entry}</span>
+          <button class="x" data-remove aria-label="Remove {entry}" onclick={(event) => removeAt(list, index, event)}>×</button>
         </span>
       {/each}
       <input
@@ -276,9 +292,9 @@
       {#each list as entry, index (index)}
         {@const name = names[entry]?.name || idName(entry)}
         <span class="cg-chip on-text" role="listitem">
-          {#if kind}<ItemIcon id={entry} size={kind === "effect" ? 18 : 16} {kind} />{/if}
-          <span class="ellipsis">{name}</span>
-          <button class="x" aria-label="Remove {name}" onclick={() => removeEntry(list, entry)}>×</button>
+          {#if kind}<ItemIcon id={entry} size={kind === "effect" ? 18 : 16} {kind} fallback />{/if}
+          <span class="ellipsis" title={name}>{name}</span>
+          <button class="x" data-remove aria-label="Remove {name}" onclick={(event) => removeAt(list, index, event)}>×</button>
         </span>
       {:else}
         <span class="cg-hint">Empty</span>
@@ -311,13 +327,11 @@
           />
         {/each}
         <button
+          data-remove
           class="cg-pill quiet remove"
           aria-label="Remove point {index + 1}"
           disabled={curve.value.length <= 2}
-          onclick={() => {
-            play("tap");
-            set(curve.value.filter((_, i) => i !== index));
-          }}>×</button
+          onclick={(event) => removeAt(curve.value, index, event)}>×</button
         >
       {/each}
     </div>
@@ -351,7 +365,7 @@
   {@const id = node.value}
   <div class="cg-row" data-key={key} data-type={node.valueType}>
     {@render field(label)}
-    <span class="cg-chip on-text"><ItemIcon {id} size={16} />{idName(id)}</span>
+    <span class="cg-chip on-text"><ItemIcon {id} size={16} fallback />{idName(id)}</span>
     <RegistryPicker
       registryName={node.valueType === "BLOCK" ? "block" : "item"}
       {label}
@@ -373,7 +387,9 @@
 <style>
   .chips { margin-top: 6px; }
   .on-text { color: var(--label); }
-  .ellipsis { overflow: hidden; text-overflow: ellipsis; }
+  .ellipsis { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  /* The label keeps its width; a long list of file types gives way */
+  .extensions { max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .text { width: 160px; }
   .add { width: 88px; height: 24px; border-radius: 12px; }
   .line { display: flex; gap: 8px; align-items: center; }
@@ -385,4 +401,8 @@
   .points input { width: 100%; }
   .remove { padding: 0; width: 24px; height: 24px; justify-content: center; }
   .remove:disabled { opacity: 0.35; }
+  /* A long chord pushes the action switch to a line of its own instead of squeezing the label */
+  .bind { flex-wrap: wrap; row-gap: 2px; padding-block: 4px; }
+  .bind > :global(.cg-label) { flex: 1 1 auto; }
+  .bind > :global(.seg) { margin-left: auto; }
 </style>

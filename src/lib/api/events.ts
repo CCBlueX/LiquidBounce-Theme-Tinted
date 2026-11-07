@@ -10,11 +10,13 @@ const INITIAL_DELAY_MS = 250;
 const MAX_DELAY_MS = 5000;
 
 const handlers = new Map<EventName, Set<(event: never) => void>>();
+const reconnectHandlers = new Set<() => void>();
 
 let socket: WebSocket | undefined;
 let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 let delay = INITIAL_DELAY_MS;
 let activePort: number | undefined;
+let connectedBefore = false;
 
 /**
  * Opens the event socket and keeps it open: on close it reconnects with exponential backoff (250 ms doubling,
@@ -50,6 +52,14 @@ export function on<K extends EventName>(name: K, handler: EventHandler<K>): Unsu
   };
 }
 
+/** Calls `handler` each time the socket opens again after a drop; events sent meanwhile are lost, so refetch state. */
+export function onReconnect(handler: () => void): Unsubscribe {
+  reconnectHandlers.add(handler);
+  return () => {
+    reconnectHandlers.delete(handler);
+  };
+}
+
 function open(): void {
   const port = activePort;
   if (port === undefined) return;
@@ -59,6 +69,16 @@ function open(): void {
 
   current.addEventListener("open", () => {
     delay = INITIAL_DELAY_MS;
+    if (connectedBefore) {
+      for (const handler of [...reconnectHandlers]) {
+        try {
+          handler();
+        } catch (error) {
+          console.error("reconnect handler failed", error);
+        }
+      }
+    }
+    connectedBefore = true;
   });
   current.addEventListener("message", (message) => {
     if (typeof message.data === "string") dispatch(message.data);
@@ -77,13 +97,15 @@ const FRAME_NAME = /^\{"name":"([^"]+)"/;
 function dispatch(data: string): void {
   const name = FRAME_NAME.exec(data)?.[1];
   if (name !== undefined && !handlers.get(name as EventName)?.size) return;
-  let frame: { name?: unknown; event?: unknown };
+  let frame: unknown;
   try {
     frame = JSON.parse(data);
   } catch {
     return;
   }
-  const set = typeof frame.name === "string" ? handlers.get(frame.name as EventName) : undefined;
+  if (typeof frame !== "object" || frame === null || !("name" in frame) || !("event" in frame)) return;
+  if (typeof frame.name !== "string" || typeof frame.event !== "object" || frame.event === null) return;
+  const set = handlers.get(frame.name as EventName);
   if (!set?.size) return;
   for (const handler of [...set]) {
     try {

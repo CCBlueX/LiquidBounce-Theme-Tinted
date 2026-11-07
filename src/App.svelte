@@ -2,6 +2,7 @@
   import { untrack, type Component } from "svelte";
   import type { TransitionConfig } from "svelte/transition";
   import { request } from "./lib/api/client";
+  import { onReconnect } from "./lib/api/events";
   import { ackScreen, onScreenChange } from "./lib/api/screen";
   import { isReducedMotion, spring } from "./lib/motion";
   import { settings } from "./lib/settings.svelte";
@@ -24,51 +25,103 @@
   let width = $state(innerWidth);
   let height = $state(innerHeight);
 
-  // Layouts target a 1600x900 canvas; small game windows shrink it, never below 0.75
-  const zoom = $derived(Math.min(1.6, Math.max(0.75, Math.min(width / 1600, height / 900))) * settings.scale);
+  // Layouts target a 1600x900 canvas; small game windows shrink it, never below 0.75. The Scale setting never makes
+  // the canvas smaller than 1066x600, the smallest one every layout holds.
+  const zoom = $derived(
+    Math.min(
+      Math.min(1.6, Math.max(0.75, Math.min(width / 1600, height / 900))) * settings.scale,
+      Math.max(0.75, Math.min(width / 1066, height / 600)),
+    ),
+  );
+
+  // Acks name the client's screen even when this theme has nothing to draw for it, and "none" once it closed
+  function follow(name: string) {
+    route = name;
+    ackScreen(name || "none").catch(() => {});
+  }
 
   $effect(() => {
     if (isStatic) return;
     let hold: number | undefined;
-    const off = onScreenChange(({ name, action }) => {
+    let events = 0;
+    // The main browser loads with an empty route, and screen events are lost while the socket is down, so it asks
+    // which screen is open; an event that arrives meanwhile wins over the answer
+    const ask = () => {
+      const asked = events;
+      request<{ name?: string | null }>("GET", "/virtualScreen")
+        .then((screen) => {
+          if (events !== asked) return;
+          clearTimeout(hold);
+          route = screen?.name ?? "";
+          ackScreen(route || "none").catch(() => {});
+        })
+        .catch(() => {});
+    };
+    const initial = untrack(() => route);
+    if (initial) ackScreen(initial).catch(() => {});
+    else ask();
+    const offScreen = onScreenChange(({ name, action }) => {
+      events++;
       if (action === "open") {
         clearTimeout(hold);
-        route = name;
+        follow(name);
       } else if (action === "close" && name === route) {
         clearTimeout(hold);
         hold = setTimeout(() => {
-          if (route === name) route = "";
+          if (route === name) follow("");
         }, CLOSE_HOLD_MS);
       }
     });
+    const offReconnect = onReconnect(ask);
     return () => {
-      off();
+      offScreen();
+      offReconnect();
       clearTimeout(hold);
     };
-  });
-
-  // The main browser loads with an empty route and must ask which screen is open
-  $effect(() => {
-    if (isStatic || route) return;
-    request<{ name?: string }>("GET", "/virtualScreen")
-      .then((screen) => {
-        if (!route && screen?.name) route = screen.name;
-      })
-      .catch(() => {});
   });
 
   $effect(() => {
     const next = route;
     const load = screens[next];
     if (!load) {
+      releaseFocus();
       shown = undefined;
       return;
     }
-    if (!isStatic) ackScreen(next);
     load().then(({ default: Screen }) => {
-      if (route === next && shown?.route !== next) shown = { route: next, Screen };
+      if (route !== next || shown?.route === next) return;
+      releaseFocus();
+      shown = { route: next, Screen };
     });
   });
+
+  // The outgoing layer turns inert but keeps focus until it is removed; incoming screens move focus only from body
+  function releaseFocus() {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && active.closest(".screen")) active.blur();
+  }
+
+  const TABBABLE = 'a[href], button, input, select, textarea, summary, [tabindex], [contenteditable="true"]';
+
+  // Tab past the last control would leave the page, where the client gives focus to nothing; it wraps within the
+  // screen instead. Dialogs that trap Tab stop the event before it bubbles up here.
+  function wrapTab(event: KeyboardEvent) {
+    if (event.key !== "Tab" || event.defaultPrevented) return;
+    const layer = document.querySelector(".canvas > .screen:not([inert])");
+    if (!layer) return;
+    const stops = [...layer.querySelectorAll<HTMLElement>(TABBABLE)].filter(
+      (element) =>
+        element.tabIndex >= 0 &&
+        !element.matches(":disabled") &&
+        !element.closest("[inert]") &&
+        element.checkVisibility({ visibilityProperty: true }),
+    );
+    if (!stops.length) return;
+    const edge = event.shiftKey ? stops[0] : stops[stops.length - 1];
+    if (document.activeElement !== edge) return;
+    event.preventDefault();
+    (event.shiftKey ? stops[stops.length - 1] : stops[0]).focus();
+  }
 
   // The incoming screen rises in over the outgoing one, which fades; under reduce motion both only fade
   function screenIn(_: Element): TransitionConfig {
@@ -82,7 +135,7 @@
   }
 </script>
 
-<svelte:window bind:innerWidth={width} bind:innerHeight={height} />
+<svelte:window bind:innerWidth={width} bind:innerHeight={height} onkeydown={wrapTab} />
 
 <div class="canvas" style:zoom={zoom} style:width="{width / zoom}px" style:height="{height / zoom}px">
   <!-- Each layer keeps its own screen while it fades out under the next -->

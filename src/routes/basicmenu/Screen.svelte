@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import { request } from "../../lib/api/client";
-  import { on } from "../../lib/api/events";
+  import { on, onReconnect } from "../../lib/api/events";
   import { screen, session } from "../../lib/api/routes";
   import type { ActiveProxy, ScreenRoute, Session } from "../../lib/api/types";
   import { rise } from "../../lib/motion";
@@ -18,15 +18,23 @@
 
   const loadProxy = () =>
     request<ActiveProxy | undefined>("GET", "/proxy").then((p) => (proxyOn = p !== undefined)).catch(() => {});
+  const loadSession = () => session.get().then((s) => (user = s)).catch(() => {});
 
   onMount(() => {
-    session.get().then((s) => (user = s)).catch(() => {});
+    loadSession();
     loadProxy();
     tick().then(() => pill?.querySelector("button")?.focus());
   });
 
   $effect(() => on("session", ({ session: s }) => (user = s)));
   $effect(() => on("proxyCheckResult", () => loadProxy()));
+  // Session and proxy changes sent while the event socket was down are lost
+  $effect(() =>
+    onReconnect(() => {
+      loadSession();
+      loadProxy();
+    }),
+  );
 
   async function open(route: ScreenRoute) {
     play("tap");

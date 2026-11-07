@@ -20,7 +20,7 @@
 <PopoverMenu {label} class="cg-pop glass">
   {#snippet trigger(props)}
     <button class="cg-pill trigger" {...props} aria-label="{label}: {value}">
-      {value}<span class="chev" aria-hidden="true">⌄</span>
+      <span class="value">{value}</span><span class="chev" aria-hidden="true">⌄</span>
     </button>
   {/snippet}
   {#snippet children(pick)}
@@ -34,6 +34,7 @@
 </PopoverMenu>
 
 <style>
-  .trigger { max-width: 220px; }
-  .chev { font-size: 12px; color: var(--label-2); margin-top: -4px; }
+  .trigger { max-width: min(220px, 62%); min-width: 0; }
+  .value { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .chev { flex: none; font-size: 12px; color: var(--label-2); margin-top: -4px; }
 </style>

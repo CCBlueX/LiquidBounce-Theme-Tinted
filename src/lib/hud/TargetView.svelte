@@ -36,6 +36,7 @@
   .text {
     display: flex;
     flex-direction: column;
+    min-width: 0;
   }
   .name {
     white-space: nowrap;
@@ -49,7 +50,12 @@
     gap: 8px;
     white-space: nowrap;
   }
+  .meta .t-footnote {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .bar {
+    flex: none;
     width: 80px;
     height: 4px;
     border-radius: 2px;

@@ -17,7 +17,7 @@
       {#if !unknownFailed}
         <img src={UNKNOWN} alt="" width="32" height="32" draggable="false" onerror={() => (unknownFailed = true)} />
       {:else}
-        <ItemIcon id="minecraft:grass_block" size={32} />
+        <ItemIcon id="minecraft:grass_block" size={32} fallback />
       {/if}
     {/snippet}
   </Base64Icon>
@@ -33,5 +33,5 @@
     border-radius: 5px;
     overflow: hidden;
   }
-  img { display: block; image-rendering: pixelated; }
+  img { display: block; }
 </style>

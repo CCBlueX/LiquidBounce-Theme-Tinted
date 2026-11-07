@@ -26,9 +26,15 @@
     display: flex;
     flex-direction: column;
     min-width: 88px;
+    max-width: 320px;
     white-space: nowrap;
   }
+  .text > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .state {
+    flex: none;
     height: 24px;
     padding: 0 10px;
     border-radius: 12px;
