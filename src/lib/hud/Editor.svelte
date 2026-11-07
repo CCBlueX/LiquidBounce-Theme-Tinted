@@ -15,6 +15,7 @@
   import { rise } from "../motion";
   import { play } from "../sound";
   import Switch from "../ui/Switch.svelte";
+  import "../ui/values.css";
   import { COMPONENT_NAMES, EDITING, hud } from "./components.svelte";
   import Placed from "./Placed.svelte";
   import { VIEWS } from "./views";
@@ -29,7 +30,7 @@
   const SAVE_DELAY_MS = 300;
   const HINTS: Record<string, string> = {
     Island: "Shows modules and live activity",
-    Modules: "Shows enabled and bound modules",
+    Modules: "Shows the modules you toggle and their binds",
     Scoreboard: "Shows the server's sidebar",
     Armor: "Shows while you wear armor",
     Effects: "Shows active effects",
@@ -62,6 +63,7 @@
   const saves = new Map<string, { timer: ReturnType<typeof setTimeout>; alignment: Alignment }>();
 
   const listed = $derived(hud.list.filter((component) => COMPONENT_NAMES.includes(component.name)));
+  const off = $derived(listed.filter((component) => !component.settings.enabled));
 
   $effect(() => {
     document.documentElement.classList.add("ctx-hud");
@@ -83,12 +85,12 @@
     };
   });
 
-  // Keyboard users start on the first component
+  // Keyboard users start on the first component, or the first one that is off when none is on
   let focused = false;
   $effect(() => {
-    if (focused || !hud.shown.length || !root) return;
+    if (focused || !listed.length || !root) return;
     focused = true;
-    tick().then(() => root?.querySelector<HTMLElement>(".item")?.focus());
+    tick().then(() => root?.querySelector<HTMLElement>(".item, .ghost")?.focus());
   });
 
   function close() {
@@ -155,7 +157,7 @@
   }
 
   function pickUp(event: PointerEvent, component: HudComponent) {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || (event.target as Element).closest("button")) return;
     event.preventDefault();
     const element = event.currentTarget as HTMLElement;
     element.focus();
@@ -236,8 +238,14 @@
     zone = undefined;
   }
 
-  // Arrow keys move the focused component a unit (Shift: ten) and keep its anchor; the save waits for the last press
-  function nudge(event: KeyboardEvent, component: HudComponent) {
+  // Arrow keys move the focused component a unit (Shift: ten) and keep its anchor; the save waits for the last press.
+  // Delete or Backspace switches it off.
+  function itemKey(event: KeyboardEvent, component: HudComponent) {
+    if (event.key === "Delete" || event.key === "Backspace") {
+      event.preventDefault();
+      showOnStage(component, false);
+      return;
+    }
     const step = event.shiftKey ? GRID : 1;
     const delta = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[event.key];
     if (!delta) return;
@@ -278,6 +286,16 @@
 
   function setShown(component: HudComponent, shown: boolean) {
     hud.setEnabled(component, shown).catch(() => play("error"));
+  }
+
+  // Focus follows the component between its live copy and its faded stand-in, so the keyboard can switch it back
+  function showOnStage(component: HudComponent, shown: boolean) {
+    play(shown ? "toggleOn" : "toggleOff");
+    if (!shown && selected === component.id) selected = undefined;
+    setShown(component, shown);
+    tick().then(() =>
+      root?.querySelector<HTMLElement>(shown ? `.item[data-id="${component.id}"]` : `.ghost[data-id="${component.id}"]`)?.focus(),
+    );
   }
 
   function grabPanel(event: PointerEvent) {
@@ -324,12 +342,12 @@
         role="button"
         tabindex={0}
         aria-roledescription="movable component"
-        aria-label="{component.name}, {describe(alignment)}. Drag or use the arrow keys to move."
+        aria-label="{component.name}, {describe(alignment)}. Drag or use the arrow keys to move, Delete to hide."
         onpointerdown={(event: PointerEvent) => pickUp(event, component)}
         onpointermove={move}
         onpointerup={drop}
         onpointercancel={cancel}
-        onkeydown={(event: KeyboardEvent) => nudge(event, component)}
+        onkeydown={(event: KeyboardEvent) => itemKey(event, component)}
         onfocus={() => (selected = component.id)}
       >
         <div class="view" bind:offsetHeight={heights[component.id]}><View /></div>
@@ -339,6 +357,39 @@
             <span class="t-footnote l2">{HINTS[component.name]}</span>
           </div>
         {/if}
+        <!-- Next to the component on the side facing the middle of the screen, so it never leaves the window -->
+        <button
+          class="cg-pill hide"
+          class:above={alignment.verticalAlignment === "Bottom"}
+          class:start={alignment.horizontalAlignment === "Left"}
+          class:middle={alignment.horizontalAlignment.startsWith("Center")}
+          tabindex={-1}
+          onclick={() => showOnStage(component, false)}
+        >
+          Hide
+        </button>
+      </Placed>
+    {/each}
+    {#each off as component (component.id)}
+      <Placed alignment={component.settings.alignment} zIndex={-1}>
+        <button
+          class="ghost placeholder glass on-glass"
+          data-id={component.id}
+          aria-label="Show {component.name}. {HINTS[component.name]}."
+          onclick={() => showOnStage(component, true)}
+          onkeydown={(event) => {
+            // Key presses reach the page without the native activation of a focused button
+            if (event.key !== "Enter" && event.key !== " ") return;
+            event.preventDefault();
+            showOnStage(component, true);
+          }}
+        >
+          <span class="text">
+            <span class="name">{component.name}</span>
+            <span class="t-footnote l2">{HINTS[component.name]}</span>
+          </span>
+          <span class="cg-pill" aria-hidden="true">Show</span>
+        </button>
       </Placed>
     {/each}
   </div>
@@ -373,7 +424,10 @@
       </ul>
       <button class="done" onclick={close}>Done</button>
     </div>
-    <p class="t-footnote l2">Drag a component to move it, arrow keys nudge. Hold Left Shift to place freely.</p>
+    <p class="t-footnote l2">
+      Drag a component to move it, arrow keys nudge, Delete hides. Faded ones are off: click to show. Hold Left Shift to
+      place freely.
+    </p>
   </section>
 </div>
 
@@ -421,6 +475,63 @@
   .placeholder .name {
     font-size: 13px;
     font-weight: 600;
+  }
+  /* A component that is off stands faded where it would show */
+  .ghost {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    padding-right: 10px;
+    opacity: 0.7;
+    outline: 1px dashed rgb(255 255 255 / 0.5);
+    outline-offset: 3px;
+    color: var(--label);
+    text-align: left;
+    cursor: default;
+    transition: opacity var(--t-pop) var(--ease);
+  }
+  .ghost:hover,
+  .ghost:focus-visible {
+    opacity: 1;
+  }
+  .ghost:focus-visible {
+    outline: 2px solid var(--accent);
+  }
+  .ghost .text {
+    display: flex;
+    flex-direction: column;
+  }
+  .hide {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 1;
+    background: var(--sheen), var(--glass);
+    box-shadow: var(--specular), var(--float-soft);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--t-pop) var(--ease);
+  }
+  .hide.above {
+    top: auto;
+    bottom: calc(100% + 8px);
+  }
+  .hide.start {
+    right: auto;
+    left: 0;
+  }
+  .hide.middle {
+    right: auto;
+    left: 50%;
+    translate: -50% 0;
+  }
+  .editor :global(.item:hover .hide),
+  .editor :global(.item.selected .hide) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .dragging .hide {
+    visibility: hidden;
   }
   .zone {
     position: absolute;
