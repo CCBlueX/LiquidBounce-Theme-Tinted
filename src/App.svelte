@@ -45,17 +45,17 @@
     let hold: number | undefined;
     let events = 0;
     // The main browser loads with an empty route, and screen events are lost while the socket is down, so it asks
-    // which screen is open; an event that arrives meanwhile wins over the answer
-    const ask = () => {
+    // which screen is open; an event that arrives meanwhile wins over the answer, and without an answer the page
+    // follows `otherwise` if given
+    const ask = (otherwise?: string) => {
       const asked = events;
       request<{ name?: string | null }>("GET", "/virtualScreen")
-        .then((screen) => {
-          if (events !== asked) return;
+        .then((screen) => screen?.name ?? "", () => otherwise)
+        .then((name) => {
+          if (name === undefined || events !== asked) return;
           clearTimeout(hold);
-          route = screen?.name ?? "";
-          ackScreen(route || "none").catch(() => {});
-        })
-        .catch(() => {});
+          follow(name);
+        });
     };
     const initial = untrack(() => route);
     if (initial) ackScreen(initial).catch(() => {});
@@ -67,12 +67,12 @@
         follow(name);
       } else if (action === "close" && name === route) {
         clearTimeout(hold);
-        hold = setTimeout(() => {
-          if (route === name) follow("");
-        }, CLOSE_HOLD_MS);
+        // The client sends events from a thread pool, so the close of a screen can arrive after the open of the same
+        // screen that followed it; the client's answer decides once the hold is over
+        hold = setTimeout(() => ask(""), CLOSE_HOLD_MS);
       }
     });
-    const offReconnect = onReconnect(ask);
+    const offReconnect = onReconnect(() => ask());
     return () => {
       offScreen();
       offReconnect();
