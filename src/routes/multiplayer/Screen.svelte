@@ -15,6 +15,7 @@
   import { typingFocus } from "../../lib/typing";
   import { keepIcons } from "../../lib/ui/Base64Icon.svelte";
   import SearchField from "../../lib/ui/SearchField.svelte";
+  import SessionPills from "../../lib/ui/SessionPills.svelte";
   import Details from "./Details.svelte";
   import { addressProblem } from "./servers";
   import ServerRow from "./ServerRow.svelte";
@@ -373,7 +374,7 @@
   // Single-letter shortcuts work outside text fields. Esc closes the screen in the client itself, whatever the page
   // does with it; a close from here as well would also close the screen the client went back to.
   function windowKey(event: KeyboardEvent) {
-    if (event.defaultPrevented || sheet || confirming) return;
+    if (event.defaultPrevented || sheet || confirming || document.querySelector(":popover-open")) return;
     const target = event.target as HTMLElement;
     const inField = target.matches?.("input, textarea, [contenteditable]");
     if ((event.ctrlKey || event.metaKey) && (event.key.toLowerCase() === "k" || event.key.toLowerCase() === "f")) {
@@ -542,6 +543,10 @@
         />
       {/if}
 
+      <div class="session" in:rise={{ delay: 120 }} inert={!!sheet} role="group" aria-label="Account and proxy">
+        <SessionPills />
+      </div>
+
       <div class="bottom" in:rise={{ delay: 120 }} inert={!!sheet}>
         <button class="glass closer" aria-label="Close" aria-keyshortcuts="Escape" onclick={close}>×</button>
       </div>
@@ -632,6 +637,7 @@
   .pane-inner { position: absolute; inset: 0; }
 
   .bottom { position: absolute; top: calc(100% + 12px); left: 50%; translate: -50% 0; }
+  .session { position: absolute; top: calc(100% + 12px); left: 0; display: flex; gap: 8px; }
   .closer { width: 30px; height: 30px; border-radius: 15px; display: grid; place-items: center; font-size: 17px; line-height: 1; padding-bottom: 2px; }
   .closer:active { transform: scale(0.92); }
 </style>

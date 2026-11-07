@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import { request } from "../../lib/api/client";
-  import { on, onReconnect } from "../../lib/api/events";
-  import { client, screen, servers, session, worlds } from "../../lib/api/routes";
-  import type { ActiveProxy, ClientInfo, Protocol, ScreenRoute, Server, Session, World } from "../../lib/api/types";
+  import { onReconnect } from "../../lib/api/events";
+  import { client, screen, servers, worlds } from "../../lib/api/routes";
+  import type { ClientInfo, Protocol, ScreenRoute, Server, World } from "../../lib/api/types";
   import { capitalize, relativeTime } from "../../lib/format";
   import { rise } from "../../lib/motion";
   import { livePings } from "../../lib/pings.svelte";
   import { play } from "../../lib/sound";
   import ConfirmPopover from "../../lib/ui/ConfirmPopover.svelte";
-  import PlayerHead from "../../lib/ui/PlayerHead.svelte";
+  import SessionPills from "../../lib/ui/SessionPills.svelte";
 
   let world = $state<World | undefined>();
   let worldsLoaded = $state(false);
@@ -17,23 +17,18 @@
   let serverList = $state<Server[] | undefined>();
   let serversFailed = $state(false);
   const pings = livePings();
-  let user = $state<Session | undefined>();
-  let proxy = $state<ActiveProxy | undefined>();
   let info = $state<ClientInfo | undefined>();
   let protocol = $state<Protocol | undefined>();
   let ready = $state(false);
   let quitOpen = $state(false);
 
   const rowEls: HTMLElement[] = [];
-  const pillEls: HTMLElement[] = [];
-  $effect(() => {
-    if (quitButton) pillEls[3] = quitButton;
-  });
+  let secondary = $state<HTMLElement>();
+  // Every pill in the row below, the account and proxy menus' triggers included
+  const pills = () => [...(secondary?.querySelectorAll<HTMLElement>("[data-pill]") ?? [])];
 
-  const loadProxy = () => request<ActiveProxy | undefined>("GET", "/proxy").then((p) => (proxy = p ?? undefined)).catch(() => {});
-
-  // The parts kept current by events (pings, session, proxy checks); fetched again when the socket comes back
-  function loadLive() {
+  // The server list is kept current by ping events; fetched again when the socket comes back
+  function loadServers() {
     servers
       .list()
       .then((list) => {
@@ -41,8 +36,6 @@
         serversFailed = false;
       })
       .catch(() => (serversFailed = true));
-    session.get().then((s) => (user = s)).catch(() => {});
-    loadProxy();
   }
 
   onMount(() => {
@@ -50,15 +43,13 @@
     worlds.list().then((list) => {
       world = [...list].sort((a, b) => b.lastPlayed - a.lastPlayed)[0];
     }).catch(() => (worldsFailed = true)).finally(() => (worldsLoaded = true));
-    loadLive();
+    loadServers();
     client.info().then((i) => (info = i)).catch(() => {});
     request<Protocol>("GET", "/protocols/protocol").then((p) => (protocol = p)).catch(() => {});
     tick().then(() => rowEls[0]?.focus({ preventScroll: true }));
   });
 
-  $effect(() => on("session", ({ session: s }) => (user = s)));
-  $effect(() => on("proxyCheckResult", loadProxy));
-  $effect(() => onReconnect(loadLive));
+  $effect(() => onReconnect(loadServers));
 
   const known = $derived((serverList ?? []).map((s) => pings.current[s.address] ?? s));
   const reachable = $derived(known.filter((s) => s.status === "SUCCESSFUL"));
@@ -81,9 +72,6 @@
     if (world) return `${world.gameMode ? capitalize(world.gameMode) : "Survival"}${world.hardcore ? " · Hardcore" : ""} · ${relativeTime(world.lastPlayed)}`;
     return worldsFailed ? "Could not load worlds" : "Create a world";
   });
-
-  const cracked = $derived(user ? user.type === "legacy" || !user.online : false);
-  const proxyLabel = $derived(proxy ? `${proxy.host}:${proxy.port}` : "Off");
 
   async function open(route: ScreenRoute) {
     play("tap");
@@ -119,16 +107,18 @@
   }
 
   function focusPill(index: number) {
-    const next = Math.max(0, Math.min(pillEls.length - 1, index));
-    if (document.activeElement !== pillEls[next]) play("tap");
-    pillEls[next]?.focus();
+    const all = pills();
+    const next = Math.max(0, Math.min(all.length - 1, index));
+    if (document.activeElement !== all[next]) play("tap");
+    all[next]?.focus();
   }
 
   function onKey(event: KeyboardEvent) {
-    if (quitOpen || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (quitOpen || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (document.querySelector(":popover-open")) return;
     const active = document.activeElement as HTMLElement | null;
     const row = rowEls.indexOf(active as HTMLElement);
-    const pill = pillEls.indexOf(active as HTMLElement);
+    const pill = pills().indexOf(active as HTMLElement);
     const inPlay = active?.classList.contains("play") ?? false;
     switch (event.key) {
       case "ArrowDown":
@@ -267,24 +257,13 @@
         </div>
       </div>
 
-      <div class="secondary" in:rise={{ delay: 120 }} role="group" aria-label="More">
-        <button
-          class="pill glass with-head"
-          bind:this={pillEls[0]}
-          aria-label="Accounts, {user?.username ?? ''}{cracked ? ', cracked' : ''}"
-          onclick={() => open("altmanager")}
-        >
-          <PlayerHead uuid={user?.uuid} size={24} radius={12} inWorld={false} />
-          <span>{user?.username ?? "Accounts"}</span>
-          {#if cracked}<span class="l3 quiet">Cracked</span>{/if}
-        </button>
-        <button class="pill glass" bind:this={pillEls[1]} aria-label="Proxy, {proxy ? proxyLabel : 'off'}" onclick={() => open("proxymanager")}>
-          <span>Proxy</span><span class="l3 quiet num">{proxyLabel}</span>
-        </button>
-        <button class="pill glass" bind:this={pillEls[2]} onclick={() => open("options")}>Options</button>
+      <div class="secondary" in:rise={{ delay: 120 }} role="group" aria-label="More" bind:this={secondary}>
+        <SessionPills />
+        <button class="menu-pill glass" data-pill onclick={() => open("options")}>Options</button>
         <div class="quit-anchor">
           <button
-            class="pill glass"
+            class="menu-pill glass"
+            data-pill
             bind:this={quitButton}
             aria-haspopup="dialog"
             aria-expanded={quitOpen}
@@ -347,15 +326,6 @@
   .play:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .secondary { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
-  .pill {
-    display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border: 0; border-radius: 15px;
-    font: inherit; font-size: 13px; font-weight: 500; color: var(--label); cursor: default; white-space: nowrap;
-    text-shadow: var(--text-shadow); transition: transform var(--t-press) var(--ease);
-  }
-  .pill:active { transform: scale(0.98); }
-  .pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .pill.with-head { padding-left: 3px; }
-  .quiet { font-weight: 400; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
 
   .quit-anchor { position: relative; }
 

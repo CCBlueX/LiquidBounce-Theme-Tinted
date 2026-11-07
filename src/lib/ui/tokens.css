@@ -143,3 +143,13 @@ input { font: inherit; color: inherit; background: none; border: 0; outline: 0; 
    same hue, so rows never read through them, and still following the contrast and transparency settings */
 .glass:is(.layered, [popover]) { background: var(--sheen), linear-gradient(var(--glass-deep), var(--glass-deep)), var(--glass-deep); }
 .group { background: rgb(255 255 255 / 0.06); border-radius: var(--r-group); box-shadow: inset 0 0 0 0.5px var(--line); }
+
+/* Glass pills for secondary actions under a menu screen's main content (title, multiplayer) */
+.menu-pill {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border: 0; border-radius: 15px;
+  font: inherit; font-size: 13px; font-weight: 500; color: var(--label); cursor: default; white-space: nowrap;
+  text-shadow: var(--text-shadow); transition: transform var(--t-press) var(--ease);
+}
+.menu-pill:active { transform: scale(0.98); }
+.menu-pill.with-head { padding-left: 3px; }
+.menu-pill .quiet { font-weight: 400; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
