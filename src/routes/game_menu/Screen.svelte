@@ -97,7 +97,7 @@
   <aside class="panel glass on-glass" aria-label="Game menu extras" in:rise>
     <h1 class="sr-only">Game menu</h1>
     <header class="who">
-      <PlayerHead uuid={user?.uuid} size={24} radius={12} />
+      <PlayerHead uuid={user?.uuid} avatar={user?.avatar} size={24} radius={12} />
       <div class="grow">
         <div class="t-headline name">{user?.username ?? me?.username ?? "Player"}</div>
         {#if place}<div class="t-footnote l2">{place}</div>{/if}

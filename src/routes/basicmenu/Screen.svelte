@@ -79,7 +79,7 @@
   <nav class="pill glass on-glass" aria-label="LiquidBounce" bind:this={pill} onkeydown={key} in:rise={{ y: -8 }}>
     <h1 class="sr-only">LiquidBounce</h1>
     <button class="item with-head" onclick={() => open("altmanager")} aria-label="Accounts{user ? `, ${user.username}` : ''}">
-      <PlayerHead uuid={user?.uuid} size={24} radius={12} inWorld={false} />
+      <PlayerHead uuid={user?.uuid} avatar={user?.avatar} size={24} radius={12} inWorld={false} />
       <span>{user?.username ?? "Accounts"}</span>
     </button>
     <span class="divider" aria-hidden="true"></span>

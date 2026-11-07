@@ -573,7 +573,7 @@
           </header>
 
           <section class="group mg-current on-glass" aria-label="Current account">
-            {#key current?.uuid}<PlayerHead uuid={current?.uuid} size={32} inWorld={false} />{/key}
+            {#key current?.uuid}<PlayerHead uuid={current?.uuid} avatar={current?.avatar} size={32} inWorld={false} />{/key}
             <div class="grow">
               <div class="t-footnote mg-kicker">Current account</div>
               <div class="t-title3 name">{current?.username ?? "Unknown"}</div>
@@ -625,7 +625,7 @@
                       onfocus={() => (focusUuid = account.uuid)}
                       onkeydown={(event) => rowKey(event, account)}
                     ></button>
-                    <PlayerHead uuid={account.uuid} size={24} radius={5} lazy inWorld={false} />
+                    <PlayerHead uuid={account.uuid} avatar={account.avatar} size={24} radius={5} lazy inWorld={false} />
                     <div class="grow">
                       <div class="name">{account.username}</div>
                       <div class="line">
