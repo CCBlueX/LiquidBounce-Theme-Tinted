@@ -1,0 +1,13 @@
+{
+  "name": "Island",
+  "description": "Active modules and live activity in one glass capsule",
+  "enabled": true,
+  "singleton": true,
+  "alignment": {
+    "horizontalAlignment": "CenterTranslated",
+    "horizontalOffset": 0,
+    "verticalAlignment": "Top",
+    "verticalOffset": 12
+  },
+  "tweaks": ["DISABLE_STATUS_EFFECT_OVERLAY"]
+}

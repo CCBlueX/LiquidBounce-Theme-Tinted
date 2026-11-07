@@ -1,0 +1,388 @@
+<script lang="ts">
+  import { request } from "../../../lib/api/client";
+  import { player } from "../../../lib/api/routes";
+  import type { FileDialogResult, JsonValue, MultiChooseValue, Registry, Vec2, Vec3 } from "../../../lib/api/types";
+  import { play } from "../../../lib/sound";
+  import ItemIcon from "../../../lib/ui/ItemIcon.svelte";
+  import Segmented from "../../../lib/ui/Segmented.svelte";
+  import Slider from "../../../lib/ui/Slider.svelte";
+  import Switch from "../../../lib/ui/Switch.svelte";
+  import type { SettingsEditor } from "../editor.svelte";
+  import { formatRanged, humanize, idName, pathKey, stepOf, type Item } from "../tree";
+  import Chooser from "./Chooser.svelte";
+  import ColorField from "./ColorField.svelte";
+  import KeyRecorder from "./KeyRecorder.svelte";
+  import RegistryPicker from "./RegistryPicker.svelte";
+  import { iconKind, registry } from "./registry";
+
+  // One row of the settings list for every value type that is not a group
+  let { item, editor }: { item: Item; editor: SettingsEditor } = $props();
+
+  const node = $derived(item.node);
+  const label = $derived(humanize(node.name));
+  const key = $derived(pathKey(item.trail, node.name));
+  const set = (value: JsonValue, delay = 0) => editor.set(item.trail, node, value, delay);
+
+  // Registry entry names for list chips; ids stand in until the registry arrives or when it cannot be loaded
+  let names = $state<Registry>({});
+  $effect(() => {
+    if (node.valueType !== "REGISTRY_LIST" && node.valueType !== "REGISTRY_MUTABLE_LIST") return;
+    let live = true;
+    registry(node.registry).then(
+      (loaded) => live && (names = loaded),
+      () => {},
+    );
+    return () => (live = false);
+  });
+
+  function toggleChoice(value: MultiChooseValue, choice: string) {
+    const on = value.value.includes(choice);
+    if (on && value.value.length === 1 && !value.canBeNone) {
+      play("error");
+      return;
+    }
+    play("tap");
+    set(on ? value.value.filter((entry) => entry !== choice) : [...value.value, choice]);
+  }
+
+  function removeEntry(list: string[], entry: string) {
+    play("tap");
+    set(list.filter((candidate) => candidate !== entry));
+  }
+
+  let draft = $state("");
+  function addText(list: string[]) {
+    const text = draft.trim();
+    if (!text) return;
+    if (list.includes(text)) {
+      play("error");
+      return;
+    }
+    play("confirm");
+    draft = "";
+    set([...list, text]);
+  }
+
+  function numberFrom(input: HTMLInputElement, int: boolean, min = -Infinity, max = Infinity): number | undefined {
+    const parsed = int ? Math.round(Number(input.value)) : Number(input.value);
+    if (input.value.trim() === "" || !Number.isFinite(parsed)) return undefined;
+    return Math.min(max, Math.max(min, parsed));
+  }
+
+  function setAxis<V extends Vec2 | Vec3>(current: V, axis: keyof V & string, input: HTMLInputElement, int: boolean) {
+    const next = numberFrom(input, int);
+    if (next === undefined) {
+      input.value = String(current[axis]);
+      play("error");
+      return;
+    }
+    input.value = String(next);
+    if (next !== current[axis]) set({ ...current, [axis]: next } as JsonValue);
+  }
+
+  async function locate(int: boolean) {
+    const data = await player.data().catch(() => undefined);
+    if (!data) {
+      play("error");
+      return;
+    }
+    const pos = int ? data.blockPosition : data.position;
+    play("confirm");
+    set(int ? { x: pos.x, y: pos.y, z: pos.z } : { x: Number(pos.x.toFixed(2)), y: Number(pos.y.toFixed(2)), z: Number(pos.z.toFixed(2)) });
+  }
+
+  async function chooseFile(mode: "OPEN_FILE" | "SAVE_FILE" | "OPEN_DIRECTORY", extensions: string[] | undefined) {
+    try {
+      const result = await request<FileDialogResult | undefined>("POST", "/fileDialog", { body: { mode, supportedExtensions: extensions } });
+      if (result?.file) {
+        play("confirm");
+        set(result.file);
+      }
+    } catch {
+      play("error");
+    }
+  }
+
+  function setPoint(points: Vec2[], index: number, axis: "x" | "y", input: HTMLInputElement, min: number, max: number) {
+    const next = numberFrom(input, false, min, max);
+    if (next === undefined) {
+      input.value = String(points[index][axis]);
+      play("error");
+      return;
+    }
+    input.value = String(next);
+    set(points.map((point, i) => (i === index ? { ...point, [axis]: next } : point)));
+  }
+
+  function addPoint(points: Vec2[]) {
+    // A new point goes halfway between the last two, so the curve keeps its shape
+    const last = points[points.length - 1];
+    const before = points[points.length - 2] ?? last;
+    const mid = { x: Number(((before.x + last.x) / 2).toFixed(3)), y: Number(((before.y + last.y) / 2).toFixed(3)) };
+    play("confirm");
+    set([...points.slice(0, -1), mid, last]);
+  }
+
+  function summary(value: JsonValue): string {
+    if (Array.isArray(value)) return value.length === 1 ? "1 entry" : `${value.length} entries`;
+    if (value === null) return "None";
+    if (typeof value === "object") return `${Object.keys(value).length} fields`;
+    return String(value);
+  }
+</script>
+
+{#snippet field(text: string)}<span class="cg-label" id="label-{key}">{text}</span>{/snippet}
+
+{#if node.valueType === "BOOLEAN"}
+  <div class="cg-row" data-key={key} data-type={node.valueType}>
+    {@render field(label)}
+    <Switch checked={node.value} {label} onchange={(value) => set(value)} />
+  </div>
+{:else if node.valueType === "INT" || node.valueType === "FLOAT"}
+  <div class="cg-row stack" data-key={key} data-type={node.valueType}>
+    {@render field(label)}
+    <span class="cg-val">{formatRanged(node)}</span>
+    <div class="cg-full">
+      <Slider
+        min={node.range.from}
+        max={node.range.to}
+        step={stepOf(node)}
+        value={node.value}
+        {label}
+        onchange={(value) => set(value as number, 150)}
+      />
+    </div>
+  </div>
+{:else if node.valueType === "INT_RANGE" || node.valueType === "FLOAT_RANGE"}
+  <div class="cg-row stack" data-key={key} data-type={node.valueType}>
+    {@render field(label)}
+    <span class="cg-val">{formatRanged(node)}</span>
+    <div class="cg-full">
+      <Slider
+        min={node.range.from}
+        max={node.range.to}
+        step={stepOf(node)}
+        from={node.value.from}
+        to={node.value.to}
+        {label}
+        onchange={(value) => set(value as JsonValue, 150)}
+      />
+    </div>
+  </div>
+{:else if node.valueType === "CHOOSE"}
+  <div class="cg-row" data-key={key} data-type={node.valueType}>
+    {@render field(label)}
+    <Chooser options={node.choices} value={node.value} {label} onchange={(value) => set(value)} />
+  </div>
+{:else if node.valueType === "MULTI_CHOOSE"}
+  {@const multi = node}
+  <div class="cg-row stack" data-key={key} data-type={node.valueType}>
+    {@render field(label)}
+    <span class="cg-val t-footnote">
+      {multi.value.length} of {multi.choices.length}{multi.isOrderSensitive && multi.value.length > 1 ? ", in order" : ""}
+    </span>
+    <div class="cg-full cg-chips chips" role="group" aria-labelledby="label-{key}">
+      {#each multi.choices as choice (choice)}
+        {@const index = multi.value.indexOf(choice)}
+        <button class="cg-chip" class:on={index >= 0} aria-pressed={index >= 0} onclick={() => toggleChoice(multi, choice)}>
+          {#if index >= 0}<span class="mark" aria-hidden="true">{multi.isOrderSensitive ? index + 1 : "✓"}</span>{/if}
+          {choice}
+        </button>
+      {/each}
+    </div>
+  </div>
+{:else if node.valueType === "COLOR"}
+  <div class="cg-row" data-key={key} data-type={node.valueType}>
+    {@render field(label)}
+    <ColorField value={node.value} {label} onchange={(value, delay) => set(value, delay)} />
+  </div>
+{:else if node.valueType === "TEXT"}
+  <div class="cg-row" data-key={key} data-type={node.valueType}>
+    {@render field(label)}
+    <input
+      class="cg-field text"
+      type={/password|token/i.test(node.name) ? "password" : "text"}
+      value={node.value}
+      spellcheck="false"
+      aria-label={label}
+      onchange={(event) => set(event.currentTarget.value)}
+    />
+  </div>
+{:else if node.valueType === "BIND"}
+  {@const bind = node.value}
+  <div class="cg-row" data-key={key} data-type={node.valueType}>
+    {@render field(label)}
+    <KeyRecorder boundKey={bind.boundKey} {label} onchange={(boundKey) => set({ ...bind, boundKey })} />
+    <Segmented
+      options={["Toggle", "Hold"]}
+      value={bind.action}
+      label="{label} action"
+      small
+      onchange={(action) => set({ ...bind, action })}
+    />
+  </div>
+{:else if node.valueType === "KEY"}
+  <div class="cg-row" data-key={key} data-type={node.valueType}>
+    {@render field(label)}
+    <KeyRecorder boundKey={node.value} {label} emptyText="None" onchange={(value) => set(value)} />
+  </div>
+{:else if node.valueType === "FILE"}
+  {@const file = node}
+  <div class="cg-row stack" data-key={key} data-type={node.valueType}>
+    {@render field(label)}
+    {#if file.supportedExtensions?.length}<span class="cg-hint">{file.supportedExtensions.join(", ")}</span>{/if}
+    <div class="cg-full line">
+      <input
+        class="cg-field grow"
+        value={file.value}
+        placeholder="No file"
+        spellcheck="false"
+        aria-label="{label} path"
+        onchange={(event) => set(event.currentTarget.value)}
+      />
+      <button class="cg-pill" onclick={() => chooseFile(file.dialogMode ?? "OPEN_FILE", file.supportedExtensions)}>Choose</button>
+    </div>
+  </div>
+{:else if node.valueType === "MUTABLE_LIST"}
+  {@const list = node.value}
+  <div class="cg-row stack" data-key={key} data-type={node.valueType}>
+    {@render field(label)}
+    <span class="cg-val t-footnote">{list.length === 1 ? "1 entry" : `${list.length} entries`}</span>
+    <div class="cg-full cg-chips chips" role="list" aria-labelledby="label-{key}">
+      {#each list as entry, index (index)}
+        <span class="cg-chip on-text" role="listitem">
+          <span class="ellipsis">{entry}</span>
+          <button class="x" aria-label="Remove {entry}" onclick={() => removeEntry(list, entry)}>×</button>
+        </span>
+      {/each}
+      <input
+        class="cg-field add"
+        bind:value={draft}
+        placeholder="Add"
+        spellcheck="false"
+        aria-label="Add to {label}"
+        onkeydown={(event) => event.key === "Enter" && addText(list)}
+      />
+    </div>
+  </div>
+{:else if node.valueType === "REGISTRY_LIST" || node.valueType === "REGISTRY_MUTABLE_LIST"}
+  {@const list = node.value}
+  {@const kind = iconKind(node.registry)}
+  <div class="cg-row stack" data-key={key} data-type={node.valueType}>
+    {@render field(label)}
+    <span class="cg-val t-footnote">{list.length === 1 ? "1 entry" : `${list.length} entries`}</span>
+    <RegistryPicker registryName={node.registry} {label} exclude={list} onpick={(id) => set([...list, id])} />
+    <div class="cg-full cg-chips chips" role="list" aria-labelledby="label-{key}">
+      {#each list as entry, index (index)}
+        {@const name = names[entry]?.name || idName(entry)}
+        <span class="cg-chip on-text" role="listitem">
+          {#if kind}<ItemIcon id={entry} size={kind === "effect" ? 18 : 16} {kind} />{/if}
+          <span class="ellipsis">{name}</span>
+          <button class="x" aria-label="Remove {name}" onclick={() => removeEntry(list, entry)}>×</button>
+        </span>
+      {:else}
+        <span class="cg-hint">Empty</span>
+      {/each}
+    </div>
+  </div>
+{:else if node.valueType === "CURVE"}
+  {@const curve = node}
+  <div class="cg-row stack" data-key={key} data-type={node.valueType}>
+    {@render field(label)}
+    <button class="cg-pill quiet" onclick={() => addPoint(curve.value)}>Add point</button>
+    <div class="cg-full points" role="group" aria-labelledby="label-{key}">
+      <span class="cg-hint">#</span>
+      <span class="cg-hint">{curve.xAxis.label}</span>
+      <span class="cg-hint">{curve.yAxis.label}</span>
+      <span></span>
+      {#each curve.value as point, index (index)}
+        <span class="cg-val t-footnote">{index + 1}</span>
+        {#each ["x", "y"] as const as axis (axis)}
+          {@const range = axis === "x" ? curve.xAxis.range : curve.yAxis.range}
+          <input
+            class="cg-field"
+            type="number"
+            step="any"
+            min={range.from}
+            max={range.to}
+            value={point[axis]}
+            aria-label="Point {index + 1} {axis === 'x' ? curve.xAxis.label : curve.yAxis.label}"
+            onchange={(event) => setPoint(curve.value, index, axis, event.currentTarget, range.from, range.to)}
+          />
+        {/each}
+        <button
+          class="cg-pill quiet remove"
+          aria-label="Remove point {index + 1}"
+          disabled={curve.value.length <= 2}
+          onclick={() => {
+            play("tap");
+            set(curve.value.filter((_, i) => i !== index));
+          }}>×</button
+        >
+      {/each}
+    </div>
+  </div>
+{:else if node.valueType === "VECTOR2_F" || node.valueType === "VECTOR3_D" || node.valueType === "VECTOR3_I"}
+  {@const vector = node.value}
+  {@const int = node.valueType === "VECTOR3_I"}
+  {@const axes = (node.valueType === "VECTOR2_F" ? ["x", "y"] : ["x", "y", "z"]) as ("x" | "y" | "z")[]}
+  <div class="cg-row stack" data-key={key} data-type={node.valueType}>
+    {@render field(label)}
+    {#if node.valueType !== "VECTOR2_F" && node.useLocateButton}
+      <button class="cg-pill quiet" onclick={() => locate(int)}>Use my position</button>
+    {/if}
+    <div class="cg-full axes" role="group" aria-labelledby="label-{key}">
+      {#each axes as axis (axis)}
+        <label class="axis">
+          <span class="cg-hint">{axis.toUpperCase()}</span>
+          <input
+            class="cg-field"
+            type="number"
+            step={int ? 1 : "any"}
+            value={(vector as Vec3)[axis]}
+            aria-label="{label} {axis}"
+            onchange={(event) => setAxis(vector as Vec3, axis, event.currentTarget, int)}
+          />
+        </label>
+      {/each}
+    </div>
+  </div>
+{:else if (node.valueType === "BLOCK" || node.valueType === "ITEM") && typeof node.value === "string"}
+  {@const id = node.value}
+  <div class="cg-row" data-key={key} data-type={node.valueType}>
+    {@render field(label)}
+    <span class="cg-chip on-text"><ItemIcon {id} size={16} />{idName(id)}</span>
+    <RegistryPicker
+      registryName={node.valueType === "BLOCK" ? "block" : "item"}
+      {label}
+      exclude={[id]}
+      buttonText="Change"
+      onpick={(next) => set(next)}
+    />
+  </div>
+{:else if node.valueType === "CONFIGURABLE" || node.valueType === "TOGGLEABLE" || node.valueType === "CHOICE"}
+  <!-- Groups are drawn by Rows -->
+{:else}
+  <!-- Lists edited elsewhere in the client (friends, proxies, accounts, marketplace items): shown, not edited here -->
+  <div class="cg-row" data-key={key} data-type={node.valueType}>
+    {@render field(label)}
+    <span class="cg-val">{summary(node.value)}</span>
+  </div>
+{/if}
+
+<style>
+  .chips { margin-top: 10px; }
+  .on-text { color: var(--label); }
+  .ellipsis { overflow: hidden; text-overflow: ellipsis; }
+  .text { width: 180px; }
+  .add { width: 96px; height: 28px; border-radius: 14px; }
+  .line { display: flex; gap: 8px; align-items: center; }
+  .grow { flex: 1; }
+  .axes { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px; }
+  .axis { display: flex; align-items: center; gap: 8px; }
+  .axis input { flex: 1; width: 0; }
+  .points { display: grid; grid-template-columns: 20px 1fr 1fr 28px; gap: 6px 8px; align-items: center; margin-top: 8px; }
+  .points input { width: 100%; }
+  .remove { padding: 0; width: 28px; justify-content: center; }
+  .remove:disabled { opacity: 0.35; }
+</style>

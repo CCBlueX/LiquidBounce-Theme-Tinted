@@ -1,146 +1,60 @@
 <script lang="ts">
-    import Router, {location} from "svelte-spa-router";
-    import Hud from "./routes/hud/Hud.svelte";
-    import {getMetadata, getTheme, getVirtualScreen} from "./integration/rest";
-    import {cleanupListeners, listenAlways} from "./integration/ws";
-    import {onMount} from "svelte";
-    import {insertPersistentData} from "./integration/persistent_storage";
-    import {isStatic} from "./integration/host";
-    import Inventory from "./routes/inventory/Inventory.svelte";
-    import Title from "./routes/menu/title/Title.svelte";
-    import Multiplayer from "./routes/menu/multiplayer/Multiplayer.svelte";
-    import AltManager from "./routes/menu/altmanager/AltManager.svelte";
-    import Singleplayer from "./routes/menu/singleplayer/Singleplayer.svelte";
-    import ProxyManager from "./routes/menu/proxymanager/ProxyManager.svelte";
-    import None from "./routes/none/None.svelte";
-    import Disconnected from "./routes/menu/disconnected/Disconnected.svelte";
-    import BasicMenu from "./routes/menu/basicmenu/BasicMenu.svelte";
-    import Browser from "./routes/browser/Browser.svelte";
-    import TabbedClickGui from "./routes/clickgui/TabbedClickGui.svelte";
-    import {intToRgba, rgbaToHex} from "./integration/util";
-    import type {ThemeColorChangeEvent} from "./integration/events";
-    import Menu from "./routes/menu/common/Menu.svelte";
-    import MenuContent from "./routes/menu/common/MenuContent.svelte";
-    import {push} from "./integration/router";
+  import { untrack, type Component } from "svelte";
+  import { request } from "./lib/api/client";
+  import { ackScreen, onScreenChange } from "./lib/api/screen";
+  import { settings } from "./lib/settings.svelte";
 
-    const menuRoutes = {
-        "/title": Title,
-        "/multiplayer": Multiplayer,
-        "/altmanager": AltManager,
-        "/singleplayer": Singleplayer,
-        "/proxymanager": ProxyManager,
-    };
+  // The HUD and the cached ClickGUI run in their own browsers marked static; they never follow screen changes
+  let { initialRoute, isStatic }: { initialRoute: string; isStatic: boolean } = $props();
 
-    const routes = {
-        "/clickgui": TabbedClickGui,
-        "/hud": Hud,
-        "/inventory": Inventory,
-        "/none": None,
-        "/disconnected": Disconnected,
-        "/basicmenu": BasicMenu,
-        "/browser": Browser
-    };
+  // Routes load on demand, so the HUD browser only fetches the HUD
+  const loaders = import.meta.glob<{ default: Component }>("./routes/*/Screen.svelte");
+  const screens: Record<string, () => Promise<{ default: Component }>> = Object.fromEntries(
+    Object.entries(loaders).map(([path, load]) => [path.split("/")[2], load]),
+  );
 
-    const SURFACE_TINT_MIX = 18;
+  let route = $state(untrack(() => initialRoute));
+  let width = $state(innerWidth);
+  let height = $state(innerHeight);
 
-    function isMenuRoute(route: string): boolean {
-        return route in menuRoutes;
-    }
+  // Layouts target a 1600x900 canvas; small game windows shrink it, never below 0.75
+  const zoom = $derived(Math.min(1.6, Math.max(0.75, Math.min(width / 1600, height / 900))) * settings.scale);
 
-    async function changeRoute(name: string) {
-        const nextRoute = `/${name}`;
-        if (!isMenuRoute($location) || !isMenuRoute(nextRoute)) {
-            cleanupListeners();
-        }
-
-        console.log(`[Router] Redirecting to ${name}`);
-        await push(nextRoute);
-    }
-
-    function setThemeColor(name: string, value: string) {
-        document.documentElement.style.setProperty(`--${name}`, value);
-    }
-
-    function themeColorToHex(value: number) {
-        return rgbaToHex(intToRgba(value));
-    }
-
-    function mixColors(leftColor: string, rightColor: string, strength: number) {
-        return `color-mix(in srgb, ${leftColor} ${100 - strength}%, ${rightColor})`;
-    }
-
-    function applyAccentColor(color: number) {
-        setThemeColor("accent-color", themeColorToHex(color));
-    }
-
-    function applyTintColor(defaultSurfaceColor: string, color: number) {
-        setThemeColor("surface-color", mixColors(defaultSurfaceColor, themeColorToHex(color), SURFACE_TINT_MIX));
-    }
-
-    onMount(async () => {
-        let metadata = await getMetadata();
-        let defaultSurfaceColor = metadata.colors.Tint;
-
-        let theme = await getTheme(metadata.id);
-
-        applyAccentColor(theme.colors.accent);
-        applyTintColor(defaultSurfaceColor, theme.colors.tint);
-
-        await insertPersistentData();
-
-        listenAlways("themeColorChange", async (event: ThemeColorChangeEvent) => {
-            if (event.themeId !== metadata?.id) {
-                return;
-            }
-
-            switch (event.name) {
-                case "Accent":
-                    applyAccentColor(event.value);
-                    break;
-                case "Tint":
-                    applyTintColor(defaultSurfaceColor, event.value);
-                    break;
-            }
-        });
-
-        if (isStatic) {
-            return;
-        }
-
-        listenAlways("socketReady", async () => {
-            const virtualScreen = await getVirtualScreen();
-            await changeRoute(virtualScreen.name || "none");
-        });
-
-        listenAlways("virtualScreen", async (event: any) => {
-            console.log(`[Router] Virtual screen change to ${event.screenName}`);
-            const action = event.action;
-
-            switch (action) {
-                case "close":
-                    await changeRoute("none");
-                    break;
-                case "open":
-                    await changeRoute(event.screenName || "none");
-                    break;
-            }
-        });
-
-        const virtualScreen = await getVirtualScreen();
-        await changeRoute(virtualScreen.name || "none");
+  $effect(() => {
+    if (isStatic) return;
+    return onScreenChange(({ name, action }) => {
+      if (action === "open") route = name;
+      else if (action === "close" && name === route) route = "";
     });
+  });
+
+  // The main browser loads with an empty route and must ask which screen is open
+  $effect(() => {
+    if (isStatic || route) return;
+    request<{ name?: string }>("GET", "/virtualScreen")
+      .then((screen) => {
+        if (!route && screen?.name) route = screen.name;
+      })
+      .catch(() => {});
+  });
+
+  $effect(() => {
+    if (!isStatic && route && screens[route]) ackScreen(route);
+  });
+
+  const loading = $derived(screens[route]?.());
 </script>
 
-<main>
-    {#if isMenuRoute($location)}
-        <Menu>
-            {#key $location}
-                <MenuContent>
-                    <Router routes={menuRoutes}/>
-                </MenuContent>
-            {/key}
-        </Menu>
-    {:else}
-        <Router {routes}/>
-    {/if}
-</main>
+<svelte:window bind:innerWidth={width} bind:innerHeight={height} />
+
+<div class="canvas" style:zoom={zoom} style:width="{width / zoom}px" style:height="{height / zoom}px">
+  {#if loading}
+    {#await loading then { default: Screen }}
+      {#key route}<Screen />{/key}
+    {/await}
+  {/if}
+</div>
+
+<style>
+  .canvas { position: relative; overflow: hidden; }
+</style>

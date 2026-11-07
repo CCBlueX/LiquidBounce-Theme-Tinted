@@ -1,77 +1,56 @@
 name: Build
+
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+  pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 env:
-  ZIP_NAME: theme            # Name for the distribution archive
-  MARKETPLACE_ITEM_ID: 12345        # Replace with your actual marketplace item ID
+  MARKETPLACE_ITEM_ID: 877
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      API_TOKEN: ${{ secrets.API_TOKEN }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
         with:
-          fetch-depth: 0
+          bun-version: 1.4.4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - run: bun run package
+
+      - uses: actions/upload-artifact@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          name: tinted
+          path: release/*.zip
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build project
-        run: npm run build
-
-      - name: Create dist archive
-        run: zip -r ${{ env.ZIP_NAME }}.zip dist/
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.ZIP_NAME }}
-          path: ${{ env.ZIP_NAME }}.zip
-
-      - name: Generate version tag
-        id: version_tag
+      # Publishes when public/metadata.json carries a version the Marketplace does not have live yet
+      - name: Publish to the Marketplace
+        if: github.event_name == 'push' && env.API_TOKEN != ''
         run: |
-          COMMIT_HASH=$(git rev-parse --short HEAD)
-          TAG="build-$COMMIT_HASH-$(date +'%Y%m%d%H%M%S')"
-          echo "version=$TAG" >> $GITHUB_OUTPUT
-
-      # Uncomment the sections below to enable GitHub releases and marketplace publishing
-      #
-      # - name: Create and push Git tag
-      #   run: |
-      #     git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      #     git config --local user.name "github-actions[bot]"
-      #     git tag ${{ steps.version_tag.outputs.version }}
-      #     git push origin ${{ steps.version_tag.outputs.version }}
-      #
-      # - name: Upload to GitHub Release
-      #   uses: softprops/action-gh-release@v1
-      #   with:
-      #     files: ${{ env.ZIP_NAME }}.zip
-      #     tag_name: ${{ steps.version_tag.outputs.version }}
-      #     prerelease: true
-      #     name: "Build Release ${{ steps.version_tag.outputs.version }}"
-      #
-      # - name: Upload to LiquidBounce Marketplace
-      #   run: |
-      #     curl -X POST \
-      #       "https://api.liquidbounce.net/api/v3/marketplace/${{ env.MARKETPLACE_ITEM_ID }}/revisions" \
-      #       -H "Authorization: Bearer ${{ secrets.API_TOKEN }}" \
-      #       -F "file=@${{ env.ZIP_NAME }}.zip" \
-      #       -F "version=${{ steps.version_tag.outputs.version }}" \
-      #       -F "changelog=Automated build from commit ${{ github.sha }}" \
-      #       -F "channel=alpha" \
-      #       --fail-with-body
+          version=$(jq -r .version public/metadata.json)
+          api="https://api.liquidbounce.net/api/v3/marketplace/$MARKETPLACE_ITEM_ID/revisions"
+          live=$(curl -fsS "$api?limit=1" | jq -r '.items[0].version // empty')
+          if [ "$live" = "$version" ]; then
+            echo "$version is already live"
+            exit 0
+          fi
+          curl -fsS -X POST "$api" \
+            -H "Authorization: Bearer $API_TOKEN" \
+            -F "file=@release/tinted-$version.zip" \
+            -F "version=$version" \
+            -F "changelog=$(git log -1 --format=%s)" \
+            -F "source_repository=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            -F "source_ref=$GITHUB_REF_NAME" \
+            -F "source_commit=$GITHUB_SHA" \
+            -F "source_build_url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            | jq '{id, version, status}'

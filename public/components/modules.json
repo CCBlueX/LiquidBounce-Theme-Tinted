@@ -1,0 +1,12 @@
+{
+  "name": "Modules",
+  "description": "Enabled modules and every key bind, with its state",
+  "enabled": true,
+  "singleton": true,
+  "alignment": {
+    "horizontalAlignment": "Right",
+    "horizontalOffset": 12,
+    "verticalAlignment": "Top",
+    "verticalOffset": 12
+  }
+}

@@ -1,131 +1,27 @@
-# LiquidBounce Default Theme
+# Tinted
 
-This repository contains the source code for the LiquidBounce Default Theme, built using [Svelte](https://svelte.dev/). 
-It is intended for development, customization, and distribution through the LiquidBounce theme system and marketplace.
+A glass theme for LiquidBounce. The world stays visible behind every screen, items show their real textures, and
+the HUD keeps your enabled modules and their key binds in view.
 
----
+Reduce motion, reduce sound, increase contrast, reduce transparency, sound captions and interface scale are in the
+theme's settings.
 
-## Getting Started with a Custom Theme
+## Install
 
-If you want to create your own LiquidBounce theme, the recommended starting point is to **fork the official default theme repository**:
+Subscribe to Tinted in the Marketplace tab of the client (`.marketplace subscribe 877`), or unpack a release ZIP into
+`LiquidBounce/themes/tinted` and run `.client theme set tinted`.
 
-https://github.com/CCBlueX/LiquidBounce-Theme
+## Build
 
-Forking this repository gives you a fully working baseline with proper project structure, build configuration, and marketplace integration already set up. From there, you can modify the UI, styles, and components to create your own custom theme while staying compatible with LiquidBounce’s theming system.
+```sh
+bun install
+bun run dev       # then .client theme set http://localhost:5173/ in the client
+bun run package   # release/tinted-<version>.zip
+```
 
----
+Pushing a new `version` in `public/metadata.json` to `main` publishes it to the Marketplace.
 
-## Development
+## License
 
-### Prerequisites
-
-Ensure the following software is installed before proceeding:
-
-- Node.js (latest LTS or stable release recommended)
-
-### Setup
-
-1. **Install dependencies**
-
-    ```bash
-    npm install
-    ```
-
-2. **Launch LiquidBounce**
-
-    Start the LiquidBounce client before running the development server.
-
-3. **Start the development server**
-
-    ```bash
-    npm run dev
-    ```
-
-4. **Set the theme in the client**
-
-    Use the live development URL provided by the dev server (for example, http://localhost:5173/):
-
-    ```
-    .client theme set <live-url>
-    ```
-
-
-5. **Open the theme in a browser**
-
-    Run the following command in the client and select the UI you want to open in your system browser:
-
-    ```
-    .client integration menu
-    ```
-
-### Building for Production
-
-Follow these steps to create a production-ready build of the theme.
-
-1. **Build the theme**
-
-    ```bash
-    npm run build
-    ```
-
-2. **Locate the build output**
-
-    - The production build is generated in the `dist` directory
-
-    - This directory contains the optimized and minified theme files
-
-3. **Deploy to the themes directory**
-
-    - Copy the entire dist directory into your LiquidBounce themes directory
-
-    - You can open the themes directory by running:
-   
-    ```
-    .client theme browse
-    ```
-
-    - Rename the dist folder to your desired theme name
-
-4. **Apply the theme**
-
-    ```
-    .client theme set <your-theme-name>
-    ```
-
-## Marketplace Publishing
-
-To publish the theme to the LiquidBounce Marketplace, complete the following steps.
-
-1. **Generate an API token**
-
-    - Visit: https://liquidbounce.net/account
-
-    - Generate an API token from your account settings
-
-2. **Obtain the marketplace item ID**
-
-    - Navigate to: https://liquidbounce.net/marketplace
-
-    - Open your marketplace item page
-
-    - Copy the value from the Item ID field displayed on the right side
-
-3. **Configure the repository**
-
-    - Add `API_TOKEN` as a repository secret under Settings → Secrets and variables → Actions
-
-    - Update the following values in `.github/workflows/build.yml`:
-
-      - `MARKETPLACE_ITEM_ID`
-
-      - `ZIP_NAME`
-
-4. **Enable publishing**
-
-    - Uncomment the GitHub release and marketplace upload steps in:
-   
-    ```
-    .github/workflows/build.yml
-    ```
-
-Once configured, the workflow will automatically build and publish the theme when triggered.
+GPL-3.0. Inter is under the SIL Open Font License (`public/fonts/Inter-LICENSE.txt`). Sound credits are in
+`public/sounds/CREDITS.txt`.

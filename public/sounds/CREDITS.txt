@@ -1,0 +1,12 @@
+Sounds in this folder are trimmed, filtered, level-matched and converted to mono from these recordings.
+
+open.ogg (also used, pitched down, for closing)
+  "rbh belt swish x 10.wav" by RHumphries
+  https://freesound.org/people/RHumphries/sounds/1935/
+  Licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+tap.ogg: "Finger Tapping Phone" by jentlemen, CC0, https://freesound.org/people/jentlemen/sounds/704862/
+toggle.ogg: "Light Switch On Off.flac" by qubodup, CC0, https://freesound.org/people/qubodup/sounds/183994/
+notify.ogg: "Clanking glass.wav" by HonorHunter, CC0, https://freesound.org/people/HonorHunter/sounds/271655/
+confirm.ogg: "Wood Knocking 3 Times" by SamsCollegeAccount, CC0, https://freesound.org/people/SamsCollegeAccount/sounds/722978/
+error.ogg: "double knocks on glass.wav" by narrative_svad, CC0, https://freesound.org/people/narrative_svad/sounds/443386/
