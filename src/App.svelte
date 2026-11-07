@@ -57,8 +57,10 @@
           follow(name);
         });
     };
+    // A reload keeps the route the client last loaded the page with, which may no longer be its screen; the client
+    // refuses that ack, and its answer decides
     const initial = untrack(() => route);
-    if (initial) ackScreen(initial).catch(() => {});
+    if (initial) ackScreen(initial).catch(() => ask());
     else ask();
     const offScreen = onScreenChange(({ name, action }) => {
       events++;
