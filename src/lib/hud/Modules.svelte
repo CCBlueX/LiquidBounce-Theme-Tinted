@@ -18,7 +18,7 @@
   const slot = slotOf();
   slot?.claim("y", 2);
 
-  // Modules the player reaches for get rows: those on with a bind or (Toggled) switched this session, then the binds
+  // Modules the player reaches for get rows: those on with a bind or (Toggled) switched lately, then the binds
   // of modules that are off. Modules that are simply always on only add to the count row. Hidden modules never show.
   const groups = $derived.by(() => {
     const { show, bindsWhenOff } = settings.moduleList;
