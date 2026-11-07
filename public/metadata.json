@@ -1,7 +1,7 @@
 {
   "id": "tinted",
   "name": "Tinted",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "authors": ["CCBlueX"],
   "screens": ["title", "clickgui", "multiplayer", "singleplayer", "altmanager", "proxymanager", "viafabricplus_protocol_selection"],
   "overlays": ["hud", "game_menu", "disconnected", "inventory", "container", "browser", "basicmenu"],
