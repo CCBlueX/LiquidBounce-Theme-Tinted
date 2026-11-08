@@ -35,6 +35,8 @@
   let failed = $state(false);
   let stack = $state<string[][]>([]);
   let scroller: HTMLDivElement;
+  // Rows that scroll up under the header fade out over a longer stretch, and the header gets its hairline
+  let scrolled = $state(false);
 
   async function load() {
     try {
@@ -182,7 +184,7 @@
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions (Esc goes back a page from any control inside) -->
 <div class="inspector" in:slideIn={{ x: 12 }} onkeydown={keydown} role="region" aria-label="{module.name} settings">
-  <header class="top on-glass">
+  <header class="top on-glass" class:scrolled>
     <div class="grow">
       <h2 class="t-title3">{module.name}</h2>
       <p class="t-footnote l2 desc" title={module.description}>{module.description}</p>
@@ -197,7 +199,7 @@
     <Switch checked={module.enabled} label={module.name} onchange={ontoggle} />
   </header>
 
-  <div class="scroll on-glass" bind:this={scroller}>
+  <div class="scroll on-glass" class:scrolled bind:this={scroller} onscroll={() => (scrolled = scroller.scrollTop > 0)}>
     {#if failed}
       <div class="failed">
         <p class="t-callout l2">The settings of {module.name} could not be loaded.</p>
@@ -255,7 +257,19 @@
 
 <style>
   .inspector { position: absolute; inset: 0; display: flex; flex-direction: column; }
-  .top { display: flex; align-items: center; gap: 8px; padding: 14px 12px 8px 16px; }
+  .top { position: relative; display: flex; align-items: center; gap: 8px; padding: 14px 12px 8px 16px; }
+  .top::after {
+    content: "";
+    position: absolute;
+    left: 16px;
+    right: 12px;
+    bottom: 0;
+    height: 0.5px;
+    background: var(--line);
+    opacity: 0;
+    transition: opacity var(--t-pop) var(--ease);
+  }
+  .top.scrolled::after { opacity: 1; }
   .grow { flex: 1; min-width: 0; }
   h2, .desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .scroll {
@@ -266,6 +280,7 @@
     scrollbar-width: none;
     mask-image: linear-gradient(180deg, transparent 0, #000 8px, #000 calc(100% - 32px), transparent);
   }
+  .scroll.scrolled { mask-image: linear-gradient(180deg, transparent 0, #000 28px, #000 calc(100% - 32px), transparent); }
   .page { padding-top: 4px; }
   .back {
     display: inline-flex;

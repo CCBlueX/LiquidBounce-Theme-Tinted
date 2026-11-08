@@ -1,11 +1,15 @@
 /* Rows of the inspector's settings list. Shared by the value editors, so they live outside component scope. */
 
+/* flow-root keeps a nested inset's bottom margin inside its group; collapsed through, the last row of a nested group
+   would sit on the outer group's edge */
 .cg-group {
+  display: flow-root;
   background: rgb(255 255 255 / 0.06);
   border-radius: var(--r-group);
   box-shadow: inset 0 0 0 0.5px var(--line);
 }
 .cg-inset {
+  display: flow-root;
   margin: 0 6px 6px 12px;
   border-radius: var(--r-control);
   background: rgb(255 255 255 / 0.045);
