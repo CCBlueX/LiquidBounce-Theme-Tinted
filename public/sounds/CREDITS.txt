@@ -10,3 +10,6 @@ toggle.ogg: "Light Switch On Off.flac" by qubodup, CC0, https://freesound.org/pe
 notify.ogg: "Clanking glass.wav" by HonorHunter, CC0, https://freesound.org/people/HonorHunter/sounds/271655/
 confirm.ogg: "Wood Knocking 3 Times" by SamsCollegeAccount, CC0, https://freesound.org/people/SamsCollegeAccount/sounds/722978/
 error.ogg: "double knocks on glass.wav" by narrative_svad, CC0, https://freesound.org/people/narrative_svad/sounds/443386/
+splash-drop.ogg: "Drop - Water" by mattfinarelli, CC0, https://freesound.org/people/mattfinarelli/sounds/533146/
+splash-chime.ogg: "Wine glass clink deeper.wav" by lmr9, CC0, https://freesound.org/people/lmr9/sounds/178178/
+splash-out.ogg: "Whoosh #1" by Kinoton, CC0, https://freesound.org/people/Kinoton/sounds/427823/
