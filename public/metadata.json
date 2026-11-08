@@ -5,7 +5,7 @@
   "authors": ["CCBlueX"],
   "screens": ["title", "clickgui", "multiplayer", "singleplayer", "altmanager", "proxymanager", "viafabricplus_protocol_selection"],
   "overlays": ["hud", "game_menu", "disconnected", "inventory", "container", "browser", "basicmenu"],
-  "splash": { "animation": "splash/animation.json", "background": "#0f1115", "text": "#ffffff", "accent": "#4677ff" },
+  "splash": { "animation": "splash/animation.json", "background": "#10131a", "text": "#ffffff", "accent": "#4677ff" },
   "components": ["Island", "Modules", "Scoreboard", "Armor", "Effects", "Target"],
   "fonts": [],
   "backgrounds": [],
