@@ -3,7 +3,7 @@
   import type { TransitionConfig } from "svelte/transition";
   import { request } from "./lib/api/client";
   import { onReconnect } from "./lib/api/events";
-  import { ackScreen, onScreenChange } from "./lib/api/screen";
+  import { ackScreen, onHandover, onScreenChange } from "./lib/api/screen";
   import { isReducedMotion, spring } from "./lib/motion";
   import { settings } from "./lib/settings.svelte";
 
@@ -12,6 +12,11 @@
 
   // The client closes the old screen just before it opens the next; the old one stays this long in case one follows
   const CLOSE_HOLD_MS = 250;
+  // Overlays over the running game leave with their vanilla screen, which vanishes at once; once no screen is open the
+  // client draws the HUD over this page, so anything still fading here would end up under it
+  const IN_GAME = new Set(["game_menu", "inventory", "container"]);
+  // Overlays sit on the game's own screen, which has already replaced the screen before them
+  const OVERLAYS = new Set(["connecting", "disconnected", "game_menu", "inventory", "container", "browser", "basicmenu"]);
 
   // Routes load on demand, so the HUD browser only fetches the HUD
   const loaders = import.meta.glob<{ default: Component }>("./routes/*/Screen.svelte");
@@ -22,6 +27,8 @@
   let route = $state(untrack(() => initialRoute));
   // What is on screen; it changes only once the next route's code has arrived, so nothing blanks in between
   let shown = $state.raw<{ route: string; Screen: Component }>();
+  // The route a game screen is about to replace; it leaves at once, and comes back if the client refused
+  let handedOver: string | undefined;
   let width = $state(innerWidth);
   let height = $state(innerHeight);
 
@@ -36,6 +43,7 @@
 
   // Acks name the client's screen even when this theme has nothing to draw for it, and "none" once it closed
   function follow(name: string) {
+    handedOver = undefined;
     route = name;
     ackScreen(name || "none").catch(() => {});
   }
@@ -67,17 +75,27 @@
       if (action === "open") {
         clearTimeout(hold);
         follow(name);
-      } else if (action === "close" && name === route) {
+      } else if (action === "close" && (name === route || (!route && name === handedOver))) {
         clearTimeout(hold);
+        if (IN_GAME.has(name)) route = "";
         // The client sends events from a thread pool, so the close of a screen can arrive after the open of the same
         // screen that followed it; the client's answer decides once the hold is over
         hold = setTimeout(() => ask(""), CLOSE_HOLD_MS);
       }
     });
     const offReconnect = onReconnect(() => ask());
+    const offHandover = onHandover((leaving) => {
+      if (leaving) {
+        handedOver = route;
+        route = "";
+      } else if (handedOver !== undefined && !route) {
+        route = handedOver;
+      }
+    });
     return () => {
       offScreen();
       offReconnect();
+      offHandover();
       clearTimeout(hold);
     };
   });
@@ -95,6 +113,16 @@
       releaseFocus();
       shown = { route: next, Screen };
     });
+  });
+
+  // Screens load on demand; once the page is up, the main browser fetches the rest while idle, so a screen the client
+  // switches to later (connecting, disconnected) does not wait for its code while the old one stays on top
+  $effect(() => {
+    if (isStatic) return;
+    const idle = requestIdleCallback(() => {
+      for (const load of Object.values(screens)) load().catch(() => {});
+    });
+    return () => cancelIdleCallback(idle);
   });
 
   // The outgoing layer turns inert but keeps focus until it is removed; incoming screens move focus only from body
@@ -132,7 +160,8 @@
     return { duration: 320, css: (t) => `opacity: ${Math.min(1, t * 2)}; transform: translateY(${(1 - spring(t)) * 10}px)` };
   }
 
-  function screenOut(_: Element): TransitionConfig {
+  function screenOut(_: Element, from: string): TransitionConfig {
+    if (IN_GAME.has(from) || from === handedOver || OVERLAYS.has(route)) return { duration: 0 };
     return { duration: isReducedMotion() ? 140 : 180, css: (t) => `opacity: ${t}` };
   }
 </script>
@@ -142,7 +171,7 @@
 <div class="canvas" style:zoom={zoom} style:width="{width / zoom}px" style:height="{height / zoom}px">
   <!-- Each layer keeps its own screen while it fades out under the next -->
   {#each shown ? [shown] : [] as layer (layer)}
-    <div class="screen" in:screenIn out:screenOut inert={layer.route !== route}>
+    <div class="screen" in:screenIn out:screenOut={layer.route} inert={layer.route !== route}>
       <layer.Screen />
     </div>
   {/each}

@@ -31,6 +31,59 @@ export function readLocation(): PageLocation {
   return { route, port, isStatic: params.has("static") };
 }
 
+// Screens this theme draws itself; for any other the client shows a game screen in place of the page
+const OWN_ROUTES = new Set(Object.keys(import.meta.glob("../../routes/*/Screen.svelte")).map((path) => path.split("/")[3]));
+const handoverListeners = new Set<(leaving: boolean) => void>();
+
+/** Calls `listener` with true when the page is about to give way to a game screen, false when that did not happen. */
+export function onHandover(listener: (leaving: boolean) => void): Unsubscribe {
+  handoverListeners.add(listener);
+  return () => handoverListeners.delete(listener);
+}
+
+const nextFrame = () => new Promise((done) => requestAnimationFrame(done));
+
+/** Hands the page over to the game before `action` (a join or a reconnect), which leaves the page's screen. */
+export async function leaveFor<T>(action: () => Promise<T>): Promise<T> {
+  for (const listener of handoverListeners) listener(true);
+  await nextFrame();
+  await nextFrame();
+  try {
+    return await action();
+  } catch (error) {
+    for (const listener of handoverListeners) listener(false);
+    throw error;
+  }
+}
+
+const CONNECTING_TO = "tinted.connectingTo";
+// A reconnect goes to the server joined last, which may be a while ago
+const CONNECTING_FRESH_MS = 60 * 60_000;
+
+/** The address the page last joined, for the connecting screen until the client names it. */
+export function connectingTo(): string | undefined {
+  try {
+    const { address, at } = JSON.parse(sessionStorage.getItem(CONNECTING_TO) ?? "null") ?? {};
+    return typeof address === "string" && Date.now() - at < CONNECTING_FRESH_MS ? address : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function rememberConnecting(address: string) {
+  sessionStorage.setItem(CONNECTING_TO, JSON.stringify({ address, at: Date.now() }));
+}
+
+/**
+ * Opens a client screen (403 for an unknown name). Before a game screen replaces the page, the page empties and paints
+ * once more: once the game shows its own screen the browser may not paint again until the mouse moves, and its last
+ * frame would stay over the game's screen.
+ */
+export async function openScreen(name: ScreenRoute): Promise<void> {
+  const open = () => request<undefined>("PUT", "/screen", { body: { name } });
+  await (OWN_ROUTES.has(name) ? open() : leaveFor(open));
+}
+
 /** Tells the client which screen the page shows ("none" for none). 403 "Wrong virtual screen" on mismatch. */
 export function ackScreen(name: ScreenRoute | "none" | (string & {})): Promise<void> {
   return request<undefined>("POST", "/virtualScreen", { body: { name } satisfies VirtualScreenAck });

@@ -2,7 +2,7 @@
 // Gotchas: validation errors are mostly 403 (ApiError.status), ids are list indices, colors are signed ARGB ints.
 
 import { ApiError, apiUrl, request, type HttpMethod, type QueryValue } from "./client";
-import { closeScreen } from "./screen";
+import { closeScreen, leaveFor, openScreen, rememberConnecting } from "./screen";
 import type {
   Account,
   ApiRoutes,
@@ -64,13 +64,16 @@ export const servers = {
   /** Reloads servers.dat and pings every server; results arrive as serverPinged events. There is no ping route. */
   list: (): Promise<Server[]> => call("GET /servers"),
   /** Connects to the address; unknown addresses get a temporary server entry. */
-  join: (address: string): Promise<void> => call("POST /servers/connect", { body: { address } }),
+  join: (address: string): Promise<void> => {
+    rememberConnecting(address);
+    return leaveFor(() => call("POST /servers/connect", { body: { address } }));
+  },
 };
 
 export const worlds = {
   list: (): Promise<World[]> => call("GET /worlds"),
   /** `name` is the world's folder id (World.name), not its display name. */
-  join: (name: string): Promise<void> => call("POST /worlds/join", { body: { name } }),
+  join: (name: string): Promise<void> => leaveFor(() => call("POST /worlds/join", { body: { name } })),
 };
 
 export const session = {
@@ -85,7 +88,7 @@ export const accounts = {
 
 export const screen = {
   /** 403 for an unknown route name. */
-  open: (name: ScreenRoute): Promise<void> => call("PUT /screen", { body: { name } }),
+  open: openScreen,
   /** Back to the screen this one was opened from, else the game or title screen. 403 when no screen is open. */
   close: closeScreen,
 };

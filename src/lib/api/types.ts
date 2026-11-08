@@ -228,6 +228,9 @@ export type UpdateInfo = {
   };
 };
 
+/** The route of a connection being made: the socket it opens (the proxy when `proxy` is set) and the server. */
+export type ConnectionDetails = { remoteAddress: string; serverAddress: string; proxy: boolean };
+
 export type WindowInfo = {
   width: number;
   height: number;
@@ -322,6 +325,7 @@ export type ScreenRoute =
   | "inventory"
   | "container"
   | "disconnected"
+  | "connecting"
   | "viafabricplus_protocol_selection"
   | "browser";
 
@@ -698,6 +702,8 @@ export type ApiRoutes = {
   "POST /exit": Route<NoContent>;
   "PUT /hud-editor": Route<NoContent, HudEditorRequest>;
   "GET /window": Route<WindowInfo>;
+  /** While the game connects to a server; 204 otherwise. */
+  "GET /connection": Route<ConnectionDetails | NoContent>;
   "POST /browse": Route<NoContent, BrowseRequest>;
   "POST /browsePath": Route<NoContent, BrowsePathRequest>;
   "POST /fileDialog": Route<FileDialogResult, FileDialogRequest>;
@@ -925,6 +931,7 @@ export type EventMap = {
   /** Sent twice per change: native list, then the active theme's list. */
   componentsUpdate: { source: "native" | "theme"; components: HudComponent[]; themeId?: string };
   scaleFactorChange: { scaleFactor: number };
+  connectionDetails: { details: ConnectionDetails };
   browserUrlChange: { index: number; url: string };
   userLoggedIn: Empty;
   userLoggedOut: Empty;
