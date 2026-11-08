@@ -2,6 +2,7 @@
 // Gotchas: validation errors are mostly 403 (ApiError.status), ids are list indices, colors are signed ARGB ints.
 
 import { ApiError, apiUrl, request, type HttpMethod, type QueryValue } from "./client";
+import { markModuleSwitch } from "../sound";
 import { closeScreen, leaveFor, openScreen, rememberConnecting } from "./screen";
 import type {
   Account,
@@ -42,10 +43,13 @@ export const modules = {
   list: (): Promise<Module[]> => call("GET /modules"),
   categories: (): Promise<ModuleCategory[]> => call("GET /modules/categories"),
   /** true enables, false disables, undefined flips. Enable/disable give 403 when already in that state. */
-  toggle: (name: string, enabled?: boolean): Promise<void> =>
-    call(enabled === undefined ? "POST /modules/toggle" : enabled ? "PUT /modules/toggle" : "DELETE /modules/toggle", {
+  toggle: (name: string, enabled?: boolean): Promise<void> => {
+    // The page that switches plays the sound; the HUD then stays quiet for this toggle
+    markModuleSwitch(name);
+    return call(enabled === undefined ? "POST /modules/toggle" : enabled ? "PUT /modules/toggle" : "DELETE /modules/toggle", {
       body: { name },
-    }),
+    });
+  },
   /** 403 for an unknown module. */
   settings: (name: string): Promise<ToggleableGroup> => call("GET /modules/settings", { query: { name } }),
   /** `partialTree` carries only the values to change, matched by name; its root name must be the module name. */

@@ -3,7 +3,7 @@
 // streams cost a comparison each. Effects and the target come from the shared live state.
 import { on } from "../api/events";
 import { moduleStore } from "../modules.svelte";
-import { onCaption, play } from "../sound";
+import { onCaption, play, playModuleToggle } from "../sound";
 import { settings } from "../settings.svelte";
 import { live, throttle, type TargetInfo } from "./live.svelte";
 
@@ -76,7 +76,10 @@ export class IslandState {
   start() {
     const offs = [
       live.onTarget(() => this.#pick()),
-      on("moduleToggle", (event) => this.#onToggle(event.moduleName, event.enabled)),
+      on("moduleToggle", (event) => {
+        this.#onToggle(event.moduleName, event.enabled);
+        if (!this.#quiet) playModuleToggle(event.moduleName, event.enabled);
+      }),
       on("notification", (event) => {
         // Module notifications repeat what the toggle activity already shows
         if ((event.severity === "ENABLED" || event.severity === "DISABLED") && moduleStore.byName.has(event.message)) {
