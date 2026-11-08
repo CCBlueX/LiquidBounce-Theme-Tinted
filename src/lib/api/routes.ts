@@ -12,6 +12,7 @@ import type {
   ModuleCategory,
   PlayerData,
   PlayerInventory,
+  RandomName,
   ScreenRoute,
   Server,
   Session,
@@ -88,6 +89,10 @@ export const accounts = {
   list: (): Promise<Account[]> => call("GET /accounts"),
   /** `id` is Account.id (a list index). The result arrives as accountManagerLogin plus a session event. */
   login: (id: number): Promise<void> => call("POST /account/login", { body: { id } }),
+  /** A free name in the style of a real player's. */
+  randomName: (): Promise<RandomName> => call("POST /account/random-name"),
+  /** Logs in without saving the account. The result arrives as accountManagerLogin plus a session event. */
+  loginCracked: (username: string): Promise<void> => call("POST /account/login/cracked", { body: { username } }),
 };
 
 export const screen = {

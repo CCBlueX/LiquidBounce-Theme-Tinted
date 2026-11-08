@@ -37,7 +37,10 @@
   const keyOf = (p: ProxyRow) => `${p.host}:${p.port}:${p.username}`;
   const address = (p: ProxyRow) => `${p.host}:${p.port}`;
   const isCurrent = (a: Account) => !!user && a.uuid === user.uuid && a.username === user.username;
-  const isActive = (p: ProxyRow) => !!proxy && keyOf(proxy) === keyOf(p);
+  // The client names the proxy in use by its index, the first of equal copies; one with a password it may not find
+  // in the list after a restart (-1), so the first row with its address stands in
+  const isActive = (p: ProxyRow) =>
+    !!proxy && (proxy.id >= 0 ? proxy.id === p.id : proxyList.find((other) => keyOf(other) === keyOf(proxy!))?.id === p.id);
 
   const loadSession = () => session.get().then((s) => (user = s)).catch(() => {});
   const loadAccounts = () => accountsApi.list().then((list) => (accountList = list)).catch(() => {});
@@ -72,7 +75,14 @@
   $effect(() => onReconnect(loadAll));
 
   const accountsShown = $derived([...accountList.filter((a) => a.favorite), ...accountList.filter((a) => !a.favorite)]);
-  const proxiesShown = $derived([...proxyList.filter((p) => p.favorite), ...proxyList.filter((p) => !p.favorite)]);
+  // A proxy saved twice is one choice
+  const proxiesShown = $derived(
+    [...proxyList.filter((p) => p.favorite), ...proxyList.filter((p) => !p.favorite)].filter(
+      (p, index, all) => all.findIndex((other) => keyOf(other) === keyOf(p)) === index,
+    ),
+  );
+  // Where a proxy comes out reads better than its host; the host stays for proxies without a known place
+  const proxyName = (p: ProxyRow) => p.place || address(p);
   const cracked = $derived(user ? user.type === "legacy" || !user.online : false);
   const accountNote = $derived(busy ? "Logging in…" : failed ? "Login failed" : cracked ? "Cracked" : undefined);
 
@@ -112,13 +122,34 @@
     loadSession();
   }
 
+  async function loginRandom() {
+    if (busy) return;
+    play("tap");
+    const name = await accountsApi.randomName().then((result) => result?.name, () => undefined);
+    if (!name) {
+      play("error");
+      status = "No random name. The client did not answer.";
+      return;
+    }
+    busy = "random";
+    failed = false;
+    status = `Logging in as ${name}`;
+    clearTimeout(loginTimer);
+    loginTimer = window.setTimeout(() => finishLogin({ error: "The client did not answer." }), LOGIN_WAIT_MS);
+    try {
+      await accountsApi.loginCracked(name);
+    } catch {
+      finishLogin({ error: "The client refused the login." });
+    }
+  }
+
   async function useProxy(row: ProxyRow | undefined) {
     if (row ? isActive(row) : !proxy) return;
     try {
       if (row) await request("POST", "/proxy", { body: { id: row.id } });
       else await request("DELETE", "/proxy");
       play("confirm");
-      status = row ? `Using ${address(row)} for new connections` : "Proxy off. New connections go straight to the server";
+      status = row ? `Using ${proxyName(row)} for new connections` : "Proxy off. New connections go straight to the server";
     } catch {
       play("error");
       status = "The proxy could not be changed";
@@ -171,6 +202,9 @@
       {/each}
       <hr />
     {/if}
+    <button class="mg-item" role="menuitem" tabindex="-1" onclick={() => pick(loginRandom)}>
+      <span class="grow"><span class="label">Random name</span><span>Play cracked as someone new, not saved</span></span>
+    </button>
     <button class="mg-item" role="menuitem" tabindex="-1" onclick={() => pick(() => manage("altmanager"))}>
       <span class="grow"><span class="label">Manage accounts</span><span>Add, sign in and sort accounts</span></span>
     </button>
@@ -179,30 +213,28 @@
 
 <PopoverMenu label="Proxy" class="mg-pop glass deep on-glass session-menu">
   {#snippet trigger(props)}
-    <button class="menu-pill glass" data-pill {...props} aria-label="Proxy, {proxy ? address(proxy) : 'off'}" onclick={loadProxies}>
-      <span>Proxy</span><span class="l3 quiet num">{proxy ? address(proxy) : "Off"}</span>
+    <button class="menu-pill glass" data-pill {...props} aria-label="Proxy, {proxy ? proxyName(proxy) : 'off'}" onclick={() => (loadProxy(), loadProxies())}>
+      <span>Proxy</span><span class="l3 quiet num">{proxy ? proxyName(proxy) : "Off"}</span>
       <span class="chev" aria-hidden="true">⌄</span>
     </button>
   {/snippet}
   {#snippet children(pick)}
-    <button class="mg-item" role="menuitemradio" aria-checked={!proxy} tabindex="-1" onclick={() => pick(() => useProxy(undefined))}>
-      <span class="grow"><span class="label">Off</span><span>Connect straight to servers</span></span>
+    <button class="mg-item compact" role="menuitemradio" aria-checked={!proxy} tabindex="-1" aria-label="Off, connect directly" onclick={() => pick(() => useProxy(undefined))}>
+      <span class="label one">Off</span><span class="host l3">Direct</span>
       <span class="check" aria-hidden="true">{proxy ? "" : "✓"}</span>
     </button>
     {#each proxiesShown as row (row.id)}
       {@const active = isActive(row)}
       <button
-        class="mg-item"
+        class="mg-item compact"
         role="menuitemradio"
         aria-checked={active}
         tabindex="-1"
-        aria-label="{address(row)}{row.place ? `, ${row.place}` : ''}{row.favorite ? ', favorite' : ''}"
+        aria-label="{proxyName(row)}{row.place ? `, ${address(row)}` : ''}{row.favorite ? ', favorite' : ''}"
         onclick={() => pick(() => useProxy(row))}
       >
-        <span class="grow">
-          <span class="label num">{address(row)}</span>
-          <span>{row.place || (row.username ? `As ${row.username}` : "Saved proxy")}{row.favorite ? " · ★" : ""}</span>
-        </span>
+        <span class="label one">{proxyName(row)}{row.favorite ? " ★" : ""}</span>
+        <span class="host l3 num">{row.place ? row.host : ""}</span>
         <span class="check" aria-hidden="true">{active ? "✓" : ""}</span>
       </button>
     {/each}
@@ -220,6 +252,10 @@
   .chev { flex: none; font-size: 12px; color: var(--label-2); margin: -4px -2px 0 -2px; }
   .check { flex: none; width: 14px; text-align: center; font-size: 12px; }
   .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Proxy rows are one line: where it comes out, then its host, quiet and cut first */
+  .compact { min-height: 32px; }
+  .one { flex: 0 1 auto; min-width: 0; font-weight: 500; }
+  .host { flex: 1 1 0; min-width: 0; text-align: right; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* Pills sit at the left of their row or in its middle, so the menu opens from the pill's left edge, above the pill
      when there is no room below */
