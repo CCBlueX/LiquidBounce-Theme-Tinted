@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import { reasonOf, request } from "../../lib/api/client";
-  import { onReconnect } from "../../lib/api/events";
-  import { client, servers, worlds } from "../../lib/api/routes";
+  import { on, onReconnect } from "../../lib/api/events";
+  import { leaveFor } from "../../lib/api/screen";
+  import { client, servers, storage, worlds } from "../../lib/api/routes";
   import type { Server, ServerData, World } from "../../lib/api/types";
   import { capitalize, relativeTime } from "../../lib/format";
   import { plainText } from "../../lib/mctext";
@@ -11,11 +12,16 @@
   import { play } from "../../lib/sound";
   import Base64Icon from "../../lib/ui/Base64Icon.svelte";
   import ItemIcon from "../../lib/ui/ItemIcon.svelte";
+  import SessionPills from "../../lib/ui/SessionPills.svelte";
+  import Switch from "../../lib/ui/Switch.svelte";
 
   // Vanilla keeps its title, reason and 'Back to server list' button around the middle. This card sits in the lower
-  // third with the ways back in: reconnect, the top of the server list, the latest world. The client does not tell the
-  // page why the connection ended, so the card never says.
+  // third with the ways back in: reconnect, now or on a timer, as another account or through another proxy, the top
+  // of the server list, the latest world. The client does not tell the page why the connection ended, so the card
+  // never says.
   const SHOWN = 3;
+  const AUTO_DELAY_MS = 5000;
+  const AUTO_KEY = "tinted.disconnected.autoReconnect";
 
   let list = $state<Server[] | undefined>();
   const pings = livePings();
@@ -23,6 +29,10 @@
   let error = $state<string | undefined>();
   let busy = $state<string | undefined>();
   let reconnectButton: HTMLButtonElement | undefined = $state();
+  let auto = $state(false);
+  let left = $state(AUTO_DELAY_MS);
+  // A reconnect that could not start stops the timer until the switch is flipped again
+  let autoStopped = $state(false);
 
   const loadServers = () => servers.list().then((all) => (list = all.slice(0, SHOWN))).catch(() => (list = []));
 
@@ -41,11 +51,43 @@
     loadServers();
     measure();
     worlds.list().then((all) => (world = [...all].sort((a, b) => b.lastPlayed - a.lastPlayed)[0])).catch(() => {});
+    storage.get(AUTO_KEY).then((value) => (auto = value === "true")).catch(() => {});
     return () => clearTimeout(resizeTimer);
   });
 
   // Pings sent while the event socket was down are lost; loading the list pings again
   $effect(() => onReconnect(loadServers));
+
+  // Another account goes straight back to the server, as the original theme does
+  $effect(() => on("accountManagerLogin", (event) => !event.error && reconnect()));
+
+  // The timer waits while a menu is open or something else runs
+  $effect(() => {
+    if (!auto || autoStopped) {
+      left = AUTO_DELAY_MS;
+      return;
+    }
+    let last = performance.now();
+    let frame = requestAnimationFrame(function step(now) {
+      if (!busy && !document.querySelector(":popover-open")) left = Math.max(0, left - (now - last));
+      last = now;
+      if (left <= 0) {
+        reconnect();
+        return;
+      }
+      frame = requestAnimationFrame(step);
+    });
+    return () => cancelAnimationFrame(frame);
+  });
+
+  function setAuto(on: boolean) {
+    auto = on;
+    autoStopped = false;
+    left = AUTO_DELAY_MS;
+    storage.set(AUTO_KEY, String(on)).catch(() => {});
+  }
+
+  const counting = $derived(auto && !autoStopped);
 
   // Names can hold § codes; they show as plain text
   const shown = $derived(
@@ -83,9 +125,10 @@
   }
 
   const reconnect = () =>
-    run("reconnect", () => request("POST", "/reconnect"), (reason) =>
-      /no known last server/i.test(reason) ? "No server to reconnect to." : "Reconnecting did not start. Try a server below.",
-    );
+    run("reconnect", () => leaveFor(() => request("POST", "/reconnect")), (reason) => {
+      autoStopped = true;
+      return /no known last server/i.test(reason) ? "No server to reconnect to." : "Reconnecting did not start. Try a server below.";
+    });
   const join = (server: Server) => run(`server-${server.id}`, () => servers.join(server.address), () => `${server.name} did not start connecting.`);
   const playWorld = (target: World) => run("world", () => worlds.join(target.name), () => `${target.displayName} did not open.`);
 </script>
@@ -96,13 +139,26 @@
   <section class="card glass on-glass" aria-labelledby="disconnected-title" in:rise={{ delay: 80 }}>
     <h1 id="disconnected-title" class="sr-only">Play again</h1>
     <div class="top">
-      <button class="primary" bind:this={reconnectButton} onclick={reconnect} disabled={busy === "reconnect"} aria-describedby={error ? "reconnect-error" : undefined}>
-        Reconnect
+      <button
+        class="primary"
+        class:counting
+        style:--left={left / AUTO_DELAY_MS}
+        bind:this={reconnectButton}
+        onclick={reconnect}
+        disabled={busy === "reconnect"}
+        aria-describedby={error ? "reconnect-error" : undefined}
+      >
+        <span class="num">{counting ? `Reconnect in ${Math.ceil(left / 1000)} s` : "Reconnect"}</span>
       </button>
-      {#if error}
-        <p id="reconnect-error" class="error t-callout" role="alert"><span class="mark" aria-hidden="true">!</span>{error}</p>
-      {/if}
+      <label class="auto t-callout">
+        <Switch small checked={auto} label="Reconnect on its own after 5 seconds" onchange={setAuto} />
+        <span aria-hidden="true">Auto</span>
+      </label>
+      <div class="session"><SessionPills /></div>
     </div>
+    {#if error}
+      <p id="reconnect-error" class="error t-callout" role="alert"><span class="mark" aria-hidden="true">!</span>{error}</p>
+    {/if}
 
     {#if shown.length || world}
       <div class="columns">
@@ -172,8 +228,13 @@
   @container (max-height: 860px) { .servers li:nth-child(n + 3) { display: none; } }
   @container (max-height: 700px) { .servers li:nth-child(n + 2) { display: none; } }
   .top { display: flex; align-items: center; gap: 12px; min-height: 30px; }
+  .auto { display: flex; align-items: center; gap: 6px; color: var(--label-2); }
+  .session { margin-left: auto; display: flex; gap: 6px; min-width: 0; }
   .primary {
+    position: relative;
+    overflow: hidden;
     flex: none;
+    min-width: 136px;
     height: 30px;
     padding: 0 16px;
     border-radius: 15px;
@@ -185,6 +246,16 @@
     transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
   }
   .primary:hover { background: var(--accent-strong); }
+  .primary span { position: relative; }
+  /* While the timer runs, the time left drains out of the button from the right */
+  .primary.counting::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgb(255 255 255 / 0.16);
+    transform-origin: left;
+    transform: scaleX(var(--left));
+  }
   .primary:active { transform: scale(0.97); }
   .primary:disabled { opacity: 0.6; }
   .error { display: flex; align-items: center; gap: 8px; min-width: 0; }
