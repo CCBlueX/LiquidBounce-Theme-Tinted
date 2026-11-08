@@ -14,7 +14,8 @@
   import type { Alignment, HorizontalAlignment, HudComponent, VerticalAlignment } from "../api/types";
   import { rise } from "../motion";
   import { play } from "../sound";
-  import Switch from "../ui/Switch.svelte";
+  import PopoverMenu from "../ui/PopoverMenu.svelte";
+  import "../ui/manager.css";
   import "../ui/values.css";
   import { COMPONENT_NAMES, EDITING, hud } from "./components.svelte";
   import Placed from "./Placed.svelte";
@@ -85,12 +86,12 @@
     };
   });
 
-  // Keyboard users start on the first component, or the first one that is off when none is on
+  // Keyboard users start on the first component, or on Add when none is on
   let focused = false;
   $effect(() => {
     if (focused || !listed.length || !root) return;
     focused = true;
-    tick().then(() => root?.querySelector<HTMLElement>(".item, .ghost")?.focus());
+    tick().then(() => root?.querySelector<HTMLElement>(".item, .add")?.focus());
   });
 
   function close() {
@@ -288,15 +289,24 @@
     hud.setEnabled(component, shown).catch(() => play("error"));
   }
 
-  // Focus follows the component between its live copy and its faded stand-in, so the keyboard can switch it back
+  // A hidden component waits in the Add menu; focus moves on to the next component, or to Add, and to a component
+  // as it comes back
   function showOnStage(component: HudComponent, shown: boolean) {
     play(shown ? "toggleOn" : "toggleOff");
     if (!shown && selected === component.id) selected = undefined;
+    const items = [...(root?.querySelectorAll<HTMLElement>(".item") ?? [])];
+    const next = items[items.findIndex((item) => item.dataset.id === component.id) + 1];
     setShown(component, shown);
     tick().then(() =>
-      root?.querySelector<HTMLElement>(shown ? `.item[data-id="${component.id}"]` : `.ghost[data-id="${component.id}"]`)?.focus(),
+      (shown ? root?.querySelector<HTMLElement>(`.item[data-id="${component.id}"]`) : (next ?? root?.querySelector<HTMLElement>(".add")))?.focus(),
     );
   }
+
+  // The remove badge sits on the top left corner, inside it where the component touches the screen's edge
+  const atEdge = (alignment: Alignment) => ({
+    left: alignment.horizontalAlignment === "Left" && alignment.horizontalOffset < 12,
+    top: alignment.verticalAlignment === "Top" && alignment.verticalOffset < 12,
+  });
 
   function grabPanel(event: PointerEvent) {
     if (event.button !== 0 || (event.target as Element).closest("button")) return;
@@ -305,13 +315,13 @@
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
   }
 
-  // The whole panel stays on screen, so Done can always be reached
+  // The whole bar stays on screen, so Done can always be reached
   function movePanel(event: PointerEvent) {
     if (!panelGrab) return;
     const { width, height } = metrics();
     const box = event.currentTarget as HTMLElement;
     const spareX = Math.max(0, (width - box.offsetWidth) / 2);
-    const top = height * 0.26;
+    const top = height * 0.22;
     panel = {
       x: clamp(event.clientX / panelGrab.zoom - panelGrab.x, -spareX, spareX),
       y: clamp(event.clientY / panelGrab.zoom - panelGrab.y, -top, height - box.offsetHeight - top),
@@ -326,6 +336,7 @@
 <svelte:window onkeydown={windowKey} onkeyup={windowKeyUp} onblur={() => (leftShift = false)} />
 
 <div class="editor" class:dragging={!!drag} bind:this={root}>
+  <div class="veil" aria-hidden="true"></div>
   {#if zone}
     <div class="zone" style:left="{(zone.h * 100) / 3}%" style:top="{(zone.v * 100) / 3}%"></div>
   {/if}
@@ -334,10 +345,11 @@
     {#each hud.shown as component (component.id)}
       {@const View = VIEWS[component.name]}
       {@const alignment = drag?.id === component.id ? drag.alignment : component.settings.alignment}
+      {@const edge = atEdge(alignment)}
       <Placed
         {alignment}
         zIndex={component.settings.zIndex}
-        class="item {selected === component.id ? 'selected' : ''}"
+        class="item {selected === component.id ? 'selected' : ''} {drag?.id === component.id && drag.moved ? 'lifted' : ''}"
         data-id={component.id}
         role="button"
         tabindex={0}
@@ -357,38 +369,15 @@
             <span class="t-footnote l2">{HINTS[component.name]}</span>
           </div>
         {/if}
-        <!-- Next to the component on the side facing the middle of the screen, so it never leaves the window -->
         <button
-          class="cg-pill hide"
-          class:above={alignment.verticalAlignment === "Bottom"}
-          class:start={alignment.horizontalAlignment === "Left"}
-          class:middle={alignment.horizontalAlignment.startsWith("Center")}
+          class="remove"
+          class:inside-left={edge.left}
+          class:inside-top={edge.top}
           tabindex={-1}
+          aria-label="Hide {component.name}"
           onclick={() => showOnStage(component, false)}
         >
-          Hide
-        </button>
-      </Placed>
-    {/each}
-    {#each off as component (component.id)}
-      <Placed alignment={component.settings.alignment} zIndex={-1}>
-        <button
-          class="ghost placeholder glass on-glass"
-          data-id={component.id}
-          aria-label="Show {component.name}. {HINTS[component.name]}."
-          onclick={() => showOnStage(component, true)}
-          onkeydown={(event) => {
-            // Key presses reach the page without the native activation of a focused button
-            if (event.key !== "Enter" && event.key !== " ") return;
-            event.preventDefault();
-            showOnStage(component, true);
-          }}
-        >
-          <span class="text">
-            <span class="name">{component.name}</span>
-            <span class="t-footnote l2">{HINTS[component.name]}</span>
-          </span>
-          <span class="cg-pill" aria-hidden="true">Show</span>
+          <span aria-hidden="true">−</span>
         </button>
       </Placed>
     {/each}
@@ -397,9 +386,9 @@
   {#if guides.x !== undefined}<div class="guide vertical" style:left="{guides.x}px"></div>{/if}
   {#if guides.y !== undefined}<div class="guide horizontal" style:top="{guides.y}px"></div>{/if}
 
-  <!-- svelte-ignore a11y_no_noninteractive_element_interactions (the panel's background is a pointer-only grip) -->
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions (the bar's background is a pointer-only grip) -->
   <section
-    class="panel glass layered on-glass"
+    class="bar glass deep on-glass"
     aria-labelledby="hud-editor-title"
     style:translate="calc(-50% + {panel.x}px) {panel.y}px"
     onpointerdown={grabPanel}
@@ -407,28 +396,26 @@
     onpointerup={() => (panelGrab = undefined)}
     in:rise
   >
-    <div class="bar">
-      <h2 id="hud-editor-title">Edit HUD</h2>
-      <ul>
-        {#each listed as component (component.id)}
-          <li class:off={!component.settings.enabled}>
-            <span class="name">{component.name}</span>
-            <Switch
-              small
-              checked={component.settings.enabled}
-              label="Show {component.name}"
-              onchange={(shown) => setShown(component, shown)}
-            />
-          </li>
+    <h2 id="hud-editor-title">Edit HUD</h2>
+    <PopoverMenu label="Add a component" class="mg-pop glass deep on-glass add-menu">
+      {#snippet trigger(props)}
+        <button class="add" {...props} disabled={!off.length} aria-label={off.length ? "Add a component" : "Every component is shown"}>
+          <span aria-hidden="true">+</span>
+        </button>
+      {/snippet}
+      {#snippet children(pick)}
+        {#each off as component (component.id)}
+          <button class="mg-item" role="menuitem" tabindex="-1" onclick={() => pick(() => showOnStage(component, true))}>
+            <span class="grow"><span class="label">{component.name}</span><span>{HINTS[component.name]}</span></span>
+          </button>
         {/each}
-      </ul>
-      <button class="done" onclick={close}>Done</button>
-    </div>
-    <p class="t-footnote l2">
-      Drag a component to move it, arrow keys nudge, Delete hides. Faded ones are off: click to show. Hold Left Shift to
-      place freely.
-    </p>
+      {/snippet}
+    </PopoverMenu>
+    <button class="done" onclick={close}>Done</button>
   </section>
+  <p class="hint t-footnote" style:translate="calc(-50% + {panel.x}px) {panel.y}px" aria-hidden="true">
+    Drag to move. Hold Left Shift to place freely.
+  </p>
 </div>
 
 <style>
@@ -438,6 +425,13 @@
     z-index: 10;
     user-select: none;
   }
+  /* The world steps back, so the components and the bar read as the thing being edited */
+  .veil {
+    position: absolute;
+    inset: 0;
+    background: rgb(6 8 12 / 0.3);
+    pointer-events: none;
+  }
   .stage {
     position: absolute;
     inset: 0;
@@ -446,15 +440,22 @@
   .editor :global(.item) {
     cursor: grab;
     touch-action: none;
-    outline: 1px dashed rgb(255 255 255 / 0.5);
-    outline-offset: 3px;
     border-radius: var(--r-group);
+    outline: 1px solid transparent;
+    outline-offset: 4px;
+    transition: outline-color var(--t-pop) var(--ease), scale var(--t-pop) var(--ease), filter var(--t-pop) var(--ease);
+  }
+  .editor :global(.item:hover) {
+    outline-color: rgb(255 255 255 / 0.4);
   }
   .editor :global(.item.selected),
   .editor :global(.item:focus-visible) {
     outline: 2px solid var(--accent);
   }
-  .dragging :global(.item) {
+  /* Picked up, a component lifts off the screen */
+  .editor :global(.item.lifted) {
+    scale: 1.03;
+    filter: drop-shadow(0 14px 28px rgb(0 0 0 / 0.35));
     cursor: grabbing;
   }
   .view {
@@ -476,75 +477,49 @@
     font-size: 13px;
     font-weight: 600;
   }
-  /* A component that is off stands faded where it would show */
-  .ghost {
-    flex-direction: row;
-    align-items: center;
-    gap: 14px;
-    padding-right: 10px;
-    opacity: 0.7;
-    outline: 1px dashed rgb(255 255 255 / 0.5);
-    outline-offset: 3px;
-    color: var(--label);
-    text-align: left;
-    cursor: default;
-    transition: opacity var(--t-pop) var(--ease);
-  }
-  .ghost:hover,
-  .ghost:focus-visible {
-    opacity: 1;
-  }
-  .ghost:focus-visible {
-    outline: 2px solid var(--accent);
-  }
-  .ghost .text {
-    display: flex;
-    flex-direction: column;
-  }
-  .hide {
+  /* The remove badge, as on the home screen: a small dark disc with a minus on the top left corner */
+  .remove {
     position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
+    top: -9px;
+    left: -9px;
     z-index: 1;
-    background: var(--sheen), var(--glass);
-    box-shadow: var(--specular), var(--float-soft);
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgb(58 60 68 / 0.94);
+    box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.35), inset 0 0 0 0.5px rgb(255 255 255 / 0.14), 0 2px 6px rgb(0 0 0 / 0.35);
+    color: #fff;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1;
+    text-shadow: none;
+    cursor: default;
+    transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease), opacity var(--t-pop) var(--ease);
+  }
+  .remove span { margin-top: -2px; }
+  .remove:hover { background: rgb(78 80 88 / 0.96); }
+  .remove:active { transform: scale(0.9); }
+  .remove.inside-left { left: 4px; }
+  .remove.inside-top { top: 4px; }
+  .dragging .remove {
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--t-pop) var(--ease);
-  }
-  .hide.above {
-    top: auto;
-    bottom: calc(100% + 8px);
-  }
-  .hide.start {
-    right: auto;
-    left: 0;
-  }
-  .hide.middle {
-    right: auto;
-    left: 50%;
-    translate: -50% 0;
-  }
-  .editor :global(.item:hover .hide),
-  .editor :global(.item.selected .hide) {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  .dragging .hide {
-    visibility: hidden;
   }
   .zone {
     position: absolute;
     width: calc(100% / 3);
     height: calc(100% / 3);
-    background: rgb(255 255 255 / 0.05);
-    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
+    border-radius: 24px;
+    background: rgb(255 255 255 / 0.035);
     pointer-events: none;
   }
   .guide {
     position: absolute;
     z-index: 2;
     background: var(--accent);
+    box-shadow: 0 0 6px rgb(70 119 255 / 0.6);
     pointer-events: none;
   }
   .guide.vertical {
@@ -557,72 +532,85 @@
     right: 0;
     height: 1px;
   }
-  .panel {
+  .bar {
     position: absolute;
     z-index: 3;
     left: 50%;
-    top: 26%;
-    padding: 6px 6px 6px;
-    border-radius: var(--r-card);
-    box-shadow: var(--specular), 0 8px 24px rgb(0 0 0 / 0.18), 0 1px 4px rgb(0 0 0 / 0.1);
+    top: 22%;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 44px;
+    padding: 0 6px 0 16px;
+    border-radius: 22px;
     cursor: grab;
     touch-action: none;
     transition: opacity var(--t-pop) var(--ease);
   }
-  /* A drag never lands on the panel */
-  .dragging .panel {
+  /* A drag never lands on the bar */
+  .dragging .bar,
+  .dragging .hint {
     opacity: 0.3;
     pointer-events: none;
   }
-  .bar {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
   h2 {
-    margin: 0 8px 0 6px;
-    font-size: 14px;
+    margin-right: 6px;
+    font-size: 15px;
     line-height: 20px;
-    font-weight: 600;
+    font-weight: 620;
+    letter-spacing: -0.008em;
     white-space: nowrap;
   }
+  .add {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--fill-2);
+    box-shadow: inset 0 0 0 0.5px var(--line);
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: default;
+    transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
+  }
+  .add span { margin-top: -2px; }
+  .add:hover { background: var(--fill-3); }
+  .add:active { transform: scale(0.94); }
+  .add:disabled { opacity: 0.4; }
+  .add:disabled:hover { background: var(--fill-2); }
   .done {
-    height: 26px;
-    margin-left: 6px;
-    padding: 0 12px;
-    border-radius: 13px;
+    height: 32px;
+    padding: 0 16px;
+    border-radius: 16px;
     font-size: 13px;
     font-weight: 600;
     background: var(--accent-fill);
     color: #fff;
     text-shadow: none;
     cursor: default;
+    transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
   }
-  ul {
-    display: flex;
-    gap: 4px;
+  .done:hover { background: var(--accent-strong); }
+  .done:active { transform: scale(0.97); }
+  .hint {
+    position: absolute;
+    z-index: 3;
+    left: 50%;
+    top: calc(22% + 52px);
     margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  li {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    height: 30px;
-    padding: 0 2px 0 10px;
-    border-radius: 15px;
-    background: var(--fill);
-    font-size: 13px;
-    font-weight: 500;
-    white-space: nowrap;
-    cursor: default;
-  }
-  li.off .name {
     color: var(--label-2);
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+    white-space: nowrap;
+    pointer-events: none;
+    transition: opacity var(--t-pop) var(--ease);
   }
-  p {
-    margin: 4px 6px 0;
-    text-align: center;
+  /* Centred under the bar's plus */
+  :global(.mg-pop.add-menu) {
+    left: anchor(center);
+    right: auto;
+    translate: -50% 0;
+    width: 240px;
   }
 </style>
