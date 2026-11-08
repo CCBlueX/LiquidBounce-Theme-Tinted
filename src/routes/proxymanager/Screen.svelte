@@ -68,8 +68,25 @@
   }
 
   const shown = $derived([...list.filter((p) => p.favorite), ...list.filter((p) => !p.favorite)]);
-  const focusTarget = $derived(shown.find((p) => keyOf(p) === focusKey) ? focusKey : shown[0] && keyOf(shown[0]));
-  const isActive = (p: ProxyRow) => !!active && keyOf(active) === keyOf(p);
+  // Rows are focused by address, so focus survives the index ids shifting on every change; a proxy saved twice gets
+  // "#2" on its second copy
+  const slots = $derived.by(() => {
+    const seen = new Map<string, number>();
+    return new Map(
+      list.map((p) => {
+        const key = keyOf(p);
+        const n = (seen.get(key) ?? 0) + 1;
+        seen.set(key, n);
+        return [p.id, n === 1 ? key : `${key}#${n}`];
+      }),
+    );
+  });
+  const slotOf = (p: ProxyRow) => slots.get(p.id) ?? keyOf(p);
+  const focusTarget = $derived(shown.find((p) => slotOf(p) === focusKey) ? focusKey : shown[0] && slotOf(shown[0]));
+  // The client names the proxy in use by its index, the first of equal copies; one with a password it may not find
+  // in the list after a restart (-1), so the first row with its address stands in
+  const isActive = (p: ProxyRow) =>
+    !!active && (active.id >= 0 ? active.id === p.id : list.find((other) => keyOf(other) === keyOf(active!))?.id === p.id);
   const subtitle = $derived(!loaded ? "Loading" : loadFailed && !list.length ? "Not loaded" : list.length ? count(list.length) : "No proxies");
 
   function count(n: number) {
@@ -294,7 +311,7 @@
     const target = removing;
     removing = undefined;
     play("close");
-    tick().then(() => focusRow(target && keyOf(target)));
+    tick().then(() => focusRow(target && slotOf(target)));
   }
 
   async function confirmRemove() {
@@ -315,7 +332,7 @@
       await request("DELETE", "/proxies/remove", { body: { id: now.id } });
       list = fresh.filter((p) => p !== now).map((p) => (p.id > now.id ? { ...p, id: p.id - 1 } : p));
       delete checks[keyOf(target)];
-      focusKey = neighbor && keyOf(neighbor);
+      focusKey = neighbor && slotOf(neighbor);
       await loadActive();
       say(`Removed ${address(target)}.`);
       play("toggleOff");
@@ -342,7 +359,7 @@
     sheetOpen = false;
     const was = editing;
     editing = undefined;
-    tick().then(() => focusRow(was ? keyOf(was) : focusTarget) || addButton?.focus());
+    tick().then(() => focusRow(was ? slotOf(was) : focusTarget) || addButton?.focus());
   }
 
   async function submit(form: ProxyForm) {
@@ -406,7 +423,7 @@
 
   function step(to: ProxyRow | undefined) {
     if (!to) return;
-    const key = keyOf(to);
+    const key = slotOf(to);
     if (key !== focusKey) play("tap");
     focusKey = key;
     focusRow(key);
@@ -540,8 +557,8 @@
           {:else}
             <div class="mg-list on-glass" bind:this={listEl} role="list" aria-label="Saved proxies, {subtitle}">
               {#each shown as row (row.id)}
-                {@const key = keyOf(row)}
-                {@const result = checks[key]}
+                {@const key = slotOf(row)}
+                {@const result = checks[keyOf(row)]}
                 {@const inUse = isActive(row)}
                 <div class="mg-row" class:selected={key === focusTarget} role="listitem" animate:flip={{ duration: flipDuration(), easing: cubicOut }}>
                   <button
