@@ -2,15 +2,13 @@
   import "../../lib/ui/values.css";
   import { onMount, tick, untrack } from "svelte";
   import { flip } from "svelte/animate";
-  import { cubicOut } from "svelte/easing";
-  import { fade } from "svelte/transition";
   import { request } from "../../lib/api/client";
   import { on, onReconnect } from "../../lib/api/events";
   import { modules, screen } from "../../lib/api/routes";
   import { onScreenChange, readLocation } from "../../lib/api/screen";
   import type { Module, ScreenInfo } from "../../lib/api/types";
   import HudEditor from "../../lib/hud/Editor.svelte";
-  import { flipDuration, rise, slideIn } from "../../lib/motion";
+  import { easeOut, flipDuration, rise, slideIn } from "../../lib/motion";
   import { play } from "../../lib/sound";
   import { typingFocus } from "../../lib/typing";
   import SearchField from "../../lib/ui/SearchField.svelte";
@@ -18,7 +16,9 @@
   import Categories from "./Categories.svelte";
   import Inspector from "./Inspector.svelte";
   import ModuleRow from "./ModuleRow.svelte";
-  import { moduleScore, settingEntries, settingScore, type SettingHit } from "./tree";
+  import SettingsView from "./settings/SettingsView.svelte";
+  import { areaEntries } from "./settings/areas";
+  import { moduleScore, settingEntries, settingScore, type SettingHit, type SettingsArea } from "./tree";
 
   const STORAGE_KEY = "tinted.clickgui";
   const SETTING_RESULTS = 40;
@@ -39,6 +39,8 @@
   let grid = $state<HTMLDivElement>();
   let frame = $state<HTMLDivElement>();
   let editingHud = $state(false);
+  let settingsOpen = $state(false);
+  let settingsReveal = $state<{ area: SettingsArea; names: string[] }>();
 
   const totals = $derived(
     list.reduce<Record<string, number>>((all, module) => {
@@ -53,6 +55,7 @@
     }, {}),
   );
   const searching = $derived(query.trim() !== "");
+  const showSettings = $derived(settingsOpen && !searching);
   const inCategory = $derived(list.filter((module) => module.category === category));
   const visible = $derived.by(() => {
     const base = searching
@@ -110,12 +113,17 @@
   $effect(() => {
     if (searching && !indexing && list.length) buildIndex();
   });
+  // Settings view values are few; they are fetched again for every search so they show current modes
+  let areaIndex = $state.raw<SettingHit[]>([]);
+  $effect(() => {
+    if (searching) untrack(() => areaEntries().then((hits) => (areaIndex = hits), () => {}));
+  });
   const settingResults = $derived.by(() => {
     if (!searching) return [];
-    return settingIndex
+    return [...areaIndex, ...settingIndex]
       .map((hit) => ({ hit, score: settingScore(hit, query) }))
-      .filter((entry) => entry.score > 0 && (filter === "All" || entry.hit.module.enabled))
-      .sort((a, b) => b.score - a.score || a.hit.module.name.localeCompare(b.hit.module.name))
+      .filter((entry) => entry.score > 0 && (filter === "All" || !entry.hit.module || entry.hit.module.enabled))
+      .sort((a, b) => b.score - a.score || a.hit.where.localeCompare(b.hit.where))
       .slice(0, SETTING_RESULTS)
       .map((entry) => entry.hit);
   });
@@ -141,6 +149,7 @@
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
       if (typeof saved.category === "string") category = saved.category;
       if (typeof saved.module === "string") selectedName = saved.module;
+      settingsOpen = saved.settings === true;
     } catch {
       localStorage.removeItem(STORAGE_KEY);
     }
@@ -201,7 +210,7 @@
   });
 
   $effect(() => {
-    if (category) localStorage.setItem(STORAGE_KEY, JSON.stringify({ category, module: selectedName }));
+    if (category) localStorage.setItem(STORAGE_KEY, JSON.stringify({ category, module: selectedName, settings: settingsOpen }));
   });
 
   // Toggles arrive per module; a panic or config load sends dozens at once, so they are applied in batches
@@ -249,7 +258,8 @@
   }
 
   function select(module: Module, names?: string[]) {
-    if (module.name !== selectedName) play("tap");
+    if (module.name !== selectedName || settingsOpen) play("tap");
+    settingsOpen = false;
     selectedName = module.name;
     focusName = module.name;
     reveal = names;
@@ -257,8 +267,21 @@
 
   function chooseCategory(next: string) {
     category = next;
+    settingsOpen = false;
     query = "";
     grid?.scrollTo({ top: 0 });
+  }
+
+  function openSettings(reveal?: { area: SettingsArea; names: string[] }) {
+    settingsOpen = true;
+    settingsReveal = reveal;
+    query = "";
+  }
+
+  function openHit(hit: SettingHit) {
+    if (hit.module) return select(hit.module, hit.names);
+    play("tap");
+    openSettings({ area: hit.area, names: hit.names });
   }
 
   function focusSearch(selectAll = false) {
@@ -313,6 +336,7 @@
   }
 
   function searchKey(event: KeyboardEvent) {
+    if (showSettings) return;
     if (event.key === "ArrowDown") {
       event.preventDefault();
       focusCard(focusTarget);
@@ -396,7 +420,7 @@
     offset = { x: clamp(offset.x + delta[0], 240), y: clamp(offset.y + delta[1], 120) };
   }
 
-  const title = $derived(searching ? `“${query.trim()}”` : category);
+  const title = $derived(searching ? `“${query.trim()}”` : showSettings ? "Settings" : category);
   const subtitle = $derived.by(() => {
     if (searching) {
       const modulesText = visible.length === 1 ? "1 module" : `${visible.length} modules`;
@@ -412,15 +436,26 @@
   {#if ready}
     <div class="frame" class:away={editingHud} inert={editingHud} bind:this={frame} style:translate="{offset.x}px {offset.y}px">
       <div class="glass window" in:rise>
-        <Categories {categories} {totals} enabled={enabledCounts} current={searching ? "" : category} onselect={chooseCategory} onedithud={() => (editingHud = true)} />
+        <Categories
+          {categories}
+          {totals}
+          enabled={enabledCounts}
+          current={searching ? "" : category}
+          settings={showSettings}
+          onselect={chooseCategory}
+          onsettings={() => openSettings()}
+          onedithud={() => (editingHud = true)}
+        />
 
-        <main class="list" aria-label="ClickGUI">
+        <main class="list" class:wide={showSettings} aria-label="ClickGUI">
           <header class="head on-glass">
             <div class="titles">
               <h1 class="t-large">{title}</h1>
-              {#if list.length}<span class="t-callout l2 num">{subtitle}</span>{/if}
+              {#if list.length && !showSettings}<span class="t-callout l2 num">{subtitle}</span>{/if}
             </div>
-            <Segmented options={["All", "Enabled"]} value={filter} label="Show" small onchange={(value) => (filter = value)} />
+            {#if !showSettings}
+              <Segmented options={["All", "Enabled"]} value={filter} label="Show" small onchange={(value) => (filter = value)} />
+            {/if}
             <!-- svelte-ignore a11y_no_noninteractive_element_interactions (arrow keys and Enter from the field inside) -->
             <div class="search" bind:this={searchBox} onkeydown={searchKey} role="search">
               <!-- The cached page loads hidden; it focuses the field itself when the ClickGUI shows -->
@@ -428,55 +463,59 @@
             </div>
           </header>
 
-          <div class="grid-wrap" bind:this={grid}>
-            {#if failed}
-              <div class="empty">
-                <p class="t-callout l2">Modules could not be loaded from the client.</p>
-                <button class="cg-pill" onclick={load}>Try again</button>
-              </div>
-            {:else}
-              {#key searching ? "search" : category}
-                <div class="grid on-glass" role="list" aria-label={searching ? "Matching modules" : `${category} modules`} in:fade={{ duration: 160 }}>
-                  {#each visible as module, index (module.name)}
-                    <div role="listitem" animate:flip={{ duration: flipDuration(260), easing: cubicOut }}>
-                      <ModuleRow
-                        {module}
-                        selected={module.name === selectedName}
-                        focusable={module.name === focusTarget}
-                        onselect={() => select(module)}
-                        ontoggle={(enabled) => toggle(module, enabled)}
-                        onkeydown={(event) => gridKey(event, index)}
-                      />
-                    </div>
-                  {/each}
+          {#if showSettings}
+            <SettingsView reveal={settingsReveal} />
+          {:else}
+            <div class="grid-wrap" bind:this={grid}>
+              {#if failed}
+                <div class="empty">
+                  <p class="t-callout l2">Modules could not be loaded from the client.</p>
+                  <button class="cg-pill" onclick={load}>Try again</button>
                 </div>
-              {/key}
-              {#if list.length && visible.length === 0 && !settingResults.length}
-                <p class="empty t-callout l2">
-                  {searching
-                    ? `No ${filter === "Enabled" ? "enabled " : ""}modules or settings match “${query.trim()}”`
-                    : `No modules in ${category} are on`}
-                </p>
-              {/if}
-              {#if settingResults.length}
-                <section class="settings-results on-glass" aria-label="Matching settings">
-                  <h2 class="t-footnote">Settings</h2>
-                  <div class="cg-group">
-                    {#each settingResults as hit (hit.where + hit.names.join("/"))}
-                      <button class="cg-row hit" onclick={() => select(hit.module, hit.names)}>
-                        <span class="cg-label">{hit.label}</span>
-                        <span class="cg-val t-footnote">{hit.where}</span>
-                      </button>
+              {:else}
+                {#key searching ? "search" : category}
+                  <div class="grid on-glass" role="list" aria-label={searching ? "Matching modules" : ` modules`}>
+                    {#each visible as module, index (module.name)}
+                      <div role="listitem" animate:flip={{ duration: flipDuration(searching ? 0 : 200), easing: easeOut }}>
+                        <ModuleRow
+                          {module}
+                          selected={module.name === selectedName}
+                          focusable={module.name === focusTarget}
+                          onselect={() => select(module)}
+                          ontoggle={(enabled) => toggle(module, enabled)}
+                          onkeydown={(event) => gridKey(event, index)}
+                        />
+                      </div>
                     {/each}
                   </div>
-                </section>
+                {/key}
+                {#if list.length && visible.length === 0 && !settingResults.length}
+                  <p class="empty t-callout l2">
+                    {searching
+                      ? `No ${filter === "Enabled" ? "enabled " : ""}modules or settings match “${query.trim()}”`
+                      : `No modules in ${category} are on`}
+                  </p>
+                {/if}
+                {#if settingResults.length}
+                  <section class="settings-results on-glass" aria-label="Matching settings">
+                    <h2 class="t-footnote">Settings</h2>
+                    <div class="cg-group">
+                      {#each settingResults as hit (hit.where + hit.names.join("/"))}
+                        <button class="cg-row hit" onclick={() => openHit(hit)}>
+                          <span class="cg-label">{hit.label}</span>
+                          <span class="cg-val t-footnote">{hit.where}</span>
+                        </button>
+                      {/each}
+                    </div>
+                  </section>
+                {/if}
               {/if}
-            {/if}
-          </div>
+            </div>
+          {/if}
         </main>
 
-        {#if selected}
-          <aside class="glass deep inspector" in:slideIn={{ delay: 80, x: 12 }}>
+        {#if selected && !showSettings}
+          <aside class="glass deep inspector" in:slideIn>
             {#key selected.name}
               <Inspector
                 module={selected}
@@ -536,6 +575,8 @@
   }
   .window > :global(.sidebar) { box-shadow: inset -0.5px 0 0 var(--line); }
   .list { grid-column: 2; min-width: 0; display: flex; flex-direction: column; container-type: inline-size; }
+  /* The Settings view takes the module list's and the inspector's columns */
+  .list.wide { grid-column: 2 / 4; }
   .head { display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px; }
   .titles { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; }
   h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -599,7 +640,7 @@
     border-radius: 4px;
     background: rgb(255 255 255 / 0.55);
     box-shadow: 0 1px 4px rgb(0 0 0 / 0.18);
-    transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
+    transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease);
   }
   .grabber:hover::after { background: rgb(255 255 255 / 0.75); }
   .grabber:active::after { transform: scaleY(1.2); }

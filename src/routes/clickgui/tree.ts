@@ -177,24 +177,40 @@ export function cssColor(argb: Argb, opaque = false): string {
 
 // Search
 
-export type SettingHit = { module: Module; names: string[]; label: string; where: string };
+/** Where a hit opens: a module's inspector, or the Settings view ("tinted" for the theme's values, "client" for global). */
+export type SettingsArea = "tinted" | "client";
+type Entry = { names: string[]; label: string; where: string };
+export type SettingHit = Entry & ({ module: Module; area?: undefined } | { area: SettingsArea; module?: undefined });
 
 // Every module has these two at its root; they would flood every search for "bind" or "hidden"
 const SKIPPED_ROOT_VALUES: Record<string, true> = { Bind: true, Hidden: true };
 
-/** Every value reachable in the inspector (active modes only), as search entries. */
-export function settingEntries(module: Module, root: ValueGroup): SettingHit[] {
-  const hits: SettingHit[] = [];
+/**
+ * Every value and group below `root` (active modes only) with its names from `root` down; `where` starts with
+ * `place`, followed by the labels of the groups on the way.
+ */
+export function treeEntries(
+  root: ValueGroup,
+  place: string[],
+  title: (name: string) => string = humanize,
+  skipAtRoot: Record<string, true> = {},
+): Entry[] {
+  const entries: Entry[] = [];
   const walk = (group: ValueGroup, trail: Trail, names: string[], where: string[]) => {
     for (const { node, trail: inner } of contents(group, trail)) {
-      if (names.length === 0 && SKIPPED_ROOT_VALUES[node.name]) continue;
-      const label = humanize(node.name);
-      hits.push({ module, names: [...names, node.name], label, where: [module.name, ...where].join(" › ") });
+      if (names.length === 0 && skipAtRoot[node.name]) continue;
+      const label = title(node.name);
+      entries.push({ names: [...names, node.name], label, where: where.join(" › ") });
       if (isGroup(node)) walk(node, inner, [...names, node.name], [...where, label]);
     }
   };
-  walk(root, [], [], []);
-  return hits;
+  walk(root, [], [], place);
+  return entries;
+}
+
+/** Every value reachable in the inspector, as search entries. */
+export function settingEntries(module: Module, root: ValueGroup): SettingHit[] {
+  return treeEntries(root, [module.name], humanize, SKIPPED_ROOT_VALUES).map((entry) => ({ ...entry, module }));
 }
 
 export function normalize(text: string): string {

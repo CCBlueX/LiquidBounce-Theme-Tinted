@@ -1,34 +1,46 @@
 <script lang="ts">
   import { play } from "../../lib/sound";
 
-  // The category sidebar: names with the number of enabled modules. Up and Down move between categories. The HUD
-  // editor entry sits at the bottom.
+  // The category sidebar: names with the number of enabled modules, then Settings at the bottom. Up and Down move
+  // between all of them. The HUD editor entry sits below.
   let {
     categories,
     totals,
     enabled,
     current,
+    settings,
     onselect,
+    onsettings,
     onedithud,
   }: {
     categories: string[];
     totals: Record<string, number>;
     enabled: Record<string, number>;
     current: string;
+    /** The Settings view is shown. */
+    settings: boolean;
     onselect: (category: string) => void;
+    onsettings: () => void;
     onedithud: () => void;
   } = $props();
 
   let bar: HTMLDivElement;
 
   function select(category: string) {
-    if (category === current) return;
+    if (category === current && !settings) return;
     play("tap");
     onselect(category);
   }
 
+  function openSettings() {
+    if (settings) return;
+    play("tap");
+    onsettings();
+  }
+
+  // The Settings tab comes after the categories
   function key(event: KeyboardEvent, index: number) {
-    const last = categories.length - 1;
+    const last = categories.length;
     const next =
       event.key === "ArrowDown" ? (index === last ? 0 : index + 1)
       : event.key === "ArrowUp" ? (index === 0 ? last : index - 1)
@@ -38,7 +50,8 @@
     if (next === undefined) return;
     event.preventDefault();
     bar.querySelectorAll<HTMLElement>("[role=tab]")[next]?.focus();
-    select(categories[next]);
+    if (next === last) openSettings();
+    else select(categories[next]);
   }
 </script>
 
@@ -46,13 +59,14 @@
   <div role="tablist" aria-label="Categories" aria-orientation="vertical" bind:this={bar}>
     {#each categories as category, index (category)}
       {@const on = enabled[category] ?? 0}
+      {@const isCurrent = !settings && category === current}
       <button
         role="tab"
         class="tab"
-        class:current={category === current}
-        aria-selected={category === current}
+        class:current={isCurrent}
+        aria-selected={isCurrent}
         aria-label="{category}, {totals[category] ?? 0} modules, {on} on"
-        tabindex={category === current || (!categories.includes(current) && index === 0) ? 0 : -1}
+        tabindex={isCurrent || (!settings && !categories.includes(current) && index === 0) ? 0 : -1}
         onclick={() => select(category)}
         onkeydown={(event) => key(event, index)}
       >
@@ -60,14 +74,26 @@
         {#if on}<span class="count num" aria-hidden="true">{on}</span>{/if}
       </button>
     {/each}
+    <button
+      role="tab"
+      class="tab settings"
+      class:current={settings}
+      aria-selected={settings}
+      tabindex={settings ? 0 : -1}
+      onclick={openSettings}
+      onkeydown={(event) => key(event, categories.length)}
+    >
+      <span class="name">Settings</span>
+    </button>
   </div>
   <button class="tab edit" onclick={() => (play("open"), onedithud())}>Edit HUD</button>
 </nav>
 
 <style>
-  .sidebar { display: flex; flex-direction: column; gap: 8px; padding: 16px 8px 12px 10px; overflow-y: auto; scrollbar-width: none; }
-  [role="tablist"] { display: grid; gap: 2px; }
+  .sidebar { display: flex; flex-direction: column; gap: 2px; padding: 16px 8px 12px 10px; overflow-y: auto; scrollbar-width: none; }
+  [role="tablist"] { flex: 1 0 auto; display: flex; flex-direction: column; gap: 2px; }
   .tab {
+    flex: none;
     height: 28px;
     display: flex;
     align-items: center;
@@ -85,5 +111,7 @@
   .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .count { font-size: 12px; color: var(--label-2); }
   .current .count { color: var(--label); }
-  .edit { margin-top: auto; flex: none; }
+  /* Settings sits right above Edit HUD, apart from the categories */
+  .settings { margin-top: auto; }
+  .edit { flex: none; }
 </style>

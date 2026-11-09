@@ -1,12 +1,14 @@
-// Writes inspector edits to the client: the local tree changes at once, the PUT carries only the changed value
+// Writes settings edits to the client: the local tree changes at once, the PUT carries only the changed value
 // wrapped in its groups, and a failed write puts the old value back.
 import { SvelteSet } from "svelte/reactivity";
 import { modules } from "../../lib/api/routes";
-import type { ChoiceGroup, JsonValue, ValueNode } from "../../lib/api/types";
+import type { ChoiceGroup, JsonValue, ValueNode, ValuePatch } from "../../lib/api/types";
 import { play } from "../../lib/sound";
 import { choicePatches, pathKey, patchFor, type Trail } from "./tree";
 
 type Burst = { timer: number; before: JsonValue; write: () => void };
+/** Sends one patch whose root is the tree's root (a module name, or "Settings" for the global tree). */
+export type PatchWriter = (patch: ValuePatch) => Promise<void>;
 /** Every ValueNode holds its value in `value`; the union just cannot be assigned through without narrowing. */
 type Writable = { value: JsonValue };
 
@@ -16,15 +18,16 @@ function snapshot(value: JsonValue): JsonValue {
 }
 
 export class SettingsEditor {
-  readonly module: string;
   /** Path keys of the inline groups that are open. */
   readonly expanded = new SvelteSet<string>();
   /** Writes scheduled or in flight; a refresh from the client waits until this is 0. */
   pending = $state(0);
   #bursts = new Map<string, Burst>();
+  #write: PatchWriter;
 
-  constructor(module: string) {
-    this.module = module;
+  /** A module name writes to that module's settings; anything else passes its own writer. */
+  constructor(target: string | PatchWriter) {
+    this.#write = typeof target === "string" ? (patch) => modules.putSettings(target, patch) : target;
   }
 
   /**
@@ -45,7 +48,7 @@ export class SettingsEditor {
     const write = async () => {
       this.#bursts.delete(key);
       try {
-        await modules.putSettings(this.module, patchFor(trail, { name: node.name, value: snapshot(target.value) }));
+        await this.#write(patchFor(trail, { name: node.name, value: snapshot(target.value) }));
         settle(true);
       } catch {
         target.value = before;
@@ -66,7 +69,7 @@ export class SettingsEditor {
     node.active = active;
     this.pending++;
     try {
-      await modules.putSettings(this.module, patchFor(trail, { name: node.name, value: [], active, choices: choicePatches(node) }));
+      await this.#write(patchFor(trail, { name: node.name, value: [], active, choices: choicePatches(node) }));
     } catch {
       node.active = before;
       play("error");

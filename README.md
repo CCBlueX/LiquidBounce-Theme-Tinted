@@ -4,8 +4,8 @@ A compact glass theme for LiquidBounce. The world stays visible behind every scr
 modules and their key binds in view. Scoreboard, Armor, Effects and Target are optional HUD pieces; move them with
 Edit HUD in the ClickGUI.
 
-Reduce motion, reduce sound, increase contrast, reduce transparency, sound captions and interface scale are in the
-theme's settings.
+Reduce motion, reduce sound, increase contrast, reduce transparency, sound captions and interface scale are under
+Settings in the ClickGUI, next to the client's own settings.
 
 ## Install
 

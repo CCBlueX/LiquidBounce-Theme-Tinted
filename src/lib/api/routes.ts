@@ -8,6 +8,7 @@ import type {
   Account,
   ApiRoutes,
   ClientInfo,
+  ConfigurableGroup,
   Module,
   ModuleCategory,
   PlayerData,
@@ -56,6 +57,13 @@ export const modules = {
   /** `partialTree` carries only the values to change, matched by name; its root name must be the module name. */
   putSettings: (name: string, partialTree: ValuePatch): Promise<void> =>
     call("PUT /modules/settings", { query: { name }, body: partialTree }),
+};
+
+/** The client's global settings (GET/PUT /global), one tree with root "Settings". */
+export const globalSettings = {
+  get: (): Promise<ConfigurableGroup> => call("GET /global"),
+  /** `partialTree` carries only the values to change, matched by name; its root name must be "Settings". */
+  put: (partialTree: ValuePatch): Promise<void> => call("PUT /global", { body: partialTree }),
 };
 
 export const player = {
