@@ -506,6 +506,20 @@ export type GameMode = "survival" | "creative" | "adventure" | "spectator";
 
 export type Scoreboard = { header: TextComponent; entries: { name: TextComponent; score: TextComponent }[] };
 
+/** GET /server: the world the player is in and this session's stats; 204 outside a world. Unknown values are left out. */
+export type ServerSession = {
+  singleplayer: boolean;
+  /** The saved server's name, else its address; the world's name in singleplayer. */
+  name: string;
+  address?: string;
+  players: { online: number; max?: number };
+  tps?: number;
+  ping?: number;
+  joinedAt: number;
+  kills: number;
+  deaths: number;
+};
+
 export type PlayerData = {
   username: string;
   uuid: string;
@@ -956,6 +970,7 @@ export type EventMap = {
   disconnect: Empty;
   overlayMessage: { text: TextComponent; tinted: boolean };
   death: Empty;
+  serverSession: { session?: ServerSession };
   fps: { fps: number };
   clientPlayerData: { playerData: PlayerData };
   clientPlayerEffect: { effects: MobEffect[] };

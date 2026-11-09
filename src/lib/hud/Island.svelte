@@ -1,17 +1,18 @@
 <script lang="ts">
   import { getContext, untrack } from "svelte";
   import type { TransitionConfig } from "svelte/transition";
-  import { moduleStore } from "../modules.svelte";
   import { isReducedMotion, rise, spring, tween } from "../motion";
   import ItemIcon from "../ui/ItemIcon.svelte";
+  import PlayerHead from "../ui/PlayerHead.svelte";
   import { EDITING, hud } from "./components.svelte";
-  import { IslandState } from "./island.svelte";
+  import { IslandState, blockName } from "./island.svelte";
   import { slotOf } from "./layout.svelte";
   import { live } from "./live.svelte";
   import NoteView from "./NoteView.svelte";
   import ScaffoldView from "./ScaffoldView.svelte";
   import TargetView from "./TargetView.svelte";
   import ToggleView from "./ToggleView.svelte";
+  import { serverSession } from "./session.svelte";
 
   const MORPH_MS = 560;
   const MAX_RADIUS = 26;
@@ -29,42 +30,50 @@
     untrack(() => (island.showTarget = show));
   });
   const effects = $derived(hud.isOn("Effects") ? [] : live.effects);
+  $effect(() => serverSession.start());
 
-  const enabledCount = $derived(moduleStore.list.filter((module) => module.enabled && !module.hidden).length);
-  const compact = $derived(effects.length > 0 || enabledCount > 0);
-  const visible = $derived(!!island.kind || compact);
+  // At rest the capsule says who plays where: the player, effects, the server or world, this session's kills and
+  // deaths, the time played, then TPS and players online, which give way first when room runs out
+  const me = $derived(live.me);
+  const server = $derived(serverSession.server);
+  const visible = $derived(!!island.kind || !!me);
 
-  // Effects past the room end in a count: the chips wrap onto a hidden second line, and the chips row is narrowed to
-  // the ones left on the first. Chips change width as their times tick and once the font loads, and the count takes
-  // room too, so either measures the row again.
-  let chips = $state<HTMLElement>();
-  let hiddenEffects = $state(0);
-  function fitChips(row: HTMLElement | undefined) {
-    if (!row) return;
-    row.style.maxWidth = "";
-    const items = [...row.children] as HTMLElement[];
+  const DIMENSIONS: Record<string, string> = { "minecraft:overworld": "Overworld", "minecraft:the_nether": "Nether", "minecraft:the_end": "End" };
+  const dimension = $derived(me ? (DIMENSIONS[me.dimension] ?? blockName(me.dimension)) : "");
+  const place = $derived.by(() => {
+    if (server?.singleplayer) return { name: server.name, detail: dimension };
+    const ping = server?.ping ?? me?.ping;
+    return { name: server?.name, detail: ping ? `${ping} ms` : undefined };
+  });
+  const played = $derived.by(() => {
+    const minutes = serverSession.minutes;
+    return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, "0")} min`;
+  });
+
+  // Items past the room wrap onto a hidden second line, and the row is narrowed to the ones left on the first. Items
+  // change width as effect times tick and once the font loads, so either measures the row again.
+  let row = $state<HTMLElement>();
+  function fitRow(node: HTMLElement | undefined) {
+    if (!node) return;
+    node.style.maxWidth = "";
+    const items = [...node.children] as HTMLElement[];
     const kept = items.filter((item) => item.offsetTop === items[0].offsetTop);
     const last = kept[kept.length - 1];
-    hiddenEffects = items.length - kept.length;
-    if (hiddenEffects && last) {
-      // Layout offsets, as the capsule's content scales in; they round, so one pixel keeps the last chip on the line
-      const end = last.offsetLeft + last.offsetWidth + parseFloat(getComputedStyle(row).paddingRight) + 1;
-      row.style.maxWidth = `${end - row.offsetLeft}px`;
+    if (last && kept.length < items.length) {
+      // Layout offsets, as the capsule's content scales in; they round, so one pixel keeps the last item on the line
+      node.style.maxWidth = `${last.offsetLeft + last.offsetWidth + 1 - node.offsetLeft}px`;
     }
   }
   $effect(() => {
     void effects;
     void room;
-    void enabledCount;
-    const row = chips;
-    if (!row) return;
-    const observer = new ResizeObserver(() => fitChips(row));
-    for (const item of row.children) observer.observe(item);
+    void server;
+    void me;
+    const node = row;
+    if (!node) return;
+    const observer = new ResizeObserver(() => fitRow(node));
+    for (const item of node.children) observer.observe(item);
     return () => observer.disconnect();
-  });
-  $effect(() => {
-    void hiddenEffects;
-    fitChips(untrack(() => chips));
   });
 
   const view = $derived.by(() => {
@@ -168,24 +177,44 @@
           <NoteView note={island.notes[0]} />
         {:else if island.kind === "toggle" && island.toggle}
           <ToggleView toggle={island.toggle} />
-        {:else}
+        {:else if me}
           <div class="compact">
-            {#if effects.length}
-              <span class="chips" bind:this={chips}>
-                {#each effects as effect (effect.id)}
-                  <span class="effect">
-                    <ItemIcon id={effect.id} kind="effect" size={18} label={effect.name} fallback />
-                    {#if effect.level}<span class="l2">{effect.level}</span>{/if}
-                    <span class="num">{effect.time}</span>
-                  </span>
-                {/each}
+            <span class="row" bind:this={row}>
+              <span class="item">
+                <PlayerHead uuid={me.uuid} size={16} radius={4} />
+                <span class="name">{me.name}</span>
               </span>
-              {#if hiddenEffects}<span class="more l2 num">+{hiddenEffects}</span>{/if}
-            {/if}
-            {#if effects.length && enabledCount}<span class="sep"></span>{/if}
-            {#if enabledCount}
-              <span class="count"><span class="num">{enabledCount}</span> <span class="l2">{enabledCount === 1 ? "module on" : "modules on"}</span></span>
-            {/if}
+              {#each effects as effect, index (effect.id)}
+                <span class="item" class:lead={index === 0}>
+                  <ItemIcon id={effect.id} kind="effect" size={18} label={effect.name} fallback />
+                  {#if effect.level}<span class="l2">{effect.level}</span>{/if}
+                  <span class="num">{effect.time}</span>
+                </span>
+              {/each}
+              {#if place.name || place.detail}
+                <span class="item lead">
+                  {#if place.name}<span class="place">{place.name}</span>{/if}
+                  {#if place.detail}<span class="l2 num">{place.detail}</span>{/if}
+                </span>
+              {/if}
+              {#if server && server.kills + server.deaths > 0}
+                <span class="item lead" aria-label="{server.kills} kills, {server.deaths} deaths">
+                  <span class="pair"><ItemIcon id="minecraft:iron_sword" size={16} /><span class="num">{server.kills}</span></span>
+                  <span class="pair"><ItemIcon id="minecraft:skeleton_skull" size={16} /><span class="num">{server.deaths}</span></span>
+                </span>
+              {/if}
+              {#if server}
+                <span class="item lead" aria-label="Played {played}">
+                  <ItemIcon id="minecraft:clock" size={16} /><span class="num">{played}</span>
+                </span>
+              {/if}
+              {#if server?.tps !== undefined}
+                <span class="item lead"><span class="num">{server.tps.toFixed(1)}</span><span class="l2">TPS</span></span>
+              {/if}
+              {#if server && !server.singleplayer}
+                <span class="item lead"><span class="num">{server.players.online.toLocaleString("en-US")}</span><span class="l2">online</span></span>
+              {/if}
+            </span>
           </div>
         {/if}
       </div>
@@ -215,44 +244,53 @@
   .compact {
     display: flex;
     align-items: center;
-    gap: 12px;
     height: 36px;
-    padding: 0 14px;
+    padding: 0 14px 0 10px;
     font-size: 13px;
     line-height: 16px;
     font-weight: 500;
   }
-  .effect {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-  }
-  /* One visible line; chips that wrap to the hidden second line end in the count */
-  .chips {
+  /* One visible line; items that wrap go to a second line out of view */
+  .row {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 12px;
+    align-items: center;
+    gap: 20px 10px;
     min-width: 0;
     height: 18px;
     overflow: hidden;
   }
-  .more {
-    min-width: 3ch;
-    margin-left: -4px;
+  .item {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 18px;
     white-space: nowrap;
   }
-  .effect .l2 {
-    margin-right: -2px;
+  .item.lead {
+    margin-left: 2px;
+    padding-left: 12px;
   }
-  .sep {
-    flex: none;
+  .item.lead::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 1px;
     width: 1px;
     height: 16px;
     background: var(--line);
   }
-  .count {
-    white-space: nowrap;
+  .name {
+    font-weight: 600;
+  }
+  .pair {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .pair + .pair {
+    margin-left: 4px;
   }
   .caption {
     margin-top: 8px;

@@ -12,6 +12,7 @@ const TARGET_IDLE_MS = 5000;
 const LEVELS = ["", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
 
 export type EffectChip = { id: string; name: string; level: string; time: string };
+export type Me = { name: string; uuid: string; ping: number; dimension: string };
 export type TargetInfo = {
   name: string;
   uuid: string;
@@ -74,16 +75,24 @@ class LiveState {
   scoreboard = $state.raw<Scoreboard>();
   effects = $state.raw<EffectChip[]>([]);
   target = $state.raw<TargetInfo>();
+  me = $state.raw<Me>();
 
   #position: Vec3 | undefined;
   #armorKey = "[]";
   #scoreboardKey = "";
   #effectsKey = "[]";
+  #meKey = "";
   #targetListeners = new Set<() => void>();
   #targetTimer: number | undefined;
 
   #updatePlayer(data: PlayerData) {
     this.#position = data.position;
+    const me = { name: data.username, uuid: data.uuid, ping: data.ping, dimension: data.dimension };
+    const meKey = JSON.stringify(me);
+    if (meKey !== this.#meKey) {
+      this.#meKey = meKey;
+      this.me = me;
+    }
     const armor = data.armorItems ?? [];
     const armorKey = JSON.stringify(armor);
     if (armorKey !== this.#armorKey) {

@@ -10,7 +10,7 @@
   );
 </script>
 
-<div class="activity" role="group" aria-label="Scaffold, {scaffold.count} blocks left">
+<div class="activity" class:icon={!!scaffold.block} role="group" aria-label="Scaffold, {scaffold.count} blocks left">
   {#if scaffold.block}<ItemIcon id={scaffold.block} size={32} label={scaffold.blockName} fallback />{/if}
   <span class="text">
     <span class="t-headline">Scaffold</span>
@@ -24,6 +24,8 @@
 </div>
 
 <style>
+  /* The pill is 52 tall with 26 px corners, so the bar keeps 22 px from its ends and sits under the text when there is
+     an icon */
   .activity {
     position: relative;
     display: flex;
@@ -32,8 +34,9 @@
     width: 300px;
     max-width: 100%;
     height: 52px;
-    padding: 0 16px 4px;
+    padding: 0 22px 4px;
   }
+  .activity.icon { padding-left: 16px; }
   .text {
     display: flex;
     flex-direction: column;
@@ -53,14 +56,15 @@
   }
   .bar {
     position: absolute;
-    left: 16px;
-    right: 16px;
-    bottom: 5px;
+    left: 22px;
+    right: 22px;
+    bottom: 6px;
     height: 3px;
     border-radius: 2px;
     background: var(--fill-2);
     overflow: hidden;
   }
+  .icon .bar { left: 58px; }
   .bar i {
     display: block;
     height: 100%;
