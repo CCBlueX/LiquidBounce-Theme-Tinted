@@ -506,19 +506,8 @@ export type GameMode = "survival" | "creative" | "adventure" | "spectator";
 
 export type Scoreboard = { header: TextComponent; entries: { name: TextComponent; score: TextComponent }[] };
 
-/** GET /server: the world the player is in and this session's stats; 204 outside a world. Unknown values are left out. */
-export type ServerSession = {
-  singleplayer: boolean;
-  /** The saved server's name, else its address; the world's name in singleplayer. */
-  name: string;
-  address?: string;
-  players: { online: number; max?: number };
-  tps?: number;
-  ping?: number;
-  joinedAt: number;
-  kills: number;
-  deaths: number;
-};
+/** Since joining the world; kills and deaths are read from death messages. */
+export type PlayerStatistics = { joinedAt: number; kills: number; deaths: number };
 
 export type PlayerData = {
   username: string;
@@ -618,6 +607,8 @@ export type ServerData = {
 export type Server = ServerData & { id: number };
 /** `id` is negative (-1, -2, ...). */
 export type LanServer = ServerData & { id: number; lan: true; online: boolean };
+/** The server the player is on; `id` only when it is saved in the list. */
+export type CurrentServer = ServerData & { id?: number; tps?: number };
 export type ServerAddRequest = { name: string; address: string; resourcePackPolicy?: ResourcePackPolicy };
 export type ServerEditRequest = ServerAddRequest & { id: number };
 export type ServerConnectRequest = { address: string };
@@ -835,12 +826,14 @@ export type ApiRoutes = {
   // player
   "GET /player": Route<PlayerData | NoContent>;
   "GET /player/inventory": Route<PlayerInventory | NoContent>;
+  "GET /player/statistics": Route<PlayerStatistics | NoContent>;
   "GET /crosshair": Route<Crosshair | NoContent>;
   // registry
   "GET /registry/{name}": Route<Registry>;
   "GET /registry/{name}/groups": Route<RegistryGroups>;
   // servers
   "GET /servers": Route<Server[]>;
+  "GET /servers/current": Route<CurrentServer | NoContent>;
   "GET /servers/lan": Route<LanServer[]>;
   "PUT /servers/add": Route<NoContent, ServerAddRequest>;
   "DELETE /servers/remove": Route<NoContent, IdRequest>;
@@ -970,7 +963,7 @@ export type EventMap = {
   disconnect: Empty;
   overlayMessage: { text: TextComponent; tinted: boolean };
   death: Empty;
-  serverSession: { session?: ServerSession };
+  clientPlayerStatistics: { statistics: PlayerStatistics };
   fps: { fps: number };
   clientPlayerData: { playerData: PlayerData };
   clientPlayerEffect: { effects: MobEffect[] };

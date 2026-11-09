@@ -9,10 +9,12 @@ import type {
   ApiRoutes,
   ClientInfo,
   ConfigurableGroup,
+  CurrentServer,
   Module,
   ModuleCategory,
   PlayerData,
   PlayerInventory,
+  PlayerStatistics,
   RandomName,
   ScreenRoute,
   Server,
@@ -71,11 +73,15 @@ export const player = {
   data: (): Promise<PlayerData | undefined> => call("GET /player"),
   /** undefined when not in a world (204). */
   inventory: (): Promise<PlayerInventory | undefined> => call("GET /player/inventory"),
+  /** undefined when not in a world (204). */
+  statistics: (): Promise<PlayerStatistics | undefined> => call("GET /player/statistics"),
 };
 
 export const servers = {
   /** Reloads servers.dat and pings every server; results arrive as serverPinged events. There is no ping route. */
   list: (): Promise<Server[]> => call("GET /servers"),
+  /** undefined in singleplayer and menus (204). Players come from the last list ping. */
+  current: (): Promise<CurrentServer | undefined> => call("GET /servers/current"),
   /** Connects to the address; unknown addresses get a temporary server entry. */
   join: (address: string): Promise<void> => {
     rememberConnecting(address);

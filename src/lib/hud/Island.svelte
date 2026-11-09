@@ -32,18 +32,18 @@
   const effects = $derived(hud.isOn("Effects") ? [] : live.effects);
   $effect(() => serverSession.start());
 
-  // At rest the capsule says who plays where: the player, effects, the server or world, this session's kills and
-  // deaths, the time played, then TPS and players online, which give way first when room runs out
+  // At rest: the player, effects, where they play, kills and deaths, time played, then TPS and players online, which
+  // give way first when room runs out
   const me = $derived(live.me);
   const server = $derived(serverSession.server);
+  const statistics = $derived(serverSession.statistics);
   const visible = $derived(!!island.kind || !!me);
 
   const DIMENSIONS: Record<string, string> = { "minecraft:overworld": "Overworld", "minecraft:the_nether": "Nether", "minecraft:the_end": "End" };
-  const dimension = $derived(me ? (DIMENSIONS[me.dimension] ?? blockName(me.dimension)) : "");
+  // Saved servers by name, others by address; singleplayer by dimension
   const place = $derived.by(() => {
-    if (server?.singleplayer) return { name: server.name, detail: dimension };
-    const ping = server?.ping ?? me?.ping;
-    return { name: server?.name, detail: ping ? `${ping} ms` : undefined };
+    if (!server) return { detail: me ? (DIMENSIONS[me.dimension] ?? blockName(me.dimension)) : undefined };
+    return { name: server.id === undefined ? server.address : server.name, detail: me?.ping ? `${me.ping} ms` : undefined };
   });
   const played = $derived.by(() => {
     const minutes = serverSession.minutes;
@@ -197,13 +197,13 @@
                   {#if place.detail}<span class="l2 num">{place.detail}</span>{/if}
                 </span>
               {/if}
-              {#if server && server.kills + server.deaths > 0}
-                <span class="item lead" aria-label="{server.kills} kills, {server.deaths} deaths">
-                  <span class="pair"><ItemIcon id="minecraft:iron_sword" size={16} /><span class="num">{server.kills}</span></span>
-                  <span class="pair"><ItemIcon id="minecraft:skeleton_skull" size={16} /><span class="num">{server.deaths}</span></span>
+              {#if statistics && statistics.kills + statistics.deaths > 0}
+                <span class="item lead" aria-label="{statistics.kills} kills, {statistics.deaths} deaths">
+                  <span class="pair"><ItemIcon id="minecraft:iron_sword" size={16} /><span class="num">{statistics.kills}</span></span>
+                  <span class="pair"><ItemIcon id="minecraft:skeleton_skull" size={16} /><span class="num">{statistics.deaths}</span></span>
                 </span>
               {/if}
-              {#if server}
+              {#if statistics}
                 <span class="item lead" aria-label="Played {played}">
                   <ItemIcon id="minecraft:clock" size={16} /><span class="num">{played}</span>
                 </span>
@@ -211,7 +211,7 @@
               {#if server?.tps !== undefined}
                 <span class="item lead"><span class="num">{server.tps.toFixed(1)}</span><span class="l2">TPS</span></span>
               {/if}
-              {#if server && !server.singleplayer}
+              {#if server?.players.online !== undefined}
                 <span class="item lead"><span class="num">{server.players.online.toLocaleString("en-US")}</span><span class="l2">online</span></span>
               {/if}
             </span>
