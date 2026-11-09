@@ -42,7 +42,7 @@
     {/if}
   </div>
   {#if open && inner.length}
-    <div class="cg-inset" id="group-{key}" transition:expand={{ duration: 280 }}>
+    <div class="cg-inset" id="group-{key}" transition:expand>
       <Rows items={inner} level={2} {path} {editor} {drill} />
     </div>
   {/if}

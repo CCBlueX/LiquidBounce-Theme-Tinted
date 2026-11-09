@@ -84,7 +84,7 @@
   border-radius: var(--r-group);
   content-visibility: auto;
   contain-intrinsic-size: auto 46px;
-  transition: background-color var(--t-pop) var(--ease);
+  transition: background-color var(--t-hover) ease;
 }
 .mg-row:hover { background: rgb(255 255 255 / 0.045); }
 .mg-list:focus-within .mg-row.selected { background: var(--fill); }
@@ -143,7 +143,7 @@
   color: var(--label);
   white-space: nowrap;
   flex: none;
-  transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease), opacity var(--t-pop) var(--ease);
+  transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease), opacity var(--t-pop) var(--ease);
 }
 .mg-pill:hover { background: var(--fill-3); }
 .mg-pill:active { transform: scale(0.97); }
@@ -299,10 +299,15 @@
   width: 280px;
   font-size: 13px;
 }
-.mg-pop:popover-open { animation: mg-pop-in var(--t-pop) var(--ease); }
-@keyframes mg-pop-in { from { opacity: 0; transform: translateY(-4px) scale(0.98); } }
-:root.reduce-motion .mg-pop:popover-open { animation-name: mg-fade-in; }
-@keyframes mg-fade-in { from { opacity: 0; } }
+.mg-pop {
+  transform-origin: top right;
+  opacity: 0;
+  transform: scale(0.97);
+  transition: opacity 100ms var(--ease), transform 100ms var(--ease), overlay 100ms allow-discrete, display 100ms allow-discrete;
+}
+.mg-pop:popover-open { opacity: 1; transform: none; transition-duration: 150ms; }
+@starting-style { .mg-pop:popover-open { opacity: 0; transform: scale(0.97); } }
+:root.reduce-motion .mg-pop { transform: none; }
 .mg-pop .group-label { padding: 6px 8px 2px; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--label-2); }
 .mg-pop hr { border: 0; height: 0.5px; margin: 4px 8px; background: rgb(255 255 255 / 0.12); }
 .mg-item {

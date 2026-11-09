@@ -63,7 +63,7 @@
             <div class="meter" aria-hidden="true">
               {#if piece.max > 0}
                 <span class="value num"><b>{piece.left}</b><span class="l2">/{piece.max}</span></span>
-                <span class="bar"><span class="fill" style:width="{share(piece) * 100}%"></span></span>
+                <span class="bar"><span class="fill" style:transform="scaleX({share(piece)})"></span></span>
               {:else}
                 <span class="value l2">No durability</span>
               {/if}
@@ -86,7 +86,7 @@
   .value { font-size: 12px; line-height: 14px; }
   .value b { font-weight: 600; }
   .bar { height: 4px; border-radius: 2px; background: var(--fill-2); overflow: hidden; }
-  .fill { display: block; height: 100%; border-radius: 2px; background: var(--label); transition: width var(--t-enter) var(--ease); }
+  .fill { display: block; height: 100%; background: var(--label); transform-origin: left; transition: transform var(--t-enter) var(--ease); }
   .low .fill { background: var(--negative); }
   .low .value b { color: #ff8a8d; }
   .none { padding: 0 0 6px; }

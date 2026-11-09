@@ -164,7 +164,7 @@
     line-height: 1;
     padding-bottom: 2px;
     color: var(--label);
-    transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
+    transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease);
   }
   .round.reload { font-size: 18px; padding-bottom: 0; }
   .round:hover { background: var(--fill); }
@@ -195,7 +195,7 @@
     font-size: 13px;
     font-weight: 600;
     background: var(--fill);
-    transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
+    transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease);
   }
   .close span:first-child { font-size: 17px; font-weight: 400; line-height: 1; padding-bottom: 2px; }
   .close:hover { background: var(--fill-2); }

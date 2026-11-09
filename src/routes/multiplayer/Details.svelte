@@ -165,7 +165,7 @@
   .join { padding: 0 16px 12px; display: grid; gap: 6px; }
   .primary {
     height: 30px; border-radius: 15px; color: #fff; background: var(--accent-fill); font-size: 13px; font-weight: 600;
-    transition: transform var(--t-press) var(--ease), background-color var(--t-pop) var(--ease);
+    transition: transform var(--t-press) var(--ease), background-color var(--t-hover) ease;
   }
   .primary:hover { background: var(--accent-strong); }
   .primary:active { transform: scale(0.98); }

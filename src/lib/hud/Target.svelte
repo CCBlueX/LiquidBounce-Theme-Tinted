@@ -20,8 +20,8 @@
         {#if target.distance !== undefined}<span class="t-footnote l2 num">{target.distance.toFixed(1)} m</span>{/if}
       </div>
       <div class="bar" role="meter" aria-label="Health" aria-valuemin={0} aria-valuemax={target.maxHealth} aria-valuenow={target.health}>
-        <i class="health" style:width="{(Math.max(0, target.health) / scale) * 100}%"></i>
-        {#if target.absorption > 0}<i class="absorption" style:width="{(target.absorption / scale) * 100}%"></i>{/if}
+        <i class="health" style:transform="scaleX({Math.max(0, target.health) / scale})"></i>
+        {#if target.absorption > 0}<i class="absorption" style:transform="translateX({(Math.max(0, target.health) / scale) * 100}%) scaleX({target.absorption / scale})"></i>{/if}
       </div>
       <span class="t-footnote l2 num">
         {hp(target.health)}{#if target.absorption > 0}{` + ${hp(target.absorption)}`}{/if} hp
@@ -64,7 +64,7 @@
     text-overflow: ellipsis;
   }
   .bar {
-    display: flex;
+    position: relative;
     height: 4px;
     margin: 2px 0;
     border-radius: 2px;
@@ -72,9 +72,10 @@
     overflow: hidden;
   }
   .bar i {
-    display: block;
-    height: 100%;
-    transition: width var(--t-pop) var(--ease);
+    position: absolute;
+    inset: 0;
+    transform-origin: left;
+    transition: transform var(--t-pop) var(--ease);
   }
   .health {
     background: var(--label);

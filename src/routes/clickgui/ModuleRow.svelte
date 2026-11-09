@@ -58,7 +58,7 @@
     gap: 6px;
     padding: 0 2px 0 10px;
     border-radius: var(--r-control);
-    transition: background-color var(--t-pop) var(--ease);
+    transition: background-color var(--t-hover) ease;
   }
   .row:hover { background: var(--fill); }
   .row.selected { background: var(--accent-tint); box-shadow: inset 0 0 0 1px rgb(70 119 255 / 0.75); }

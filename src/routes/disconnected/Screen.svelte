@@ -243,7 +243,7 @@
     font-size: 13px;
     font-weight: 600;
     text-shadow: none;
-    transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
+    transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease);
   }
   .primary:hover { background: var(--accent-strong); }
   .primary span { position: relative; }
@@ -291,7 +291,7 @@
     box-shadow: inset 0 0 0 0.5px var(--line);
     font-size: 13px;
     font-weight: 600;
-    transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
+    transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease);
   }
   .small:hover { background: var(--fill-3); }
   .small:active { transform: scale(0.96); }

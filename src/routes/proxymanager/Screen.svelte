@@ -2,13 +2,12 @@
   import "../../lib/ui/manager.css";
   import { onMount, tick } from "svelte";
   import { flip } from "svelte/animate";
-  import { cubicOut } from "svelte/easing";
   import { reasonOf, request } from "../../lib/api/client";
   import { on, onReconnect } from "../../lib/api/events";
   import { screen } from "../../lib/api/routes";
   import type { ActiveProxy, Proxy, ProxyEntry } from "../../lib/api/types";
   import { keepRowFocus } from "../../lib/focus";
-  import { fadeOut, flipDuration, rise, slideIn } from "../../lib/motion";
+  import { easeOut, fadeOut, flipDuration, rise, slideIn } from "../../lib/motion";
   import { failure, phrase } from "../../lib/phrases";
   import { play } from "../../lib/sound";
   import { isTextField, typingFocus } from "../../lib/typing";
@@ -560,7 +559,7 @@
                 {@const key = slotOf(row)}
                 {@const result = checks[keyOf(row)]}
                 {@const inUse = isActive(row)}
-                <div class="mg-row" class:selected={key === focusTarget} role="listitem" animate:flip={{ duration: flipDuration(), easing: cubicOut }}>
+                <div class="mg-row" class:selected={key === focusTarget} role="listitem" animate:flip={{ duration: flipDuration(), easing: easeOut }}>
                   <button
                     class="hit"
                     data-key={key}

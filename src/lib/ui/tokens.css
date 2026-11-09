@@ -44,15 +44,16 @@
   --r-group: 10px;
   --r-control: 7px;
 
-  /* Motion: one spring, a few durations; reduce motion zeroes movement and keeps short fades */
+  /* Motion: a strong ease-out for anything that enters or settles, plain ease for hover colors, a spring only for the
+     switch knob; reduce motion zeroes movement and keeps short fades */
   --spring: linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121,
     1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%,
     0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1);
-  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
   --t-press: 120ms;
+  --t-hover: 150ms;
   --t-pop: 200ms;
-  --t-enter: 360ms;
-  --rise: 8px;
+  --t-enter: 220ms;
 
   --scale: 1;
   color-scheme: dark;
@@ -61,7 +62,6 @@
 :root.reduce-motion {
   --spring: linear(0, 1);
   --t-enter: 160ms;
-  --rise: 0px;
 }
 
 /* The HUD floats over a sharp, moving world with no menu blur behind it */

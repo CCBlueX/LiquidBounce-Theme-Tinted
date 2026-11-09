@@ -350,7 +350,7 @@
           {#if selected}
             <aside class="details glass deep on-glass" aria-label="Selected world">
               {#key selected.name}
-                <div class="details-in" in:fade={{ duration: 160 }}>
+                <div class="details-in">
                   <div class="details-scroll">
                     <div class="hero-row">
                       <WorldIcon icon={selected.icon} size={64} />
@@ -462,7 +462,7 @@
   .pill {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 28px; padding: 0 8px 0 12px;
     border-radius: 14px; background: var(--fill-2); font-size: 13px; font-weight: 500; white-space: nowrap;
-    transition: transform var(--t-press) var(--ease), background-color var(--t-pop) var(--ease);
+    transition: transform var(--t-press) var(--ease), background-color var(--t-hover) ease;
   }
   .pill:hover { background: var(--fill-3); }
   .pill:active { transform: scale(0.97); }
@@ -477,7 +477,7 @@
   .card {
     position: relative; flex: none; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px 0 4px;
     border-radius: var(--r-group); text-align: left;
-    transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
+    transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease);
   }
   .card:hover { background: var(--fill); }
   .card:active { transform: scale(0.99); }
@@ -524,7 +524,7 @@
   .actions { flex: none; display: grid; gap: 8px; padding: 4px 12px 12px; }
   .play {
     height: 30px; border-radius: 15px; font-size: 13px; font-weight: 600; color: #fff; background: var(--accent-fill);
-    transition: transform var(--t-press) var(--ease), background-color var(--t-pop) var(--ease);
+    transition: transform var(--t-press) var(--ease), background-color var(--t-hover) ease;
   }
   .play:hover:not(:disabled) { background: var(--accent-strong); }
   .play:active:not(:disabled) { transform: scale(0.98); }

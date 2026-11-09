@@ -183,7 +183,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions (Esc goes back a page from any control inside) -->
-<div class="inspector" in:slideIn={{ x: 12 }} onkeydown={keydown} role="region" aria-label="{module.name} settings">
+<div class="inspector" onkeydown={keydown} role="region" aria-label="{module.name} settings">
   <header class="top on-glass" class:scrolled>
     <div class="grow">
       <h2 class="t-title3">{module.name}</h2>
@@ -207,7 +207,7 @@
       </div>
     {:else if page}
       {#key stack.length}
-        <div class="page" in:slideIn={{ x: stack.length ? 12 : -12 }}>
+        <div class="page" in:slideIn={{ x: stack.length ? 8 : -8, duration: 180 }}>
           {#if stack.length}
             {@const group = page.group}
             {@const enabled = enabledOf(group)}

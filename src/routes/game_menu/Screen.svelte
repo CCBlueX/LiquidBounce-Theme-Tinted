@@ -4,7 +4,6 @@
   import { on } from "../../lib/api/events";
   import { player, session } from "../../lib/api/routes";
   import type { PlayerData, Protocol, Session } from "../../lib/api/types";
-  import { rise } from "../../lib/motion";
   import PlayerHead from "../../lib/ui/PlayerHead.svelte";
 
   // Vanilla's pause menu keeps the centre column and every one of its buttons; this panel sits at the left edge with
@@ -39,7 +38,7 @@
 </script>
 
 {#if ready}
-  <aside class="panel glass on-glass" aria-label="Game menu extras" in:rise>
+  <aside class="panel glass on-glass" aria-label="Game menu extras">
     <h1 class="sr-only">Game menu</h1>
     <header class="who">
       <PlayerHead uuid={user?.uuid} avatar={user?.avatar} size={24} radius={12} />

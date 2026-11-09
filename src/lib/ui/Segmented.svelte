@@ -53,7 +53,7 @@
     font-size: 13px;
     font-weight: 500;
     color: var(--label-2);
-    transition: background-color var(--t-pop) var(--ease), color var(--t-pop) var(--ease);
+    transition: background-color var(--t-hover) ease, color var(--t-hover) ease;
   }
   button.on {
     background: var(--fill-on);

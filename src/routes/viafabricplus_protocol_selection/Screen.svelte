@@ -339,7 +339,7 @@
     padding: 0 12px 0 8px;
     font-size: 13px;
     outline: none;
-    transition: background-color var(--t-pop) var(--ease);
+    transition: background-color var(--t-hover) ease;
   }
   .row:first-child { border-radius: var(--r-group) var(--r-group) 0 0; }
   .row:last-child { border-radius: 0 0 var(--r-group) var(--r-group); }

@@ -2,13 +2,12 @@
   import "../../lib/ui/manager.css";
   import { onMount, tick } from "svelte";
   import { flip } from "svelte/animate";
-  import { cubicOut } from "svelte/easing";
   import { request } from "../../lib/api/client";
   import { on, onReconnect } from "../../lib/api/events";
   import { accounts as accountsApi, screen, session as sessionApi } from "../../lib/api/routes";
   import type { Account, RandomName, RemovedAccount, Session } from "../../lib/api/types";
   import { keepRowFocus } from "../../lib/focus";
-  import { fadeOut, flipDuration, rise, slideIn } from "../../lib/motion";
+  import { easeOut, fadeOut, flipDuration, rise, slideIn } from "../../lib/motion";
   import { failure, phrase } from "../../lib/phrases";
   import { play } from "../../lib/sound";
   import { isTextField, typingFocus } from "../../lib/typing";
@@ -606,7 +605,7 @@
                   class={item.kind === "section" ? "mg-section" : "mg-row"}
                   class:selected={item.kind === "account" && item.account.uuid === focusTarget}
                   role={item.kind === "section" ? "presentation" : "listitem"}
-                  animate:flip={{ duration: flipDuration(), easing: cubicOut }}
+                  animate:flip={{ duration: flipDuration(), easing: easeOut }}
                 >
                   {#if item.kind === "section"}
                     {item.label}

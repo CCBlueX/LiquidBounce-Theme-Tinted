@@ -74,7 +74,7 @@
   font-weight: 500;
   color: var(--label);
   white-space: nowrap;
-  transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
+  transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease);
 }
 .cg-pill:hover { background: var(--fill-3); }
 .cg-pill:active { transform: scale(0.97); }
@@ -135,14 +135,16 @@
   scrollbar-color: rgb(255 255 255 / 0.25) transparent;
   font-size: 13px;
 }
-.cg-pop:popover-open { animation: cg-pop-in var(--t-pop) var(--ease); }
-@keyframes cg-pop-in {
-  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+/* Grows out of its trigger's corner and leaves faster; transitions, so a quick reopen picks up where it is */
+.cg-pop {
+  transform-origin: top right;
+  opacity: 0;
+  transform: scale(0.97);
+  transition: opacity 100ms var(--ease), transform 100ms var(--ease), overlay 100ms allow-discrete, display 100ms allow-discrete;
 }
-:root.reduce-motion .cg-pop:popover-open { animation-name: cg-fade-in; }
-@keyframes cg-fade-in {
-  from { opacity: 0; }
-}
+.cg-pop:popover-open { opacity: 1; transform: none; transition-duration: 150ms; }
+@starting-style { .cg-pop:popover-open { opacity: 0; transform: scale(0.97); } }
+:root.reduce-motion .cg-pop { transform: none; }
 .cg-option {
   width: 100%;
   min-height: 28px;

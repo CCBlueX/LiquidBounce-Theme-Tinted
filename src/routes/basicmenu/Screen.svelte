@@ -107,7 +107,7 @@
     font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
-    transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
+    transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease);
   }
   .item.with-head { padding-left: 7px; gap: 7px; }
   .item:hover { background: var(--fill); }

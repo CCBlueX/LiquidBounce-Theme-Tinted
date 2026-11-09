@@ -80,7 +80,7 @@
     padding: 3px 12px 3px 4px;
     border-radius: var(--r-group);
     outline: none;
-    transition: background-color var(--t-pop) var(--ease);
+    transition: background-color var(--t-hover) ease;
   }
   .row:hover { background: var(--fill); }
   .row.selected { background: var(--accent-tint); box-shadow: inset 0 0 0 1px rgb(70 119 255 / 0.75); }

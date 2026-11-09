@@ -50,7 +50,7 @@
     border-radius: calc(var(--h) / 2);
     background: var(--fill-3);
     box-shadow: inset 0 0 0 0.5px var(--line);
-    transition: background-color var(--t-pop) var(--ease);
+    transition: background-color var(--t-hover) ease;
   }
   .switch::after {
     left: 4px;

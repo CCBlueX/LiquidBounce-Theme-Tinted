@@ -443,7 +443,7 @@
     border-radius: var(--r-group);
     outline: 1px solid transparent;
     outline-offset: 4px;
-    transition: outline-color var(--t-pop) var(--ease), scale var(--t-pop) var(--ease), filter var(--t-pop) var(--ease);
+    transition: outline-color var(--t-hover) ease, scale var(--t-pop) var(--ease), filter var(--t-pop) var(--ease);
   }
   .editor :global(.item:hover) {
     outline-color: rgb(255 255 255 / 0.4);
@@ -496,11 +496,11 @@
     line-height: 1;
     text-shadow: none;
     cursor: default;
-    transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease), opacity var(--t-pop) var(--ease);
+    transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease), opacity var(--t-pop) var(--ease);
   }
   .remove span { margin-top: -2px; }
   .remove:hover { background: rgb(78 80 88 / 0.96); }
-  .remove:active { transform: scale(0.9); }
+  .remove:active { transform: scale(0.95); }
   .remove.inside-left { left: 4px; }
   .remove.inside-top { top: 4px; }
   .dragging .remove {
@@ -573,7 +573,7 @@
     font-weight: 500;
     line-height: 1;
     cursor: default;
-    transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
+    transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease);
   }
   .add span { margin-top: -2px; }
   .add:hover { background: var(--fill-3); }
@@ -590,7 +590,7 @@
     color: #fff;
     text-shadow: none;
     cursor: default;
-    transition: background-color var(--t-pop) var(--ease), transform var(--t-press) var(--ease);
+    transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease);
   }
   .done:hover { background: var(--accent-strong); }
   .done:active { transform: scale(0.97); }

@@ -138,7 +138,7 @@
     return {
       duration: 300,
       css: (t) =>
-        `opacity: ${Math.min(1, Math.max(0, (t - 0.1) / 0.45))}; transform: scale(${0.94 + 0.06 * spring(t)})`,
+        `opacity: ${Math.min(1, Math.max(0, (t - 0.1) / 0.45))}; transform: scale(${0.96 + 0.04 * spring(t)})`,
     };
   }
 

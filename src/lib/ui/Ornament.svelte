@@ -85,7 +85,7 @@
     height: 32px;
     padding: 0 6px 0 10px;
     border-radius: 14px;
-    transition: background-color var(--t-pop) var(--ease);
+    transition: background-color var(--t-hover) ease;
   }
   .row:hover, .row:has(:focus-visible) { background: var(--fill); }
   .name {

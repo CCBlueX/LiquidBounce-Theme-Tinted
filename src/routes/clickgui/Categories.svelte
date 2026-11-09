@@ -78,7 +78,7 @@
     font-weight: 500;
     color: var(--label-2);
     text-align: left;
-    transition: background-color var(--t-pop) var(--ease), color var(--t-pop) var(--ease);
+    transition: background-color var(--t-hover) ease, color var(--t-hover) ease;
   }
   .tab:hover { background: var(--fill); color: var(--label); }
   .tab.current { background: var(--fill-on); color: var(--label); font-weight: 600; box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.3); }

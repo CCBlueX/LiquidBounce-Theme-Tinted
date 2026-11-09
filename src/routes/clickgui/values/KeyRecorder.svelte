@@ -232,7 +232,7 @@
     padding: 0 3px;
     border-radius: 6px;
     font-size: 13px;
-    transition: background-color var(--t-pop) var(--ease);
+    transition: background-color var(--t-hover) ease;
   }
   .recorder:hover { background: var(--fill); }
   .empty { padding: 0 8px; }

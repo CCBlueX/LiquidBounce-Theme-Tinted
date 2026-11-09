@@ -3,7 +3,7 @@
   import { fade } from "svelte/transition";
   import { bindLabel } from "../keys";
   import { moduleStore } from "../modules.svelte";
-  import { isReducedMotion, spring } from "../motion";
+  import { easeOut, isReducedMotion } from "../motion";
   import { settings } from "../settings.svelte";
   import Keycap from "../ui/Keycap.svelte";
   import { slotOf } from "./layout.svelte";
@@ -57,7 +57,7 @@
   );
 
   const move = (node: Element, fromTo: { from: DOMRect; to: DOMRect }) =>
-    flip(node, fromTo, { duration: isReducedMotion() ? 0 : 320, easing: spring });
+    flip(node, fromTo, { duration: isReducedMotion() ? 0 : 200, easing: easeOut });
   const appear = (node: Element) => fade(node, { duration: isReducedMotion() ? 120 : 180 });
 </script>
 

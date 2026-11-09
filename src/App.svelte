@@ -4,7 +4,7 @@
   import { request } from "./lib/api/client";
   import { onReconnect } from "./lib/api/events";
   import { ackScreen, onHandover, onScreenChange } from "./lib/api/screen";
-  import { isReducedMotion, spring } from "./lib/motion";
+  import { easeOut } from "./lib/motion";
   import { settings } from "./lib/settings.svelte";
 
   // The HUD and the cached ClickGUI run in their own browsers marked static; they never follow screen changes
@@ -153,16 +153,15 @@
     (event.shiftKey ? stops[stops.length - 1] : stops[0]).focus();
   }
 
-  // The incoming screen rises in over the outgoing one, which fades; under reduce motion both only fade
+  // The incoming screen fades in over the outgoing one, which fades out faster; its glass surfaces rise on their own
   function screenIn(_: Element): TransitionConfig {
     if (isStatic) return { duration: 0 };
-    if (isReducedMotion()) return { duration: 160, css: (t) => `opacity: ${t}` };
-    return { duration: 320, css: (t) => `opacity: ${Math.min(1, t * 2)}; transform: translateY(${(1 - spring(t)) * 10}px)` };
+    return { duration: 160, easing: easeOut, css: (t) => `opacity: ${t}` };
   }
 
   function screenOut(_: Element, from: string): TransitionConfig {
     if (IN_GAME.has(from) || from === handedOver || OVERLAYS.has(route)) return { duration: 0 };
-    return { duration: isReducedMotion() ? 140 : 180, css: (t) => `opacity: ${t}` };
+    return { duration: 120, easing: easeOut, css: (t) => `opacity: ${t}` };
   }
 </script>
 

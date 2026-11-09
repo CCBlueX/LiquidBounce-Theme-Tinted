@@ -303,7 +303,7 @@
   .row {
     display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 12px 0 16px; border-radius: var(--r-card);
     cursor: default; outline: none;
-    transition: transform var(--t-press) var(--ease), background-color var(--t-pop) var(--ease);
+    transition: transform var(--t-press) var(--ease), background-color var(--t-hover) ease;
   }
   .row:hover { background: var(--sheen), var(--fill), var(--glass); }
   .row:active { transform: scale(0.98); }

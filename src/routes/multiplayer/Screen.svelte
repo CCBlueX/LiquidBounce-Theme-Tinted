@@ -2,14 +2,12 @@
   import "../../lib/ui/values.css";
   import { onMount, tick } from "svelte";
   import { flip } from "svelte/animate";
-  import { cubicOut } from "svelte/easing";
-  import { fade } from "svelte/transition";
   import { request } from "../../lib/api/client";
   import { onReconnect } from "../../lib/api/events";
   import { client, screen, servers } from "../../lib/api/routes";
   import type { ClientInfo, LanServer, Protocol, Server, ServerAddRequest, ServerData } from "../../lib/api/types";
   import { plainText } from "../../lib/mctext";
-  import { flipDuration, rise } from "../../lib/motion";
+  import { easeOut, flipDuration, rise } from "../../lib/motion";
   import { livePings } from "../../lib/pings.svelte";
   import { play } from "../../lib/sound";
   import { typingFocus } from "../../lib/typing";
@@ -439,7 +437,7 @@
           {:else}
             <div class="list on-glass" role="listbox" aria-label="Server list, {shown.length} {shown.length === 1 ? 'entry' : 'entries'}">
               {#each shownSaved as entry, index (entry.key)}
-                <div class="cell" animate:flip={{ duration: flipDuration(320), easing: cubicOut }}>
+                <div class="cell" animate:flip={{ duration: flipDuration(), easing: easeOut }}>
                   <ServerRow
                     server={entry.data}
                     id={entry.id}
@@ -510,7 +508,7 @@
       {#if current}
         <aside class="glass deep pane" aria-label="{current.data.name} details" inert={!!sheet}>
           {#key current.key}
-            <div class="pane-inner" in:fade={{ duration: 140 }}>
+            <div class="pane-inner">
               <Details
                 server={current.data}
                 lan={current.lan}

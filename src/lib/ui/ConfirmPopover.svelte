@@ -110,7 +110,7 @@
   .modal .actions { margin-top: 14px; }
   .btn {
     height: 28px; border-radius: 14px; font-size: 13px; font-weight: 500; color: var(--label);
-    background: var(--fill-2); transition: transform var(--t-press) var(--ease), background-color var(--t-pop) var(--ease);
+    background: var(--fill-2); transition: transform var(--t-press) var(--ease), background-color var(--t-hover) ease;
   }
   .modal .btn { height: 30px; border-radius: 15px; }
   .btn:hover { background: var(--fill-3); }

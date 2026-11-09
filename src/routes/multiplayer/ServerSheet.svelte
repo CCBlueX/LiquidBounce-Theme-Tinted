@@ -105,7 +105,7 @@
   bind:this={panel}
   tabindex="-1"
   onkeydown={onKey}
-  in:rise={{ duration: 320, y: -10, scale: 0.98 }}
+  in:rise={{ duration: 240, y: -8, scale: 0.98 }}
 >
   <h2 id="sheet-title" class="t-title3">{editing !== undefined ? `Edit ${editing || "server"}` : "Add server"}</h2>
 
@@ -183,7 +183,7 @@
   .actions { display: flex; justify-content: flex-end; gap: 8px; }
   .btn {
     height: 28px; padding: 0 14px; border-radius: 14px; font-size: 13px; font-weight: 500; background: var(--fill-2);
-    transition: transform var(--t-press) var(--ease), background-color var(--t-pop) var(--ease);
+    transition: transform var(--t-press) var(--ease), background-color var(--t-hover) ease;
   }
   .btn:hover { background: var(--fill-3); }
   .btn:active { transform: scale(0.98); }
