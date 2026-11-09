@@ -26,11 +26,11 @@
 ></button>
 
 <style>
-  /* The button is the 24px-tall hit area; the track and knob are drawn inside it */
+  /* The button is the 24px-tall hit area, as wide as the track, so the track ends flush with the row's inset */
   .switch {
     --w: 32px;
     --h: 18px;
-    width: calc(var(--w) + 4px);
+    width: var(--w);
     height: 24px;
     position: relative;
     flex: none;
@@ -44,7 +44,7 @@
     translate: 0 -50%;
   }
   .switch::before {
-    left: 2px;
+    left: 0;
     width: var(--w);
     height: var(--h);
     border-radius: calc(var(--h) / 2);
@@ -53,7 +53,7 @@
     transition: background-color var(--t-hover) ease;
   }
   .switch::after {
-    left: 4px;
+    left: 2px;
     width: calc(var(--h) - 4px);
     height: calc(var(--h) - 4px);
     border-radius: var(--h);

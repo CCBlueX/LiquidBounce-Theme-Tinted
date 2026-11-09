@@ -236,6 +236,8 @@
   }
   .recorder:hover { background: var(--fill); }
   .empty { padding: 0 8px; }
+  /* Trailing keycaps end on the row's inset; the hover fill may run past it */
+  :global(.cg-row) > .recorder:last-child:not(.empty, .recording) { margin-right: -3px; }
   .none, .prompt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .none { color: var(--label-2); }
   .recording { padding: 0 8px; background: var(--accent-tint); box-shadow: inset 0 0 0 1px rgb(70 119 255 / 0.6); }

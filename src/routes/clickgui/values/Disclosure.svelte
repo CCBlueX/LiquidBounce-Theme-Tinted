@@ -49,7 +49,6 @@
 </div>
 
 <style>
-  .head { padding-right: 8px; }
   .opener {
     flex: 1;
     min-width: 0;

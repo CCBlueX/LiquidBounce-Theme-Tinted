@@ -16,13 +16,16 @@
     kind = "item",
     label = "",
     fallback = false,
+    initials,
   }: {
     id: string;
-    size?: 16 | 32 | 48 | 64 | 18 | 36;
+    size?: 16 | 24 | 32 | 48 | 64 | 18 | 36;
     kind?: "item" | "effect";
     label?: string;
     /** Once every source failed, show the name's initial in the icon's place instead of a blank. */
     fallback?: boolean;
+    /** Text for the fallback instead of the name's initial. */
+    initials?: string;
   } = $props();
 
   // Rendered item icons need item components, which the client binds only once a world is joined. Before that the
@@ -97,7 +100,7 @@
     if (img) texels = kind === "item" && index === 0 ? img.naturalWidth / 4 : img.naturalWidth;
   }
 
-  const initial = $derived((label || id.slice(id.indexOf(":") + 1)).charAt(0).toUpperCase());
+  const initial = $derived(initials ?? (label || id.slice(id.indexOf(":") + 1)).charAt(0).toUpperCase());
   const inset = $derived(drawn ? (size - drawn.size) / 2 : 0);
 </script>
 

@@ -2,7 +2,7 @@
   import { tick } from "svelte";
   import { request } from "../../../lib/api/client";
   import { player } from "../../../lib/api/routes";
-  import type { FileDialogResult, JsonValue, MultiChooseValue, Registry, Vec2, Vec3 } from "../../../lib/api/types";
+  import type { FileDialogResult, JsonValue, MultiChooseValue, Vec2, Vec3 } from "../../../lib/api/types";
   import { play } from "../../../lib/sound";
   import ItemIcon from "../../../lib/ui/ItemIcon.svelte";
   import Segmented from "../../../lib/ui/Segmented.svelte";
@@ -12,9 +12,10 @@
   import { formatRanged, humanize, idName, pathKey, stepOf, type Item } from "../tree";
   import Chooser from "./Chooser.svelte";
   import ColorField from "./ColorField.svelte";
+  import CurveEditor from "./CurveEditor.svelte";
   import KeyRecorder from "./KeyRecorder.svelte";
+  import RegistryList from "./RegistryList.svelte";
   import RegistryPicker from "./RegistryPicker.svelte";
-  import { iconKind, registry } from "./registry";
 
   // One row of the settings list for every value type that is not a group
   let { item, editor }: { item: Item; editor: SettingsEditor } = $props();
@@ -23,18 +24,6 @@
   const label = $derived(humanize(node.name));
   const key = $derived(pathKey(item.trail, node.name));
   const set = (value: JsonValue, delay = 0) => editor.set(item.trail, node, value, delay);
-
-  // Registry entry names for list chips; ids stand in until the registry arrives or when it cannot be loaded
-  let names = $state<Registry>({});
-  $effect(() => {
-    if (node.valueType !== "REGISTRY_LIST" && node.valueType !== "REGISTRY_MUTABLE_LIST") return;
-    let live = true;
-    registry(node.registry).then(
-      (loaded) => live && (names = loaded),
-      () => {},
-    );
-    return () => (live = false);
-  });
 
   function toggleChoice(value: MultiChooseValue, choice: string) {
     const on = value.value.includes(choice);
@@ -108,26 +97,6 @@
     } catch {
       play("error");
     }
-  }
-
-  function setPoint(points: Vec2[], index: number, axis: "x" | "y", input: HTMLInputElement, min: number, max: number) {
-    const next = numberFrom(input, false, min, max);
-    if (next === undefined) {
-      input.value = String(points[index][axis]);
-      play("error");
-      return;
-    }
-    input.value = String(next);
-    set(points.map((point, i) => (i === index ? { ...point, [axis]: next } : point)));
-  }
-
-  function addPoint(points: Vec2[]) {
-    // A new point goes halfway between the last two, so the curve keeps its shape
-    const last = points[points.length - 1];
-    const before = points[points.length - 2] ?? last;
-    const mid = { x: Number(((before.x + last.x) / 2).toFixed(3)), y: Number(((before.y + last.y) / 2).toFixed(3)) };
-    play("confirm");
-    set([...points.slice(0, -1), mid, last]);
   }
 
   function summary(value: JsonValue): string {
@@ -283,57 +252,28 @@
   </div>
 {:else if node.valueType === "REGISTRY_LIST" || node.valueType === "REGISTRY_MUTABLE_LIST"}
   {@const list = node.value}
-  {@const kind = iconKind(node.registry)}
   <div class="cg-row stack" data-key={key} data-type={node.valueType}>
     {@render field(label)}
     <span class="cg-val t-footnote">{list.length === 1 ? "1 entry" : `${list.length} entries`}</span>
     <RegistryPicker registryName={node.registry} {label} exclude={list} onpick={(id) => set([...list, id])} />
-    <div class="cg-full cg-chips chips" role="list" aria-labelledby="label-{key}">
-      {#each list as entry, index (index)}
-        {@const name = names[entry]?.name || idName(entry)}
-        <span class="cg-chip on-text" role="listitem">
-          {#if kind}<ItemIcon id={entry} size={kind === "effect" ? 18 : 16} {kind} fallback />{/if}
-          <span class="ellipsis" title={name}>{name}</span>
-          <button class="x" data-remove aria-label="Remove {name}" onclick={(event) => removeAt(list, index, event)}>×</button>
-        </span>
-      {:else}
-        <span class="cg-hint">Empty</span>
-      {/each}
+    <div class="cg-full">
+      <RegistryList {list} registryName={node.registry} {label} onchange={(next) => set(next)} />
     </div>
   </div>
 {:else if node.valueType === "CURVE"}
   {@const curve = node}
   <div class="cg-row stack" data-key={key} data-type={node.valueType}>
     {@render field(label)}
-    <button class="cg-pill quiet" onclick={() => addPoint(curve.value)}>Add point</button>
-    <div class="cg-full points" role="group" aria-labelledby="label-{key}">
-      <span class="cg-hint">#</span>
-      <span class="cg-hint">{curve.xAxis.label}</span>
-      <span class="cg-hint">{curve.yAxis.label}</span>
-      <span></span>
-      {#each curve.value as point, index (index)}
-        <span class="cg-val t-footnote">{index + 1}</span>
-        {#each ["x", "y"] as const as axis (axis)}
-          {@const range = axis === "x" ? curve.xAxis.range : curve.yAxis.range}
-          <input
-            class="cg-field"
-            type="number"
-            step="any"
-            min={range.from}
-            max={range.to}
-            value={point[axis]}
-            aria-label="Point {index + 1} {axis === 'x' ? curve.xAxis.label : curve.yAxis.label}"
-            onchange={(event) => setPoint(curve.value, index, axis, event.currentTarget, range.from, range.to)}
-          />
-        {/each}
-        <button
-          data-remove
-          class="cg-pill quiet remove"
-          aria-label="Remove point {index + 1}"
-          disabled={curve.value.length <= 2}
-          onclick={(event) => removeAt(curve.value, index, event)}>×</button
-        >
-      {/each}
+    <span class="cg-val t-footnote">{curve.value.length} points</span>
+    <div class="cg-full">
+      <CurveEditor
+        value={curve.value}
+        xAxis={curve.xAxis}
+        yAxis={curve.yAxis}
+        tension={curve.tension}
+        {label}
+        onchange={(points: Vec2[], delay) => set(points, delay)}
+      />
     </div>
   </div>
 {:else if node.valueType === "VECTOR2_F" || node.valueType === "VECTOR3_D" || node.valueType === "VECTOR3_I"}
@@ -397,10 +337,6 @@
   .axes { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 6px; }
   .axis { display: flex; align-items: center; gap: 6px; }
   .axis input { flex: 1; width: 0; }
-  .points { display: grid; grid-template-columns: 20px 1fr 1fr 24px; gap: 4px 6px; align-items: center; margin-top: 4px; }
-  .points input { width: 100%; }
-  .remove { padding: 0; width: 24px; height: 24px; justify-content: center; }
-  .remove:disabled { opacity: 0.35; }
   /* A long chord pushes the action switch to a line of its own instead of squeezing the label */
   .bind { flex-wrap: wrap; row-gap: 2px; padding-block: 4px; }
   .bind > :global(.cg-label) { flex: 1 1 auto; }
