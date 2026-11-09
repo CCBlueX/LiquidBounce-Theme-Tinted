@@ -39,12 +39,33 @@
   // The client adds a second "Back to server list" button 140 GUI units from the right edge and 30 from the bottom, so
   // servers that cover vanilla's button can't trap a player; the card keeps clear of it at every GUI scale
   let scaledWidth = $state<number | undefined>();
+  let scaledHeight = $state<number | undefined>();
+  let measured = $state(false);
+  let stageHeight = $state(0);
   let resizeTimer: number | undefined;
-  const measure = () => client.window().then((info) => (scaledWidth = info.scaledWidth)).catch(() => {});
+  const measure = () =>
+    client
+      .window()
+      .then((info) => ({ scaledWidth, scaledHeight } = info))
+      .catch(() => {})
+      .finally(() => (measured = true));
   const remeasure = () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(measure, 200);
   };
+
+  // Vanilla centres its title (9 + 20 padding), the reason (9 a line + 20) and its button (20 + 4). The page is never
+  // told the reason, so room is kept for four lines of it; servers and the world list as many rows as fit under that.
+  const REASON_LINES = 4;
+  const rows = $derived.by(() => {
+    if (!measured || !stageHeight) return 0;
+    if (!scaledHeight) return 1;
+    const layout = 73 + 9 * REASON_LINES;
+    const vanillaBottom = ((Math.floor((scaledHeight - layout) / 2) + layout) * stageHeight) / scaledHeight;
+    // Card: 32 from the bottom, 12 clear of vanilla, 62 for the top row, 30 for an error, 38 + 40 a row for the lists
+    const room = stageHeight - vanillaBottom - 12 - 32 - 62 - (error ? 30 : 0);
+    return Math.max(0, Math.min(SHOWN, Math.floor((room - 38) / 40)));
+  });
 
   onMount(() => {
     tick().then(() => reconnectButton?.focus());
@@ -135,7 +156,7 @@
 
 <svelte:window onresize={remeasure} />
 
-<div class="stage" style:--scaled-width={scaledWidth}>
+<div class="stage" style:--scaled-width={scaledWidth} bind:clientHeight={stageHeight}>
   <section class="card glass on-glass" aria-labelledby="disconnected-title" in:rise={{ delay: 80 }}>
     <h1 id="disconnected-title" class="sr-only">Play again</h1>
     <div class="top">
@@ -160,13 +181,13 @@
       <p id="reconnect-error" class="error t-callout" role="alert"><span class="mark" aria-hidden="true">!</span>{error}</p>
     {/if}
 
-    {#if shown.length || world}
+    {#if rows > 0 && (shown.length || world)}
       <div class="columns">
         {#if shown.length}
           <div class="column">
             <h2 class="t-footnote">Servers</h2>
             <ul class="group servers">
-              {#each shown as server (server.id)}
+              {#each shown.slice(0, rows) as server (server.id)}
                 <li class="row">
                   <span class="icon">
                     <Base64Icon icon={server.icon} size={32}>
@@ -208,9 +229,7 @@
 </div>
 
 <style>
-  /* Vanilla centres its title, reason and button; with GUI scale auto they reach about 27% of the height below the
-     middle for a four-line reason. The card keeps to the strip under that and lists fewer servers on short canvases. */
-  .stage { position: absolute; inset: 0; container-type: size; pointer-events: none; }
+  .stage { position: absolute; inset: 0; pointer-events: none; }
   .card {
     --quit: calc(100% * 140 / var(--scaled-width, 1000000) + 16px);
     --width: min(640px, calc(100% - 64px), calc(100% - var(--quit) - 32px));
@@ -225,8 +244,6 @@
     gap: 12px;
     pointer-events: auto;
   }
-  @container (max-height: 860px) { .servers li:nth-child(n + 3) { display: none; } }
-  @container (max-height: 700px) { .servers li:nth-child(n + 2) { display: none; } }
   .top { display: flex; align-items: center; gap: 12px; min-height: 30px; }
   .auto { display: flex; align-items: center; gap: 6px; color: var(--label-2); }
   .session { margin-left: auto; display: flex; gap: 6px; min-width: 0; }
