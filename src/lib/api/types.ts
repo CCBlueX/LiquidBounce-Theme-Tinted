@@ -701,6 +701,85 @@ export type MarketplaceQuery = {
 export type PageQuery = { page?: number; limit?: number };
 export type ReviewRequest = { rating: number; comment: string };
 
+// The ClickGUI marketplace (/marketplace/configs, /marketplace/items). Dates are epoch ms; unknown values are left out.
+
+/** `code` and `unfeatured` only come with a page of configs. */
+export type MarketplacePage<T> = { items: T[]; pagination: Pagination; code?: boolean; unfeatured?: number };
+/** `address` is "author/name"; `image` is a server icon URL or data URL; `overlayOn` the config it loads on top of. */
+export type MarketConfig = {
+  id: number;
+  name: string;
+  address: string;
+  image?: string;
+  featured: boolean;
+  binds: boolean;
+  tags: string[];
+  servers: string[];
+  protocol?: string;
+  protocolMatches: boolean;
+  works: number;
+  fails: number;
+  downloads: number;
+  updatedAt?: number;
+  overlayOn?: string;
+  visibility?: "public" | "unlisted";
+};
+export type MarketLinkedConfig = { id: number; address: string; image?: string; featured: boolean };
+export type MarketConfigRevision = {
+  id: number;
+  createdAt?: number;
+  changelog?: string;
+  works: number;
+  fails: number;
+  latest: boolean;
+  first: boolean;
+};
+/** `configs` load first, in order, and `installs` get installed; `report` is the player's own report on the newest revision. */
+export type MarketConfigDetail = {
+  config: MarketConfig;
+  description: string;
+  createdAt?: number;
+  forkOf?: MarketLinkedConfig;
+  configs: MarketLinkedConfig[];
+  installs: MarketItem[];
+  revisions: MarketConfigRevision[];
+  changes?: string[];
+  report?: boolean;
+};
+export type MarketRevision = { id: number; version: string; liquidbounce?: string; createdAt?: number; changelog?: string };
+export type MarketItemType = "Addon" | "Script" | "Theme";
+/** `notFor` is the running LiquidBounce when no revision fits it; `inUse` marks the active theme. */
+export type MarketItem = {
+  id: number;
+  type: MarketItemType;
+  name: string;
+  author?: string;
+  image?: string;
+  summary: string;
+  featured: boolean;
+  downloads: number;
+  rating?: number;
+  reviews: number;
+  subscribed: boolean;
+  installable: boolean;
+  notFor?: string;
+  installed?: MarketRevision;
+  update: boolean;
+  restartRequired: boolean;
+  inUse: boolean;
+};
+export type MarketItemDetail = {
+  item: MarketItem;
+  description: string;
+  liquidbounce: string;
+  versions: { revision: MarketRevision; installed: boolean; fits: boolean }[];
+};
+export type MarketInstalled = { id: number; type: MarketplaceItemType; name: string };
+export type MarketSort = "top" | "new";
+/** `server` filters by the server the player is on; a query starting with the share code prefix finds that config. */
+export type MarketConfigQuery = { page?: number; query?: string; sort?: MarketSort; tags?: string; server?: boolean; featured?: boolean };
+export type MarketItemQuery = { type: MarketItemType; page?: number; query?: string; sort?: MarketSort };
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Every registered REST route: "<METHOD> <path under /api/v1/client>" to its query, body and response.
 // `response: undefined` means 204 No Content.
@@ -860,6 +939,21 @@ export type ApiRoutes = {
   "POST /marketplace/{id}/unsubscribe": Route<NoContent>;
   "GET /marketplace/{id}/reviews": Route<Paged<MarketplaceReview>, never, PageQuery>;
   "POST /marketplace/{id}/reviews": Route<MarketplaceReview, ReviewRequest>;
+  "GET /marketplace/tags": Route<string[]>;
+  "GET /marketplace/configs": Route<MarketplacePage<MarketConfig>, never, MarketConfigQuery>;
+  "GET /marketplace/configs/{id}": Route<MarketConfigDetail>;
+  "GET /marketplace/configs/{id}/modules": Route<string[]>;
+  /** Without `modules` the whole config loads and is tracked. */
+  "POST /marketplace/configs/{id}/load": Route<NoContent, { modules?: string[] }>;
+  /** `works` missing withdraws the report; 401 when not signed in. */
+  "PUT /marketplace/configs/{id}/report": Route<MarketConfig, { works?: boolean }>;
+  "GET /marketplace/items": Route<MarketplacePage<MarketItem>, never, MarketItemQuery>;
+  "GET /marketplace/items/installed": Route<MarketInstalled[]>;
+  "GET /marketplace/items/{id}": Route<MarketItemDetail>;
+  "POST /marketplace/items/{id}/install": Route<NoContent>;
+  "POST /marketplace/items/{id}/update": Route<MarketItem>;
+  "POST /marketplace/items/{id}/remove": Route<NoContent>;
+  "POST /marketplace/items/{id}/apply": Route<NoContent>;
 };
 
 // ---------------------------------------------------------------------------------------------------------------------

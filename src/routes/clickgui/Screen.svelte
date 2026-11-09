@@ -13,8 +13,11 @@
   import { typingFocus } from "../../lib/typing";
   import SearchField from "../../lib/ui/SearchField.svelte";
   import Segmented from "../../lib/ui/Segmented.svelte";
-  import Categories from "./Categories.svelte";
+  import Categories, { type ClickGuiView } from "./Categories.svelte";
   import Inspector from "./Inspector.svelte";
+  import MarketDetail from "./marketplace/MarketDetail.svelte";
+  import MarketplaceView from "./marketplace/MarketplaceView.svelte";
+  import { marketState } from "./marketplace/market.svelte";
   import ModuleRow from "./ModuleRow.svelte";
   import SettingsView from "./settings/SettingsView.svelte";
   import { areaEntries } from "./settings/areas";
@@ -39,7 +42,7 @@
   let grid = $state<HTMLDivElement>();
   let frame = $state<HTMLDivElement>();
   let editingHud = $state(false);
-  let settingsOpen = $state(false);
+  let view = $state<ClickGuiView>("modules");
   let settingsReveal = $state<{ area: SettingsArea; names: string[] }>();
 
   const totals = $derived(
@@ -54,8 +57,10 @@
       return all;
     }, {}),
   );
-  const searching = $derived(query.trim() !== "");
-  const showSettings = $derived(settingsOpen && !searching);
+  // In the Marketplace the search field searches the marketplace
+  const showMarket = $derived(view === "marketplace" && marketState.available === true);
+  const searching = $derived(query.trim() !== "" && !showMarket);
+  const showSettings = $derived(view === "settings" && !searching);
   const inCategory = $derived(list.filter((module) => module.category === category));
   const visible = $derived.by(() => {
     const base = searching
@@ -149,10 +154,12 @@
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
       if (typeof saved.category === "string") category = saved.category;
       if (typeof saved.module === "string") selectedName = saved.module;
-      settingsOpen = saved.settings === true;
+      if (saved.view === "settings" || saved.view === "marketplace") view = saved.view;
     } catch {
       localStorage.removeItem(STORAGE_KEY);
     }
+    marketState.restore();
+    marketState.probe();
     ready = true;
     // The cached page loads hidden when a world is joined
     if (!cached) play("open");
@@ -210,7 +217,7 @@
   });
 
   $effect(() => {
-    if (category) localStorage.setItem(STORAGE_KEY, JSON.stringify({ category, module: selectedName, settings: settingsOpen }));
+    if (category) localStorage.setItem(STORAGE_KEY, JSON.stringify({ category, module: selectedName, view }));
   });
 
   // Toggles arrive per module; a panic or config load sends dozens at once, so they are applied in batches
@@ -258,8 +265,8 @@
   }
 
   function select(module: Module, names?: string[]) {
-    if (module.name !== selectedName || settingsOpen) play("tap");
-    settingsOpen = false;
+    if (module.name !== selectedName || view !== "modules") play("tap");
+    view = "modules";
     selectedName = module.name;
     focusName = module.name;
     reveal = names;
@@ -267,14 +274,20 @@
 
   function chooseCategory(next: string) {
     category = next;
-    settingsOpen = false;
+    view = "modules";
     query = "";
     grid?.scrollTo({ top: 0 });
   }
 
   function openSettings(reveal?: { area: SettingsArea; names: string[] }) {
-    settingsOpen = true;
+    view = "settings";
     settingsReveal = reveal;
+    query = "";
+  }
+
+  function openView(next: Exclude<ClickGuiView, "modules">) {
+    if (next === "settings") return openSettings();
+    view = next;
     query = "";
   }
 
@@ -336,7 +349,7 @@
   }
 
   function searchKey(event: KeyboardEvent) {
-    if (showSettings) return;
+    if (showSettings || showMarket) return;
     if (event.key === "ArrowDown") {
       event.preventDefault();
       focusCard(focusTarget);
@@ -420,7 +433,16 @@
     offset = { x: clamp(offset.x + delta[0], 240), y: clamp(offset.y + delta[1], 120) };
   }
 
-  const title = $derived(searching ? `“${query.trim()}”` : showSettings ? "Settings" : category);
+  const title = $derived(
+    showMarket ? "Marketplace" : searching ? `“${query.trim()}”` : showSettings ? "Settings" : category,
+  );
+  const searchHint = $derived(
+    !showMarket
+      ? "Search modules and settings"
+      : marketState.kind === "Configs"
+        ? "Search or paste a share code"
+        : `Search ${marketState.kind.toLowerCase()}`,
+  );
   const subtitle = $derived.by(() => {
     if (searching) {
       const modulesText = visible.length === 1 ? "1 module" : `${visible.length} modules`;
@@ -441,29 +463,36 @@
           {totals}
           enabled={enabledCounts}
           current={searching ? "" : category}
-          settings={showSettings}
+          view={showMarket ? "marketplace" : showSettings ? "settings" : "modules"}
+          marketplace={marketState.available === true}
           onselect={chooseCategory}
-          onsettings={() => openSettings()}
+          onview={openView}
           onedithud={() => (editingHud = true)}
         />
 
-        <main class="list" class:wide={showSettings} aria-label="ClickGUI">
+        <main class="list" class:wide={showSettings || (showMarket && marketState.selected === undefined)} aria-label="ClickGUI">
           <header class="head on-glass">
             <div class="titles">
               <h1 class="t-large">{title}</h1>
-              {#if list.length && !showSettings}<span class="t-callout l2 num">{subtitle}</span>{/if}
+              {#if showMarket}
+                <span class="t-callout l2 num">{marketState.total.toLocaleString("en-US")} {marketState.kind.toLowerCase()}</span>
+              {:else if list.length && !showSettings}
+                <span class="t-callout l2 num">{subtitle}</span>
+              {/if}
             </div>
-            {#if !showSettings}
+            {#if !showSettings && !showMarket}
               <Segmented options={["All", "Enabled"]} value={filter} label="Show" small onchange={(value) => (filter = value)} />
             {/if}
             <!-- svelte-ignore a11y_no_noninteractive_element_interactions (arrow keys and Enter from the field inside) -->
             <div class="search" bind:this={searchBox} onkeydown={searchKey} role="search">
               <!-- The cached page loads hidden; it focuses the field itself when the ClickGUI shows -->
-              <SearchField bind:value={query} placeholder="Search modules and settings" shortcut="Ctrl K" autofocus={autofocus && !cached} />
+              <SearchField bind:value={query} placeholder={searchHint} shortcut="Ctrl K" autofocus={autofocus && !cached} />
             </div>
           </header>
 
-          {#if showSettings}
+          {#if showMarket}
+            <MarketplaceView {query} />
+          {:else if showSettings}
             <SettingsView reveal={settingsReveal} />
           {:else}
             <div class="grid-wrap" bind:this={grid}>
@@ -514,7 +543,11 @@
           {/if}
         </main>
 
-        {#if selected && !showSettings}
+        {#if showMarket && marketState.selected !== undefined}
+          <aside class="glass deep inspector" in:slideIn>
+            <MarketDetail id={marketState.selected} configs={marketState.kind === "Configs"} />
+          </aside>
+        {:else if selected && !showSettings && !showMarket}
           <aside class="glass deep inspector" in:slideIn>
             {#key selected.name}
               <Inspector

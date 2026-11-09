@@ -1,46 +1,56 @@
+<script lang="ts" module>
+  export type ClickGuiView = "modules" | "marketplace" | "settings";
+</script>
+
 <script lang="ts">
   import { play } from "../../lib/sound";
 
-  // The category sidebar: names with the number of enabled modules, then Settings at the bottom. Up and Down move
-  // between all of them. The HUD editor entry sits below.
+  // The category sidebar: names with the number of enabled modules, then Marketplace and Settings at the bottom. Up
+  // and Down move between all of them. The HUD editor entry sits below.
   let {
     categories,
     totals,
     enabled,
     current,
-    settings,
+    view,
+    marketplace,
     onselect,
-    onsettings,
+    onview,
     onedithud,
   }: {
     categories: string[];
     totals: Record<string, number>;
     enabled: Record<string, number>;
     current: string;
-    /** The Settings view is shown. */
-    settings: boolean;
+    view: ClickGuiView;
+    /** The client has the marketplace routes. */
+    marketplace: boolean;
     onselect: (category: string) => void;
-    onsettings: () => void;
+    onview: (view: Exclude<ClickGuiView, "modules">) => void;
     onedithud: () => void;
   } = $props();
 
   let bar: HTMLDivElement;
 
+  const places = $derived<{ view: Exclude<ClickGuiView, "modules">; label: string }[]>([
+    ...(marketplace ? [{ view: "marketplace" as const, label: "Marketplace" }] : []),
+    { view: "settings", label: "Settings" },
+  ]);
+
   function select(category: string) {
-    if (category === current && !settings) return;
+    if (category === current && view === "modules") return;
     play("tap");
     onselect(category);
   }
 
-  function openSettings() {
-    if (settings) return;
+  function open(next: Exclude<ClickGuiView, "modules">) {
+    if (view === next) return;
     play("tap");
-    onsettings();
+    onview(next);
   }
 
-  // The Settings tab comes after the categories
   function key(event: KeyboardEvent, index: number) {
-    const last = categories.length;
+    const last = categories.length + places.length - 1;
     const next =
       event.key === "ArrowDown" ? (index === last ? 0 : index + 1)
       : event.key === "ArrowUp" ? (index === 0 ? last : index - 1)
@@ -50,8 +60,8 @@
     if (next === undefined) return;
     event.preventDefault();
     bar.querySelectorAll<HTMLElement>("[role=tab]")[next]?.focus();
-    if (next === last) openSettings();
-    else select(categories[next]);
+    if (next < categories.length) select(categories[next]);
+    else open(places[next - categories.length].view);
   }
 </script>
 
@@ -59,14 +69,14 @@
   <div role="tablist" aria-label="Categories" aria-orientation="vertical" bind:this={bar}>
     {#each categories as category, index (category)}
       {@const on = enabled[category] ?? 0}
-      {@const isCurrent = !settings && category === current}
+      {@const isCurrent = view === "modules" && category === current}
       <button
         role="tab"
         class="tab"
         class:current={isCurrent}
         aria-selected={isCurrent}
         aria-label="{category}, {totals[category] ?? 0} modules, {on} on"
-        tabindex={isCurrent || (!settings && !categories.includes(current) && index === 0) ? 0 : -1}
+        tabindex={isCurrent || (view === "modules" && !categories.includes(current) && index === 0) ? 0 : -1}
         onclick={() => select(category)}
         onkeydown={(event) => key(event, index)}
       >
@@ -74,17 +84,20 @@
         {#if on}<span class="count num" aria-hidden="true">{on}</span>{/if}
       </button>
     {/each}
-    <button
-      role="tab"
-      class="tab settings"
-      class:current={settings}
-      aria-selected={settings}
-      tabindex={settings ? 0 : -1}
-      onclick={openSettings}
-      onkeydown={(event) => key(event, categories.length)}
-    >
-      <span class="name">Settings</span>
-    </button>
+    {#each places as place, index (place.view)}
+      <button
+        role="tab"
+        class="tab"
+        class:first={index === 0}
+        class:current={view === place.view}
+        aria-selected={view === place.view}
+        tabindex={view === place.view ? 0 : -1}
+        onclick={() => open(place.view)}
+        onkeydown={(event) => key(event, categories.length + index)}
+      >
+        <span class="name">{place.label}</span>
+      </button>
+    {/each}
   </div>
   <button class="tab edit" onclick={() => (play("open"), onedithud())}>Edit HUD</button>
 </nav>
@@ -111,7 +124,7 @@
   .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .count { font-size: 12px; color: var(--label-2); }
   .current .count { color: var(--label); }
-  /* Settings sits right above Edit HUD, apart from the categories */
-  .settings { margin-top: auto; }
+  /* Marketplace and Settings sit right above Edit HUD, apart from the categories */
+  .first { margin-top: auto; }
   .edit { flex: none; }
 </style>

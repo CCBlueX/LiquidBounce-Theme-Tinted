@@ -10,6 +10,14 @@ import type {
   ClientInfo,
   ConfigurableGroup,
   CurrentServer,
+  MarketConfig,
+  MarketConfigDetail,
+  MarketConfigQuery,
+  MarketInstalled,
+  MarketItem,
+  MarketItemDetail,
+  MarketItemQuery,
+  MarketplacePage,
   Module,
   ModuleCategory,
   PlayerData,
@@ -135,6 +143,30 @@ export const storage = {
       },
     ),
   set: (key: string, value: string): Promise<void> => call("PUT /localStorage", { body: { key, value } }),
+};
+
+/**
+ * The ClickGUI marketplace. Actions answer the client's reason on failure and tell the player in chat and a
+ * notification themselves; 503 when the marketplace cannot be reached.
+ */
+export const market = {
+  tags: (): Promise<string[]> => call("GET /marketplace/tags"),
+  configs: (query: MarketConfigQuery): Promise<MarketplacePage<MarketConfig>> => call("GET /marketplace/configs", { query }),
+  config: (id: number): Promise<MarketConfigDetail> => call("GET /marketplace/configs/{id}", { params: { id } }),
+  modules: (id: number): Promise<string[]> => call("GET /marketplace/configs/{id}/modules", { params: { id } }),
+  /** Without `modules` the whole config loads and is tracked; with them only those modules change. */
+  load: (id: number, modules?: string[]): Promise<void> =>
+    call("POST /marketplace/configs/{id}/load", { params: { id }, body: { modules } }),
+  report: (id: number, works: boolean | undefined): Promise<MarketConfig> =>
+    call("PUT /marketplace/configs/{id}/report", { params: { id }, body: { works } }),
+  items: (query: MarketItemQuery): Promise<MarketplacePage<MarketItem>> => call("GET /marketplace/items", { query }),
+  installed: (): Promise<MarketInstalled[]> => call("GET /marketplace/items/installed"),
+  item: (id: number): Promise<MarketItemDetail> => call("GET /marketplace/items/{id}", { params: { id } }),
+  install: (id: number): Promise<void> => call("POST /marketplace/items/{id}/install", { params: { id } }),
+  update: (id: number): Promise<MarketItem> => call("POST /marketplace/items/{id}/update", { params: { id } }),
+  remove: (id: number): Promise<void> => call("POST /marketplace/items/{id}/remove", { params: { id } }),
+  /** Makes an installed theme the active one. */
+  apply: (id: number): Promise<void> => call("POST /marketplace/items/{id}/apply", { params: { id } }),
 };
 
 /** URLs for <img src>; they carry the lb_auth cookie like any request to the interop server. */

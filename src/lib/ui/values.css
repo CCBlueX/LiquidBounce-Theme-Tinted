@@ -80,6 +80,11 @@
 .cg-pill:active { transform: scale(0.97); }
 .cg-pill.quiet { background: transparent; color: var(--label-2); padding: 0 8px; }
 .cg-pill.quiet:hover { background: var(--fill); color: var(--label); }
+.cg-pill.primary { background: var(--accent-fill); color: #fff; font-weight: 600; }
+.cg-pill.primary:hover { background: var(--accent-strong); }
+.cg-pill.danger { color: #ff8a8e; }
+:root.contrast-more .cg-pill.danger { color: #ffb3b5; }
+.cg-pill:disabled { opacity: 0.55; transform: none; }
 
 .cg-chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .cg-chip {
