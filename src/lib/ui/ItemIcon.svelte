@@ -135,7 +135,8 @@
 
 <style>
   img { image-rendering: pixelated; object-fit: cover; object-position: top; flex: none; display: block; visibility: hidden; }
-  img.loaded { visibility: visible; }
+  /* inherit, so a hidden ancestor (the ClickGUI behind the HUD editor) still hides it */
+  img.loaded { visibility: inherit; }
   img.smooth { image-rendering: auto; }
   img.gone { display: none; }
   .initial {
