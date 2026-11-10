@@ -1,5 +1,6 @@
 <script lang="ts">
   import { on } from "../../../lib/api/events";
+  import { keepEscape } from "../../../lib/escape.svelte";
   import { bindLabel, MODIFIERS } from "../../../lib/keys";
   import { play } from "../../../lib/sound";
   import Keycap from "../../../lib/ui/Keycap.svelte";
@@ -102,6 +103,7 @@
   }
 
   let recording = $state(false);
+  keepEscape(() => recording);
   /** Modifier keys held down since recording started, by Minecraft key name. */
   let held = $state<string[]>([]);
   let fallback: number | undefined;

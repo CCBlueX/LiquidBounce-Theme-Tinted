@@ -4,6 +4,7 @@
   import { request } from "../../lib/api/client";
   import { client, screen } from "../../lib/api/routes";
   import type { Protocol } from "../../lib/api/types";
+  import { keepEscape } from "../../lib/escape.svelte";
   import { rise } from "../../lib/motion";
   import { play } from "../../lib/sound";
   import { typingFocus } from "../../lib/typing";
@@ -17,6 +18,7 @@
   let current = $state<Protocol | undefined>();
   let failed = $state(false);
   let query = $state("");
+  keepEscape(() => !!query);
   let focusVersion = $state<number | undefined>();
   let pending = $state<number | undefined>();
   let problem = $state<string | undefined>();
@@ -188,8 +190,7 @@
     }
   }
 
-  // Esc clears the search; typing anywhere starts a search. The client closes the screen on Esc by itself, and a close
-  // from here as well would also close the screen it went back to.
+  // Esc clears the search, which keeps the key while it has text; typing anywhere starts a search
   function windowKey(event: KeyboardEvent) {
     if (event.defaultPrevented) return;
     const target = event.target as HTMLElement;

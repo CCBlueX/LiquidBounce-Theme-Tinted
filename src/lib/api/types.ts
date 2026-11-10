@@ -821,6 +821,8 @@ export type ApiRoutes = {
   "GET /screen": Route<ScreenInfo>;
   "GET /screen/size": Route<ScreenSize>;
   "PUT /screen": Route<NoContent, ScreenOpenRequest>;
+  /** Keeps Esc from closing the named screen while the page has a layer open; 403 when it is not the open screen. */
+  "PUT /screen/escape": Route<NoContent, { name: string; keep: boolean }>;
   "DELETE /screen": Route<NoContent>;
   // modules
   "GET /modules": Route<Module[]>;

@@ -12,6 +12,7 @@
   import { setContext, tick } from "svelte";
   import { on } from "../api/events";
   import type { Alignment, HorizontalAlignment, HudComponent, VerticalAlignment } from "../api/types";
+  import { keepEscape } from "../escape.svelte";
   import { rise } from "../motion";
   import { play } from "../sound";
   import PopoverMenu from "../ui/PopoverMenu.svelte";
@@ -24,6 +25,7 @@
   // While open, the client hides the HUD browser (PUT /hud-editor) and this layer draws every component with live
   // data at the spot the HUD would. Offsets are canvas units, the same CSS pixels the HUD places with.
   let { onclose }: { onclose: () => void } = $props();
+  keepEscape(() => true);
 
   const GRID = 10;
   const MAGNET = 6;

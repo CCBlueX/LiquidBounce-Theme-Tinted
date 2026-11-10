@@ -7,6 +7,7 @@
   import { modules, screen } from "../../lib/api/routes";
   import { onScreenChange, readLocation } from "../../lib/api/screen";
   import type { Module, ScreenInfo } from "../../lib/api/types";
+  import { escapeKept, keepEscape, screenOpened } from "../../lib/escape.svelte";
   import HudEditor from "../../lib/hud/Editor.svelte";
   import { easeOut, flipDuration, rise, slideIn } from "../../lib/motion";
   import { play } from "../../lib/sound";
@@ -42,6 +43,7 @@
   let grid = $state<HTMLDivElement>();
   let frame = $state<HTMLDivElement>();
   let editingHud = $state(false);
+  keepEscape(() => query !== "");
   let view = $state<ClickGuiView>("modules");
   let settingsReveal = $state<{ area: SettingsArea; names: string[] }>();
 
@@ -186,8 +188,8 @@
         })
         .catch(() => {});
     }
-    // The client closes the ClickGUI on Esc before this page sees the key; what floats over the window closes with it,
-    // and focus leaves so no caret keeps the page drawing while it fades out
+    // What floats over the window closes with the ClickGUI, and focus leaves so no caret keeps the page drawing while it
+    // fades out
     const offScreen = onScreenChange(({ name, action }) => {
       if (name !== "clickgui") return;
       if (action === "close") {
@@ -201,6 +203,7 @@
     // module shows it; newer clients send every screen change, so a hide by anything but Esc reaches it as well.
     const offToggle = on("moduleActivation", ({ moduleName }) => {
       if (!cached || moduleName !== "ClickGUI") return;
+      screenOpened("clickgui");
       shown = true;
       play("open");
       if (autofocus) focusSearch();
@@ -366,8 +369,8 @@
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   }
 
-  // The client hides the in-game ClickGUI on every Esc, whatever is open in it; the page drops all of it at once
-  // (search, menus, the HUD editor, a key being recorded) so it comes back clean
+  // The client hides the in-game ClickGUI on Esc once nothing in it keeps the key; the page drops whatever is left so it
+  // comes back clean
   const cached = readLocation().isStatic;
   const STANDALONE_SCREEN = "net.ccbluex.liquidbounce.integration.screen.impl.CustomStandaloneMinecraftScreen";
   let shown = false;
@@ -377,13 +380,12 @@
     dropLayers();
   }
   function cachedEscape(event: KeyboardEvent) {
-    if (!cached || event.key !== "Escape") return;
+    if (!cached || event.key !== "Escape" || escapeKept()) return;
     event.preventDefault();
     hide();
   }
 
-  // Esc clears the search; typing anywhere starts a search. The client closes the screen on Esc by itself, and a close
-  // from here as well would also close the screen it went back to.
+  // Esc clears the search, which keeps the key while it has text; typing anywhere starts a search
   function windowKey(event: KeyboardEvent) {
     if (event.defaultPrevented || editingHud) return;
     const target = event.target as HTMLElement;

@@ -3,6 +3,7 @@
   import { on, onReconnect } from "../../../lib/api/events";
   import { globalSettings } from "../../../lib/api/routes";
   import type { ChoiceGroup, ConfigurableGroup, ToggleableGroup, ValueGroup } from "../../../lib/api/types";
+  import { keepEscape } from "../../../lib/escape.svelte";
   import { expand, slideIn } from "../../../lib/motion";
   import { play } from "../../../lib/sound";
   import Switch from "../../../lib/ui/Switch.svelte";
@@ -36,6 +37,7 @@
   let failed = $state<Record<SettingsArea, boolean>>({ tinted: false, client: false });
   let stack = $state<{ area: SettingsArea; names: string[] }[]>([]);
   let scroller: HTMLDivElement;
+  keepEscape(() => stack.length > 0 && !!scroller?.contains(document.activeElement));
   let scrolled = $state(false);
 
   const roots = $derived<Record<SettingsArea, AreaRoot | undefined>>({

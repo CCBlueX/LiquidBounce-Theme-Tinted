@@ -4,6 +4,7 @@
   import { request } from "../../lib/api/client";
   import { screen, worlds } from "../../lib/api/routes";
   import type { World } from "../../lib/api/types";
+  import { keepEscape } from "../../lib/escape.svelte";
   import { rise } from "../../lib/motion";
   import { absoluteTime, relativeTime } from "../../lib/format";
   import { play } from "../../lib/sound";
@@ -27,6 +28,7 @@
 
   let listEl = $state<HTMLElement | undefined>();
   let searchBox = $state<HTMLElement | undefined>();
+  keepEscape(() => !!query && !!searchBox?.contains(document.activeElement));
   let playButton = $state<HTMLButtonElement | undefined>();
   // Create world (empty) or Try again (failed): takes focus when there is no row to hold it
   let stateButton = $state<HTMLButtonElement | undefined>();
@@ -191,8 +193,8 @@
     if (document.activeElement === document.body) focusList();
   }
 
-  // Shortcuts work everywhere but in the search field, where letters type; Esc there clears the search first.
-  // Plain Esc is not handled here: Minecraft's own screen closes on it and takes the page with it.
+  // Shortcuts work everywhere but in the search field, where letters type; Esc there clears the search first and keeps
+  // the key while it has text. Otherwise Esc closes the screen.
   function windowKey(event: KeyboardEvent) {
     if (event.defaultPrevented || confirming || event.altKey || event.metaKey) return;
     const inField = isTextField(event.target);

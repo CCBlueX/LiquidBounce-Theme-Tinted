@@ -6,6 +6,7 @@
   import { on, onReconnect } from "../../lib/api/events";
   import { accounts as accountsApi, screen, session as sessionApi } from "../../lib/api/routes";
   import type { Account, RandomName, RemovedAccount, Session } from "../../lib/api/types";
+  import { keepEscape } from "../../lib/escape.svelte";
   import { keepRowFocus } from "../../lib/focus";
   import { easeOut, fadeOut, flipDuration, rise, slideIn } from "../../lib/motion";
   import { failure, phrase } from "../../lib/phrases";
@@ -48,6 +49,7 @@
   let query = $state("");
   let focusUuid = $state<string>();
   let sheet = $state<Flow>();
+  keepEscape(() => !!sheet || !!query);
   let job = $state<Job>();
   let note = $state<Note>();
   let status = $state("");
@@ -518,8 +520,7 @@
     }
   }
 
-  // Esc closes the innermost layer: menu and dialog handle their own, then the sheet and the search. The client closes
-  // the screen on Esc by itself; a close from here as well would also close the screen the client went back to.
+  // Esc closes the innermost layer: menu and dialog handle their own, then the sheet and the search
   function windowKey(event: KeyboardEvent) {
     if (event.defaultPrevented || removing) return;
     const inField = isTextField(event.target);

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { tick } from "svelte";
   import type { Registry } from "../../../lib/api/types";
+  import { keepEscape } from "../../../lib/escape.svelte";
   import { play } from "../../../lib/sound";
   import ConfirmPopover from "../../../lib/ui/ConfirmPopover.svelte";
   import ItemIcon from "../../../lib/ui/ItemIcon.svelte";
@@ -35,6 +36,8 @@
 
   const entries = $derived(list.map((id) => ({ id, name: names[id]?.name || idName(id) })));
   let query = $state("");
+  let filter = $state<HTMLInputElement>();
+  keepEscape(() => !!query && document.activeElement === filter);
   const filterable = $derived(list.length >= FILTER_FROM);
   const matches = $derived.by(() => {
     const q = filterable ? query.trim().toLowerCase() : "";
@@ -173,6 +176,7 @@
   {#if filterable}
     <input
       class="cg-field filter"
+      bind:this={filter}
       bind:value={query}
       placeholder="Filter {list.length} entries"
       spellcheck="false"

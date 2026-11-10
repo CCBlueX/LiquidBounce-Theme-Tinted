@@ -47,6 +47,9 @@
     if (target !== undefined) {
       event.preventDefault();
       go(target);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      dialog?.close();
     } else if (event.key === "Tab") {
       event.preventDefault();
       const stops = [...(dialog?.querySelectorAll("button") ?? [])];
@@ -60,9 +63,6 @@
     play("close");
   }
 </script>
-
-<!-- Esc closes it here, before the screen takes Esc for its search or, as the cached in-game page, hides with it open -->
-<svelte:window onkeydowncapture={(event) => event.key === "Escape" && dialog?.close()} />
 
 {#if shown.length}
   <div class="gallery" class:single={shown.length === 1}>

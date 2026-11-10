@@ -4,6 +4,7 @@
   import { request } from "./lib/api/client";
   import { onReconnect } from "./lib/api/events";
   import { ackScreen, onHandover, onScreenChange } from "./lib/api/screen";
+  import { screenOpened } from "./lib/escape.svelte";
   import { easeOut } from "./lib/motion";
   import { settings } from "./lib/settings.svelte";
 
@@ -46,6 +47,7 @@
     handedOver = undefined;
     route = name;
     ackScreen(name || "none").catch(() => {});
+    screenOpened(name);
   }
 
   $effect(() => {

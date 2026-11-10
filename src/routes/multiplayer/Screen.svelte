@@ -6,6 +6,7 @@
   import { onReconnect } from "../../lib/api/events";
   import { client, screen, servers } from "../../lib/api/routes";
   import type { ClientInfo, LanServer, Protocol, Server, ServerAddRequest, ServerData } from "../../lib/api/types";
+  import { keepEscape } from "../../lib/escape.svelte";
   import { plainText } from "../../lib/mctext";
   import { easeOut, flipDuration, rise } from "../../lib/motion";
   import { livePings } from "../../lib/pings.svelte";
@@ -36,6 +37,7 @@
   let query = $state("");
   let selectedId = $state<number | undefined>();
   let sheet = $state<{ editing?: Server } | undefined>();
+  keepEscape(() => !!sheet);
   let confirming = $state(false);
   let joiningId = $state<number | undefined>();
   let joinError = $state<string | undefined>();
@@ -369,9 +371,14 @@
     }
   }
 
-  // Single-letter shortcuts work outside text fields. Esc closes the screen in the client itself, whatever the page
-  // does with it; a close from here as well would also close the screen the client went back to.
+  // Single-letter shortcuts work outside text fields. Esc closes the sheet, which keeps the key while open; the sheet
+  // takes it itself when it has focus.
   function windowKey(event: KeyboardEvent) {
+    if (event.key === "Escape" && sheet && !event.defaultPrevented) {
+      event.preventDefault();
+      closeSheet();
+      return;
+    }
     if (event.defaultPrevented || sheet || confirming || document.querySelector(":popover-open")) return;
     const target = event.target as HTMLElement;
     const inField = target.matches?.("input, textarea, [contenteditable]");

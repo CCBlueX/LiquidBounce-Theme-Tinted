@@ -3,6 +3,7 @@
   import { on, onReconnect } from "../../lib/api/events";
   import { modules } from "../../lib/api/routes";
   import type { BindValue, ChoiceGroup, InputBind, Module, ToggleableGroup, ValueGroup } from "../../lib/api/types";
+  import { keepEscape } from "../../lib/escape.svelte";
   import { slideIn } from "../../lib/motion";
   import { play } from "../../lib/sound";
   import Switch from "../../lib/ui/Switch.svelte";
@@ -34,6 +35,8 @@
   let tree = $state<ToggleableGroup | undefined>();
   let failed = $state(false);
   let stack = $state<string[][]>([]);
+  let root = $state<HTMLDivElement>();
+  keepEscape(() => stack.length > 0 && !!root?.contains(document.activeElement));
   let scroller: HTMLDivElement;
   // Rows that scroll up under the header fade out over a longer stretch, and the header gets its hairline
   let scrolled = $state(false);
@@ -183,7 +186,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions (Esc goes back a page from any control inside) -->
-<div class="inspector" onkeydown={keydown} role="region" aria-label="{module.name} settings">
+<div class="inspector" bind:this={root} onkeydown={keydown} role="region" aria-label="{module.name} settings">
   <header class="top on-glass" class:scrolled>
     <div class="grow">
       <h2 class="t-title3">{module.name}</h2>

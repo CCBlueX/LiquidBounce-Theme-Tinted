@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
+  import { keepEscape } from "../escape.svelte";
   import { rise } from "../motion";
 
   // A two-button question. Esc cancels; Tab and the arrow keys stay inside the two buttons. Anchored ones float above
@@ -33,6 +34,7 @@
     onconfirm: () => void;
     oncancel: () => void;
   } = $props();
+  keepEscape(() => true);
 
   const id = $props.id();
   let cancelButton: HTMLButtonElement | undefined;

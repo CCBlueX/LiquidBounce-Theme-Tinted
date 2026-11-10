@@ -6,6 +6,7 @@
   import { on, onReconnect } from "../../lib/api/events";
   import { screen } from "../../lib/api/routes";
   import type { ActiveProxy, Proxy, ProxyEntry } from "../../lib/api/types";
+  import { keepEscape } from "../../lib/escape.svelte";
   import { keepRowFocus } from "../../lib/focus";
   import { easeOut, fadeOut, flipDuration, rise, slideIn } from "../../lib/motion";
   import { failure, phrase } from "../../lib/phrases";
@@ -36,6 +37,7 @@
   let checks = $state<Record<string, Check>>({});
   let focusKey = $state<string>();
   let sheetOpen = $state(false);
+  keepEscape(() => sheetOpen);
   let editing = $state<ProxyRow>();
   let formErrors = $state<FieldErrors>({});
   let formBusy = $state(false);
@@ -460,7 +462,7 @@
     }
   }
 
-  // The client closes the screen on Esc by itself; a close from here as well would also close the screen it went back to
+  // Esc closes the sheet, which keeps the key while open
   function windowKey(event: KeyboardEvent) {
     if (event.defaultPrevented || removing) return;
     const inField = isTextField(event.target);
