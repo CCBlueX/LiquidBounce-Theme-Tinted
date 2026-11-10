@@ -39,6 +39,9 @@
   font-size: 13px;
   line-height: 18px;
 }
+/* A pill or segmented control ending a row (a menu's popover may follow it) sits as far from the row's end as from its
+   top and bottom */
+.cg-row:has(> :is(.cg-pill, .seg):last-child, > :is(.cg-pill, .seg) + [popover]:last-child) { min-height: 38px; padding-right: 6px; }
 .cg-row.stack { flex-wrap: wrap; row-gap: 0; padding: 7px 12px 6px; align-items: baseline; }
 .cg-row.stack > .cg-full { flex-basis: 100%; min-width: 0; margin-top: 2px; }
 .cg-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

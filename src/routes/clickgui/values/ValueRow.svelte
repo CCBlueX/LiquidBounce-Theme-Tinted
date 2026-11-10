@@ -161,7 +161,7 @@
       {#each multi.choices as choice (choice)}
         {@const index = multi.value.indexOf(choice)}
         <button class="cg-chip" class:on={index >= 0} aria-pressed={index >= 0} onclick={() => toggleChoice(multi, choice)}>
-          {#if index >= 0}<span class="mark" aria-hidden="true">{multi.isOrderSensitive ? index + 1 : "✓"}</span>{/if}
+          {#if index >= 0 && multi.isOrderSensitive}<span class="mark" aria-hidden="true">{index + 1}</span>{/if}
           <span class="ellipsis" title={choice}>{choice}</span>
         </button>
       {/each}
@@ -338,7 +338,8 @@
   .axis { display: flex; align-items: center; gap: 6px; }
   .axis input { flex: 1; width: 0; }
   /* A long chord pushes the action switch to a line of its own instead of squeezing the label */
-  .bind { flex-wrap: wrap; row-gap: 2px; padding-block: 4px; }
-  .bind > :global(.cg-label) { flex: 1 1 auto; }
-  .bind > :global(.seg) { margin-left: auto; }
+  /* Recording never moves the action control: the key field gives way and cuts its text instead */
+  .bind > :global(.cg-label) { flex: 1 0 auto; }
+  .bind > :global(.recorder) { min-width: 0; overflow: hidden; }
+  .bind > :global(.seg) { flex: none; margin-left: auto; }
 </style>
