@@ -178,7 +178,7 @@
     >
       <PlayerHead uuid={user?.uuid} avatar={user?.avatar} size={16} radius={8} inWorld={false} />
       <span class="name">{user?.username ?? "Accounts"}</span>
-      {#if accountNote}<span class="l3 quiet" class:mg-pulse={busy}>{accountNote}</span>{/if}
+      {#if accountNote}<span class="l3 quiet note" class:mg-pulse={busy}>{accountNote}</span>{/if}
       <span class="chev" aria-hidden="true">⌄</span>
     </button>
   {/snippet}
@@ -213,7 +213,7 @@
 
 <PopoverMenu label="Proxy" class="mg-pop glass deep on-glass session-menu">
   {#snippet trigger(props)}
-    <button class="menu-pill glass" data-pill {...props} aria-label="Proxy, {proxy ? proxyName(proxy) : 'off'}" onclick={() => (loadProxy(), loadProxies())}>
+    <button class="menu-pill glass proxy" data-pill {...props} aria-label="Proxy, {proxy ? proxyName(proxy) : 'off'}" onclick={() => (loadProxy(), loadProxies())}>
       <span>Proxy</span><span class="l3 quiet num">{proxy ? proxyName(proxy) : "Off"}</span>
       <span class="chev" aria-hidden="true">⌄</span>
     </button>
@@ -248,7 +248,11 @@
 <span class="sr-only" role="status" aria-live="polite">{status}</span>
 
 <style>
-  .name { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+  /* In a tight row the pills give way instead of leaving it: the proxy's place and the account's note are cut, the
+     name stays whole */
+  [data-pill] { min-width: 0; }
+  .proxy, .note { flex-shrink: 8; }
+  .name { flex-shrink: 0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
   .chev { flex: none; font-size: 12px; color: var(--label-2); margin: -4px -2px 0 -2px; }
   .check { flex: none; width: 14px; text-align: center; font-size: 12px; }
   .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
