@@ -129,8 +129,6 @@ export const client = {
   window: (): Promise<WindowInfo> => call("GET /window"),
   /** Quits Minecraft. */
   exit: (): Promise<void> => call("POST /exit"),
-  /** Opens an http(s) link in the system browser. */
-  browse: (url: string): Promise<void> => call("POST /browse", { body: { url } }),
 };
 
 /** The client's own key-value store, kept in its config across starts (the pages' localStorage is not). */
@@ -169,6 +167,9 @@ export const market = {
   remove: (id: number): Promise<void> => call("POST /marketplace/items/{id}/remove", { params: { id } }),
   /** Makes an installed theme the active one. */
   apply: (id: number): Promise<void> => call("POST /marketplace/items/{id}/apply", { params: { id } }),
+  /** Opens a link of the item's or config's description in the system browser; others give 403. */
+  openLink: (id: number, url: string): Promise<void> =>
+    call("POST /marketplace/items/{id}/openLink", { params: { id }, body: { url } }),
 };
 
 /** URLs for <img src>; they carry the lb_auth cookie like any request to the interop server. */

@@ -121,7 +121,7 @@
     <span class="text">
       <span class="name">{item.name}</span>
       <span class="sub t-footnote">
-        {item.author ?? ""}{#if item.author && summary.length}{" · "}{/if}<Markdown tokens={summary} inline links={false} />
+        {item.author ?? ""}{#if item.author && summary.length}{" · "}{/if}<Markdown tokens={summary} inline />
       </span>
     </span>
     <span class="meta t-footnote num">

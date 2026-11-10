@@ -250,8 +250,8 @@ export type WindowInfo = {
 };
 
 export type HudEditorRequest = { selected: boolean };
-/** A key from client_urls.properties (unknown keys give 403), or an http(s) link. */
-export type BrowseRequest = { target: string } | { url: string };
+/** A key from client_urls.properties; unknown keys give 403. */
+export type OpenLinkRequest = { target: string };
 export type BrowsePathRequest = { path: string };
 export type FileDialogRequest = { mode: FileDialogMode; supportedExtensions?: string[] };
 /** `file` is left out when the dialog was cancelled. */
@@ -796,7 +796,7 @@ export type ApiRoutes = {
   "GET /window": Route<WindowInfo>;
   /** While the game connects to a server; 204 otherwise. */
   "GET /connection": Route<ConnectionDetails | NoContent>;
-  "POST /browse": Route<NoContent, BrowseRequest>;
+  "POST /openLink": Route<NoContent, OpenLinkRequest>;
   "POST /browsePath": Route<NoContent, BrowsePathRequest>;
   "POST /fileDialog": Route<FileDialogResult, FileDialogRequest>;
   // user
@@ -954,6 +954,7 @@ export type ApiRoutes = {
   "POST /marketplace/items/{id}/update": Route<MarketItem>;
   "POST /marketplace/items/{id}/remove": Route<NoContent>;
   "POST /marketplace/items/{id}/apply": Route<NoContent>;
+  "POST /marketplace/items/{id}/openLink": Route<NoContent, { url: string }>;
 };
 
 // ---------------------------------------------------------------------------------------------------------------------

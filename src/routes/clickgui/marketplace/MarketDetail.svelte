@@ -121,6 +121,7 @@
   }
 
   const date = (ms: number | undefined) => (ms ? relativeTime(ms) : "");
+  const openLink = (url: string) => api.openLink(id, url).catch(() => play("error"));
 </script>
 
 <div class="detail">
@@ -194,7 +195,7 @@
 
       {#if about?.blocks.length}
         <h3 class="t-footnote">About</h3>
-        <div class="t-callout about"><Markdown tokens={about.blocks} /></div>
+        <div class="t-callout about"><Markdown tokens={about.blocks} onlink={openLink} /></div>
       {/if}
 
       {#if config.revisions.length}
@@ -259,7 +260,7 @@
 
       {#if about?.blocks.length}
         <h3 class="t-footnote">About</h3>
-        <div class="t-callout about"><Markdown tokens={about.blocks} /></div>
+        <div class="t-callout about"><Markdown tokens={about.blocks} onlink={openLink} /></div>
       {/if}
 
       {#if item.versions.length}

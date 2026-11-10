@@ -1,17 +1,15 @@
 <script lang="ts">
   import type { MarkedToken, Token } from "marked";
-  import { client } from "../api/routes";
   import { blank, decodeEntities, webUrl } from "../markdown";
-  import { play } from "../sound";
 
   // Lexed Markdown as Svelte markup. Images belong to a gallery, so only an image inside a link shows, as its alt
-  // text. Block HTML is left out and inline HTML shows as the text it is. Links open in the system browser; inline,
-  // inside a button, links=false keeps them plain text.
-  let { tokens, inline = false, links = true }: { tokens: Token[]; inline?: boolean; links?: boolean } = $props();
+  // text. Block HTML is left out and inline HTML shows as the text it is. Links go to onlink as written in the source,
+  // which the client checks against it; without onlink (inside a button) they are plain text.
+  let { tokens, inline = false, onlink }: { tokens: Token[]; inline?: boolean; onlink?: (url: string) => void } = $props();
 
   function open(event: MouseEvent, href: string) {
     event.preventDefault();
-    if (event.button === 0) client.browse(href).catch(() => play("error"));
+    if (event.button === 0) onlink?.(href);
   }
 
   const lineBreak = (html: string) => /^<br\s*\/?>$/i.test(html.trim());
@@ -26,7 +24,7 @@
     {:else if token.type === "codespan"}<code>{token.text}</code>
     {:else if token.type === "br"}<br />
     {:else if token.type === "link"}
-      {@const href = links && !inLink ? webUrl(token.autolink ? token.href : decodeEntities(token.href)) : undefined}
+      {@const href = onlink && !inLink && webUrl(token.href) ? token.href : undefined}
       {#if href}
         <a {href} onclick={(event) => open(event, href)} onauxclick={(event) => event.preventDefault()}>{@render spans(token.tokens, true)}</a>
       {:else}{@render spans(token.tokens, true)}{/if}
