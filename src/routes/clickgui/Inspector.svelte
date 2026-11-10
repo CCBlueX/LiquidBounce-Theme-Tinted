@@ -10,7 +10,6 @@
   import { SettingsEditor } from "./editor.svelte";
   import { contents, enabledOf, humanize, isGroup, locate, pathKey, type Trail } from "./tree";
   import Chooser from "./values/Chooser.svelte";
-  import KeyRecorder from "./values/KeyRecorder.svelte";
   import Pane from "./values/Pane.svelte";
 
   // The selected module: header with state and bind, then its full settings tree. Groups nested deeper than the
@@ -76,12 +75,7 @@
     tree?.value.find((node): node is BindValue => node.name === "Bind" && node.valueType === "BIND"),
   );
 
-  async function setBind(boundKey: string, modifiers: string[]) {
-    if (!tree || !bindNode) return;
-    editor.set([{ node: tree }], bindNode, { ...bindNode.value, boundKey, modifiers });
-  }
-
-  // The header keycap and the Bind row both edit this value; the card in the grid follows it, rollbacks included
+  // The card in the grid shows the Bind row's value, rollbacks included
   $effect(() => {
     const bind = bindNode?.value;
     if (!bind) return;
@@ -192,13 +186,6 @@
       <h2 class="t-title3">{module.name}</h2>
       <p class="t-footnote l2 desc" title={module.description}>{module.description}</p>
     </div>
-    <KeyRecorder
-      boundKey={module.keyBind.boundKey}
-      modifiers={module.keyBind.modifiers}
-      chords
-      label="{module.name} bind"
-      onchange={setBind}
-    />
     <Switch checked={module.enabled} label={module.name} onchange={ontoggle} />
   </header>
 
@@ -274,7 +261,8 @@
   }
   .top.scrolled::after { opacity: 1; }
   .grow { flex: 1; min-width: 0; }
-  h2, .desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  h2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .desc { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
   .scroll {
     flex: 1;
     min-height: 0;

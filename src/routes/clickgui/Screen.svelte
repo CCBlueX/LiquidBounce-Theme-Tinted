@@ -4,7 +4,7 @@
   import { flip } from "svelte/animate";
   import { request } from "../../lib/api/client";
   import { on, onReconnect } from "../../lib/api/events";
-  import { modules, screen } from "../../lib/api/routes";
+  import { modules } from "../../lib/api/routes";
   import { onScreenChange, readLocation } from "../../lib/api/screen";
   import type { Module, ScreenInfo } from "../../lib/api/types";
   import { escapeKept, keepEscape, screenOpened } from "../../lib/escape.svelte";
@@ -38,7 +38,6 @@
   let autofocus = $state(false);
   let ready = $state(false);
   let focusName = $state<string | undefined>();
-  let offset = $state({ x: 0, y: 0 });
   let searchBox = $state<HTMLDivElement>();
   let grid = $state<HTMLDivElement>();
   let frame = $state<HTMLDivElement>();
@@ -312,15 +311,6 @@
     grid?.querySelector<HTMLElement>(`[data-module="${CSS.escape(name)}"]`)?.focus();
   }
 
-  async function close() {
-    play("close");
-    try {
-      await screen.close();
-    } catch {
-      play("error");
-    }
-  }
-
   function gridKey(event: KeyboardEvent, index: number) {
     const module = visible[index];
     if (event.key === " ") {
@@ -415,26 +405,6 @@
     }
   }
 
-  // The grabber moves the window, by pointer or arrow keys
-  let drag: { x: number; y: number; zoom: number } | undefined;
-  const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit, value));
-  function grab(event: PointerEvent) {
-    const zoom = frame ? frame.getBoundingClientRect().width / frame.offsetWidth || 1 : 1;
-    drag = { x: event.clientX / zoom - offset.x, y: event.clientY / zoom - offset.y, zoom };
-    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-  }
-  function moveGrab(event: PointerEvent) {
-    if (!drag) return;
-    offset = { x: clamp(event.clientX / drag.zoom - drag.x, 240), y: clamp(event.clientY / drag.zoom - drag.y, 120) };
-  }
-  function grabKey(event: KeyboardEvent) {
-    const step = event.shiftKey ? 80 : 20;
-    const delta = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[event.key];
-    if (!delta) return;
-    event.preventDefault();
-    offset = { x: clamp(offset.x + delta[0], 240), y: clamp(offset.y + delta[1], 120) };
-  }
-
   const title = $derived(
     showMarket ? "Marketplace" : searching ? `“${query.trim()}”` : showSettings ? "Settings" : category,
   );
@@ -445,12 +415,10 @@
         ? "Search or paste a share code"
         : `Search ${marketState.kind.toLowerCase()}`,
   );
+  // The sidebar already counts what is on in each category, so only a search says how much it found
   const subtitle = $derived.by(() => {
-    if (searching) {
-      const modulesText = visible.length === 1 ? "1 module" : `${visible.length} modules`;
-      return settingResults.length ? `${modulesText} · ${settingResults.length} settings` : modulesText;
-    }
-    return `${inCategory.length} modules · ${inCategory.filter((module) => module.enabled).length} on`;
+    const modulesText = visible.length === 1 ? "1 module" : `${visible.length} modules`;
+    return settingResults.length ? `${modulesText} · ${settingResults.length} settings` : modulesText;
   });
 </script>
 
@@ -458,7 +426,7 @@
 
 <div class="stage" role="presentation" {...typingFocus}>
   {#if ready}
-    <div class="frame" class:away={editingHud} inert={editingHud} bind:this={frame} style:translate="{offset.x}px {offset.y}px">
+    <div class="frame" class:away={editingHud} inert={editingHud} bind:this={frame}>
       <div class="glass window" in:rise>
         <Categories
           {categories}
@@ -565,18 +533,6 @@
         {/if}
       </div>
 
-      <div class="bottom" in:rise={{ delay: 120 }}>
-        <button class="glass closer" aria-label="Close" onclick={close}>×</button>
-        <button
-          class="grabber"
-          aria-label="Move window, use the arrow keys"
-          onpointerdown={grab}
-          onpointermove={moveGrab}
-          onpointerup={() => (drag = undefined)}
-          onkeydown={grabKey}
-          ondblclick={() => (offset = { x: 0, y: 0 })}
-        ></button>
-      </div>
     </div>
   {/if}
 </div>
@@ -592,12 +548,10 @@
 
 <style>
   .stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-  /* The bottom controls sit under the window and move with it */
   .frame {
     position: relative;
     width: min(1240px, calc(100% - 48px));
-    height: min(560px, calc(100% - 104px));
-    margin-bottom: 40px;
+    height: min(560px, calc(100% - 64px));
   }
   /* Hidden, not unmounted, while the HUD editor is open, so the window comes back as it was */
   .frame.away { visibility: hidden; }
@@ -641,44 +595,4 @@
   .hit .cg-val { max-width: 50%; overflow: hidden; text-overflow: ellipsis; }
 
   .inspector { grid-column: 3; margin: 8px; border-radius: var(--r-pane); overflow: hidden; position: relative; }
-
-  .bottom {
-    position: absolute;
-    top: calc(100% + 10px);
-    left: 50%;
-    translate: -50% 0;
-    display: flex;
-    align-items: center;
-    gap: 18px;
-  }
-  .closer {
-    width: 28px;
-    height: 28px;
-    border-radius: 14px;
-    display: grid;
-    place-items: center;
-    font-size: 16px;
-    line-height: 1;
-    padding-bottom: 2px;
-  }
-  .closer:active { transform: scale(0.92); }
-  /* A 24px tall hit area around the thin bar */
-  .grabber {
-    width: 140px;
-    height: 24px;
-    border-radius: 12px;
-    display: grid;
-    align-items: center;
-    touch-action: none;
-  }
-  .grabber::after {
-    content: "";
-    height: 8px;
-    border-radius: 4px;
-    background: rgb(255 255 255 / 0.55);
-    box-shadow: 0 1px 4px rgb(0 0 0 / 0.18);
-    transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease);
-  }
-  .grabber:hover::after { background: rgb(255 255 255 / 0.75); }
-  .grabber:active::after { transform: scaleY(1.2); }
 </style>
