@@ -247,6 +247,8 @@
   .top { display: flex; align-items: center; gap: 12px; min-height: 30px; }
   .auto { display: flex; align-items: center; gap: 6px; color: var(--label-2); }
   .session { margin-left: auto; display: flex; gap: 6px; min-width: 0; }
+  /* The card is narrower than the pills with a long name and a proxy; they give way instead of leaving it */
+  .session > :global([data-pill]) { min-width: 0; }
   .primary {
     position: relative;
     overflow: hidden;

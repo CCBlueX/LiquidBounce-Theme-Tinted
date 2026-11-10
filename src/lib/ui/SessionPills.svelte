@@ -248,9 +248,8 @@
 <span class="sr-only" role="status" aria-live="polite">{status}</span>
 
 <style>
-  /* In a tight row the pills give way instead of leaving it: the proxy's place and the account's note are cut, the
-     name stays whole */
-  [data-pill] { min-width: 0; }
+  /* Where a row lets the pills shrink (min-width: 0), the proxy's place and the account's note are cut, the name stays
+     whole */
   .proxy, .note { flex-shrink: 8; }
   .name { flex-shrink: 0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
   .chev { flex: none; font-size: 12px; color: var(--label-2); margin: -4px -2px 0 -2px; }
