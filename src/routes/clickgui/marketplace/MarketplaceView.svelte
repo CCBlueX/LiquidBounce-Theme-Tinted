@@ -2,7 +2,9 @@
   import { onMount } from "svelte";
   import { market as api, servers } from "../../../lib/api/routes";
   import type { MarketConfig, MarketItem } from "../../../lib/api/types";
+  import { summaryTokens } from "../../../lib/markdown";
   import { play } from "../../../lib/sound";
+  import Markdown from "../../../lib/ui/Markdown.svelte";
   import PopoverMenu from "../../../lib/ui/PopoverMenu.svelte";
   import Segmented from "../../../lib/ui/Segmented.svelte";
   import MarketIcon from "./MarketIcon.svelte";
@@ -107,6 +109,7 @@
 
 {#snippet itemRow(item: MarketItem)}
   {@const status = itemState(item)}
+  {@const summary = summaryTokens(item.summary, item.name)}
   <button
     class="row"
     class:selected={market.selected === item.id}
@@ -117,7 +120,9 @@
     <MarketIcon src={item.image} fallback={ITEM_FALLBACK[item.type]} />
     <span class="text">
       <span class="name">{item.name}</span>
-      <span class="sub t-footnote">{item.author ? `${item.author} · ` : ""}{item.summary}</span>
+      <span class="sub t-footnote">
+        {item.author ?? ""}{#if item.author && summary.length}{" · "}{/if}<Markdown tokens={summary} inline links={false} />
+      </span>
     </span>
     <span class="meta t-footnote num">
       {#if status}<span class="badge" class:accent={status === "Update"}>{status}</span>
@@ -240,7 +245,7 @@
   .row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .name { font-size: 13px; line-height: 18px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .sub { color: var(--label-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sub { color: var(--label-2); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; line-clamp: 1; overflow: hidden; overflow-wrap: anywhere; }
   .meta { flex: none; display: flex; align-items: center; gap: 8px; color: var(--label-2); }
   .badge { padding: 1px 7px; border-radius: 9px; background: var(--fill-2); color: var(--label); }
   .badge.accent { background: var(--accent-fill); color: #fff; }

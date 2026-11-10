@@ -3,8 +3,11 @@
   import { market as api } from "../../../lib/api/routes";
   import type { MarketConfigDetail, MarketItemDetail } from "../../../lib/api/types";
   import { relativeTime } from "../../../lib/format";
+  import { markdownDocument } from "../../../lib/markdown";
   import { play } from "../../../lib/sound";
   import ConfirmPopover from "../../../lib/ui/ConfirmPopover.svelte";
+  import Markdown from "../../../lib/ui/Markdown.svelte";
+  import Gallery from "./Gallery.svelte";
   import LoadModules from "./LoadModules.svelte";
   import MarketIcon from "./MarketIcon.svelte";
   import { CONFIG_FALLBACK, ITEM_FALLBACK, marketState as market } from "./market.svelte";
@@ -21,6 +24,12 @@
   let removing = $state(false);
   let removeButton = $state<HTMLButtonElement>();
   let scrolled = $state(false);
+
+  const about = $derived(
+    configs
+      ? config && markdownDocument(config.description, config.config.name)
+      : item && markdownDocument(item.description, item.item.name),
+  );
 
   async function load() {
     failed = false;
@@ -100,7 +109,7 @@
     run("remove", () => api.remove(id).then(settle));
   }
 
-  // Markdown as plain paragraphs: images dropped, links as their text, marks removed
+  // Changelogs as plain paragraphs: images dropped, links as their text, marks removed
   function plain(markdown: string) {
     return markdown
       .replace(/!\[[^\]]*]\([^)]*\)/g, "")
@@ -137,6 +146,7 @@
       {#if !c.protocolMatches && c.protocol}<p class="note t-footnote">Made for {c.protocol}</p>{/if}
       {#if c.binds}<p class="note t-footnote">Changes key binds</p>{/if}
       {#if c.overlayOn}<p class="note t-footnote">Loads on top of {c.overlayOn}</p>{/if}
+      {#if about}<Gallery images={about.images} />{/if}
 
       <h3 class="t-footnote">Does it work?</h3>
       {#if signedIn === false}
@@ -182,9 +192,9 @@
         <p class="t-footnote l2 list">{config.changes.join(", ")}</p>
       {/if}
 
-      {#if config.description.trim()}
+      {#if about?.blocks.length}
         <h3 class="t-footnote">About</h3>
-        <p class="t-callout about">{plain(config.description)}</p>
+        <div class="t-callout about"><Markdown tokens={about.blocks} /></div>
       {/if}
 
       {#if config.revisions.length}
@@ -245,10 +255,11 @@
       {#if i.notFor}<p class="note t-footnote">No version for LiquidBounce {i.notFor}</p>{/if}
       {#if i.installed}<p class="note t-footnote">Version {i.installed.version} is installed{i.inUse ? " and in use" : ""}</p>{/if}
       {#if i.restartRequired}<p class="note t-footnote">Restart the game to finish</p>{/if}
+      {#if about}<Gallery images={about.images} />{/if}
 
-      {#if item.description.trim()}
+      {#if about?.blocks.length}
         <h3 class="t-footnote">About</h3>
-        <p class="t-callout about">{plain(item.description)}</p>
+        <div class="t-callout about"><Markdown tokens={about.blocks} /></div>
       {/if}
 
       {#if item.versions.length}
@@ -297,8 +308,8 @@
   .actions { margin: 2px 0 8px; }
   h3 { margin: 14px 4px 6px; font-weight: 600; color: var(--label-2); }
   .note { margin: 4px 4px 0; color: var(--label-2); }
-  .about, .list { padding: 0 4px; white-space: pre-line; overflow-wrap: anywhere; }
-  .about { color: var(--label-2); }
+  .about { padding: 0 4px; }
+  .list { padding: 0 4px; white-space: pre-line; overflow-wrap: anywhere; }
   .tag { color: var(--label); }
   .pos { color: var(--positive); }
   .neg { color: var(--negative); }

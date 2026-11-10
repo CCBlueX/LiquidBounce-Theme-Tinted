@@ -129,6 +129,8 @@ export const client = {
   window: (): Promise<WindowInfo> => call("GET /window"),
   /** Quits Minecraft. */
   exit: (): Promise<void> => call("POST /exit"),
+  /** Opens an http(s) link in the system browser. */
+  browse: (url: string): Promise<void> => call("POST /browse", { body: { url } }),
 };
 
 /** The client's own key-value store, kept in its config across starts (the pages' localStorage is not). */

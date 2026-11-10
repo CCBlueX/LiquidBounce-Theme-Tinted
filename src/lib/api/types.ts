@@ -250,8 +250,8 @@ export type WindowInfo = {
 };
 
 export type HudEditorRequest = { selected: boolean };
-/** A key from client_urls.properties; unknown keys give 403. */
-export type BrowseRequest = { target: string };
+/** A key from client_urls.properties (unknown keys give 403), or an http(s) link. */
+export type BrowseRequest = { target: string } | { url: string };
 export type BrowsePathRequest = { path: string };
 export type FileDialogRequest = { mode: FileDialogMode; supportedExtensions?: string[] };
 /** `file` is left out when the dialog was cancelled. */
