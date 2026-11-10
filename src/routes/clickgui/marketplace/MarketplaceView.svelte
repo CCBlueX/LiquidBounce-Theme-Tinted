@@ -184,7 +184,9 @@
         <p class="t-callout l2">{market.error}</p>
         <button class="cg-pill" onclick={() => market.reload()}>Try again</button>
       </div>
-    {:else if !market.loading && !market.rows.length}
+    {:else if market.loading && !market.rows.length}
+      <p class="empty t-callout l2">Loading…</p>
+    {:else if !market.rows.length}
       <div class="empty">
         {#if isConfigs && market.featuredOnly && market.unfeatured > 0}
           <p class="t-callout l2">

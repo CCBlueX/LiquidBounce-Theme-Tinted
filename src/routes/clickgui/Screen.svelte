@@ -475,8 +475,10 @@
             <div class="titles">
               <h1 class="t-large">{title}</h1>
               {#if showMarket}
-                <span class="t-callout l2 num">{marketState.total.toLocaleString("en-US")} {marketState.kind.toLowerCase()}</span>
-              {:else if list.length && !showSettings}
+                {#if marketState.rows.length || !marketState.loading}
+                  <span class="t-callout l2 num">{marketState.total.toLocaleString("en-US")} {marketState.kind.toLowerCase()}</span>
+                {/if}
+              {:else if searching && !showSettings}
                 <span class="t-callout l2 num">{subtitle}</span>
               {/if}
             </div>
