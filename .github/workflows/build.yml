@@ -38,7 +38,7 @@ jobs:
         if: github.event_name == 'push' && env.API_TOKEN != ''
         run: |
           version=$(jq -r .version public/metadata.json)
-          api="https://api.liquidbounce.net/api/v3/marketplace/$MARKETPLACE_ITEM_ID/revisions"
+          api="https://api.liquidbounce.net/marketplace/items/$MARKETPLACE_ITEM_ID/revisions"
           live=$(curl -fsS "$api?limit=1" | jq -r '.items[0].version // empty')
           if [ "$live" = "$version" ]; then
             echo "$version is already live"
@@ -49,8 +49,8 @@ jobs:
             -F "file=@release/tinted-$version.zip" \
             -F "version=$version" \
             -F "changelog=$(git log -1 --format=%s)" \
-            -F "source_repository=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
-            -F "source_ref=$GITHUB_REF_NAME" \
-            -F "source_commit=$GITHUB_SHA" \
-            -F "source_build_url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            -F "sourceRepository=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            -F "sourceRef=$GITHUB_REF_NAME" \
+            -F "sourceCommit=$GITHUB_SHA" \
+            -F "sourceBuildUrl=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
             | jq '{id, version, status}'
