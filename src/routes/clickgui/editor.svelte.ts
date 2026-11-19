@@ -12,11 +12,16 @@ export type PatchWriter = (patch: ValuePatch) => Promise<void>;
 /** Every ValueNode holds its value in `value`; the union just cannot be assigned through without narrowing. */
 type Writable = { value: JsonValue };
 
-/** Plain copy of a value for the wire; typed through unknown because Snapshot<JsonValue> recurses without end. */
+/**
+ * Plain copy of a value for the wire; typed through unknown because Snapshot<JsonValue> recurses without end.
+ *
+ * @agent claude-opus-5-5
+ */
 function snapshot(value: JsonValue): JsonValue {
   return $state.snapshot<unknown>(value) as JsonValue;
 }
 
+/** @agent claude-opus-5-5 */
 export class SettingsEditor {
   /** Path keys of the inline groups that are open. */
   readonly expanded = new SvelteSet<string>();

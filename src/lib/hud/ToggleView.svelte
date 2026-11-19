@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import type { ToggleActivity } from "./island.svelte";
 
   let { toggle }: { toggle: ToggleActivity } = $props();

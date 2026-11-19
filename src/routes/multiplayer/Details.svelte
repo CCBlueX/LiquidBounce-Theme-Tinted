@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import type { ServerData } from "../../lib/api/types";
   import { plainText } from "../../lib/mctext";
   import ConfirmPopover from "../../lib/ui/ConfirmPopover.svelte";

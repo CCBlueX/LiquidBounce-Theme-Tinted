@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { apiUrl } from "../../lib/api/client";
   import Base64Icon from "../../lib/ui/Base64Icon.svelte";
   import ItemIcon from "../../lib/ui/ItemIcon.svelte";

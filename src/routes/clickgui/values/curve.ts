@@ -6,6 +6,7 @@ type Point = Pick<Vec2, "x" | "y">;
 
 export const DEFAULT_TENSION = 0.4;
 
+/** @agent claude-opus-5-5 */
 export function curveY(data: Point[], x: number, tension = DEFAULT_TENSION): number {
   if (data.length === 1) return data[0].y;
   const first = data[0];
@@ -19,6 +20,7 @@ export function curveY(data: Point[], x: number, tension = DEFAULT_TENSION): num
   return spline(data, x, t);
 }
 
+/** @agent claude-opus-5-5 */
 function controlPoints(data: Point[], x: number): [Point, Point, Point] {
   const last = data.length - 1;
   const adjusted = x === data[0].x ? x + 1 : x;
@@ -27,6 +29,7 @@ function controlPoints(data: Point[], x: number): [Point, Point, Point] {
   return [data[Math.max(0, next - 2)], data[Math.max(0, next - 1)], data[next] ?? data[last]];
 }
 
+/** @agent claude-opus-5-5 */
 function spline(data: Point[], x: number, tension: number): number {
   const [prev, point, next] = controlPoints(data, x);
   const t = next.x === x ? 1 : next.x === point.x ? 0 : Math.min(1, Math.max(0, (x - point.x) / (next.x - point.x)));
@@ -36,7 +39,11 @@ function spline(data: Point[], x: number, tension: number): number {
   return mt * mt * mt * point.y + 3 * mt * mt * t * p1.y + 3 * mt * t * t * p2.y + t * t * t * next.y;
 }
 
-/** Control points before and after `point`, along the line from `prev` to `next`, scaled by distance. */
+/**
+ * Control points before and after `point`, along the line from `prev` to `next`, scaled by distance.
+ *
+ * @agent claude-opus-5-5
+ */
 function handles(prev: Point, point: Point, next: Point, tension: number): [Point, Point] {
   const d01 = Math.hypot(point.x - prev.x, point.y - prev.y);
   const d12 = Math.hypot(next.x - point.x, next.y - point.y);
@@ -52,6 +59,7 @@ function handles(prev: Point, point: Point, next: Point, tension: number): [Poin
   ];
 }
 
+/** @agent claude-opus-5-5 */
 function secondHandle(data: Point[], current: Point, tension: number): Point {
   const index = data.findIndex((point) => point.x > current.x);
   if (index === -1) return current;
@@ -60,6 +68,7 @@ function secondHandle(data: Point[], current: Point, tension: number): Point {
   return handles(...controlPoints(data, segment.x + (after.x - segment.x)), tension)[0];
 }
 
+/** @agent claude-opus-5-5 */
 function linear(p0: Point, p1: Point, x: number): number {
   const dx = p1.x - p0.x;
   return dx === 0 ? p0.y : p0.y + ((p1.y - p0.y) * (x - p0.x)) / dx;

@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import type { ChoiceGroup, ValueGroup } from "../../../lib/api/types";
   import { expand } from "../../../lib/motion";
   import Switch from "../../../lib/ui/Switch.svelte";

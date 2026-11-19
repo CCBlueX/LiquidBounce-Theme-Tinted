@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { on } from "../../../lib/api/events";
   import { keepEscape } from "../../../lib/escape.svelte";
   import { bindLabel, MODIFIERS } from "../../../lib/keys";

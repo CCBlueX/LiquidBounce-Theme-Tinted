@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { plainText } from "../mctext";
   import ItemIcon from "../ui/ItemIcon.svelte";
   import { live } from "./live.svelte";

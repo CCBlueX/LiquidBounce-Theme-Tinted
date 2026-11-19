@@ -4,6 +4,7 @@ import type { Registry } from "../../../lib/api/types";
 
 const cache = new Map<string, Promise<Registry>>();
 
+/** @agent claude-opus-5-5 */
 export function registry(name: string): Promise<Registry> {
   let entry = cache.get(name);
   if (!entry) {
@@ -15,7 +16,11 @@ export function registry(name: string): Promise<Registry> {
   return entry;
 }
 
-/** How entries of a registry are drawn: item art for items and blocks, effect art for effects, else text only. */
+/**
+ * How entries of a registry are drawn: item art for items and blocks, effect art for effects, else text only.
+ *
+ * @agent claude-opus-5-5
+ */
 export function iconKind(registryName: string): "item" | "effect" | undefined {
   if (/^(item|items|block|blocks)$/.test(registryName)) return "item";
   return registryName === "mob_effect" ? "effect" : undefined;

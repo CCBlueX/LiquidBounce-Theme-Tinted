@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { onMount } from "svelte";
   import { ApiError } from "../../lib/api/client";
   import type { ResourcePackPolicy, ServerAddRequest } from "../../lib/api/types";

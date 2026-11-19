@@ -21,6 +21,7 @@
 </script>
 
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { onMount } from "svelte";
   import Segmented from "../../lib/ui/Segmented.svelte";
   import Switch from "../../lib/ui/Switch.svelte";

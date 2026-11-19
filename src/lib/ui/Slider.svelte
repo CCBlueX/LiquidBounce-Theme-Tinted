@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { play } from "../sound";
 
   // One component for both shapes: `value` for a single knob, `from`/`to` for a range

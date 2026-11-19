@@ -4,6 +4,8 @@ import type { ServerData } from "./api/types";
 /**
  * Latest serverPinged result per address while the calling component lives. Loading the server list pings every
  * server and the results come in bursts, so they are merged once per frame.
+ *
+ * @agent claude-opus-5-5
  */
 export function livePings() {
   let pings = $state.raw<Record<string, ServerData>>({});

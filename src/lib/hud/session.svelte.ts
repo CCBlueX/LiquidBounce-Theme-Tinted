@@ -7,6 +7,7 @@ import type { CurrentServer, PlayerStatistics } from "../api/types";
 
 const POLL_MS = 5000;
 
+/** @agent claude-opus-5-5 */
 class SessionState {
   server = $state.raw<CurrentServer>();
   statistics = $state.raw<PlayerStatistics>();

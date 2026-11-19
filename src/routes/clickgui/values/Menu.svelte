@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { play } from "../../../lib/sound";
   import PopoverMenu from "../../../lib/ui/PopoverMenu.svelte";
 

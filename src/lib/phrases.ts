@@ -24,6 +24,7 @@ const KNOWN: Record<string, string> = {
     "The clipboard holds no proxy. Copy host:port or host:port:username:password first.",
 };
 
+/** @agent claude-opus-5-5 */
 export function phrase(text: string) {
   const known = KNOWN[text.trim()];
   if (known) return known;
@@ -31,7 +32,11 @@ export function phrase(text: string) {
   return /[.?]$/.test(calm) ? calm : `${calm}.`;
 }
 
-/** The reason of a failed request, in words; requests that never reached the client say so. */
+/**
+ * The reason of a failed request, in words; requests that never reached the client say so.
+ *
+ * @agent claude-opus-5-5
+ */
 export function failure(error: unknown) {
   if (!(error instanceof ApiError)) return "The client could not be reached.";
   const reason = reasonOf(error);

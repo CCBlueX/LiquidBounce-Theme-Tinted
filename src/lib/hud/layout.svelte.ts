@@ -12,7 +12,11 @@ const SLOT = Symbol("hud-slot");
 type Grow = "x" | "y";
 type Box = { left: number; top: number; right: number; bottom: number };
 
-/** One placed component: its clamp shift and, once its view claims an axis, the room it may fill along it. */
+/**
+ * One placed component: its clamp shift and, once its view claims an axis, the room it may fill along it.
+ *
+ * @agent claude-opus-5-5
+ */
 export class Slot {
   width = $state(Infinity);
   height = $state(Infinity);
@@ -62,6 +66,7 @@ export class Slot {
 
 const layouts = new WeakMap<HTMLElement, Layout>();
 
+/** @agent claude-opus-5-5 */
 class Layout {
   #container: HTMLElement;
   #slots = new Map<Slot, HTMLElement>();
@@ -143,11 +148,16 @@ class Layout {
   }
 }
 
+/** @agent claude-opus-5-5 */
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
-/** The cross-axis stretch a component covers, from its anchored edge out to the widest extent it has had. */
+/**
+ * The cross-axis stretch a component covers, from its anchored edge out to the widest extent it has had.
+ *
+ * @agent claude-opus-5-5
+ */
 function band(anchor: string, start: number, end: number, extent: number): [number, number] {
   if (anchor === "Left" || anchor === "Top") return [start, start + extent];
   if (anchor === "Right" || anchor === "Bottom") return [end - extent, end];
@@ -159,6 +169,8 @@ function band(anchor: string, start: number, end: number, extent: number): [numb
  * Room along one axis from the anchored edge (or the centre) to the window edge or the nearest blocker that way. A
  * component anchored at or past the window edge is pinned there by the clamp and grows back in; it gets at least a
  * third of the window unless a blocker is what stops it.
+ *
+ * @agent claude-opus-5-5
  */
 function room(anchor: string, start: number, end: number, size: number, blockers: number[][]) {
   const forward = anchor === "Left" || anchor === "Top";
@@ -178,11 +190,16 @@ function room(anchor: string, start: number, end: number, size: number, blockers
   return Math.max(0, Math.floor(open ? Math.max(value, (size - 2 * EDGE) / 3) : value));
 }
 
+/** @agent claude-opus-5-5 */
 export function provideSlot(slot: Slot) {
   setContext(SLOT, slot);
 }
 
-/** The slot of the component a view is placed in; views outside a placed box get none. */
+/**
+ * The slot of the component a view is placed in; views outside a placed box get none.
+ *
+ * @agent claude-opus-5-5
+ */
 export function slotOf(): Slot | undefined {
   return getContext<Slot | undefined>(SLOT);
 }

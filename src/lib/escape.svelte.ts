@@ -13,11 +13,16 @@ let queued = false;
 let unsupported = false;
 let requests: Promise<unknown> = Promise.resolve();
 
-/** Whether Esc now closes something in the page rather than the screen. */
+/**
+ * Whether Esc now closes something in the page rather than the screen.
+ *
+ * @agent claude-opus-5-5
+ */
 export function escapeKept() {
   return [...layers].some((isOpen) => isOpen()) || !!document.querySelector(":popover-open, dialog:modal");
 }
 
+/** @agent claude-opus-5-5 */
 function sync() {
   if (queued) return;
   queued = true;
@@ -37,14 +42,22 @@ function sync() {
   });
 }
 
-/** The client gives every screen it opens Esc back, so open layers keep it again. */
+/**
+ * The client gives every screen it opens Esc back, so open layers keep it again.
+ *
+ * @agent claude-opus-5-5
+ */
 export function screenOpened(name: string) {
   screen = name;
   kept = false;
   sync();
 }
 
-/** Keeps Esc while isOpen() holds. Call during component setup; its reactive reads are followed. */
+/**
+ * Keeps Esc while isOpen() holds. Call during component setup; its reactive reads are followed.
+ *
+ * @agent claude-opus-5-5
+ */
 export function keepEscape(isOpen: () => boolean) {
   layers.add(isOpen);
   $effect(() => {

@@ -1,7 +1,11 @@
 import { quintOut } from "svelte/easing";
 import { fade, slide, type TransitionConfig } from "svelte/transition";
 
-/** A damped spring with a little overshoot, for the Island, which should feel alive; everything else eases out. */
+/**
+ * A damped spring with a little overshoot, for the Island, which should feel alive; everything else eases out.
+ *
+ * @agent claude-opus-5-5
+ */
 export function spring(t: number) {
   return 1 - Math.exp(-6.4 * t) * Math.cos(5.6 * t);
 }
@@ -11,14 +15,20 @@ export const easeOut = quintOut;
 
 let reduced = false;
 
+/** @agent claude-opus-5-5 */
 export function setReducedMotion(value: boolean) {
   reduced = value;
   document.documentElement.classList.toggle("reduce-motion", value);
 }
 
+/** @agent claude-opus-5-5 */
 export const isReducedMotion = () => reduced;
 
-/** Glass surfaces arrive by rising a few pixels and settling; under reduce motion they only fade. */
+/**
+ * Glass surfaces arrive by rising a few pixels and settling; under reduce motion they only fade.
+ *
+ * @agent claude-opus-5-5
+ */
 export function rise(_: Element, { delay = 0, duration = 220, y = 6, scale = 0.985 } = {}): TransitionConfig {
   if (reduced) return { delay, duration: 160, css: (t) => `opacity: ${t}` };
   return {
@@ -29,25 +39,42 @@ export function rise(_: Element, { delay = 0, duration = 220, y = 6, scale = 0.9
   };
 }
 
-/** Sheets and panes arrive sideways; under reduce motion they fade. */
+/**
+ * Sheets and panes arrive sideways; under reduce motion they fade.
+ *
+ * @agent claude-opus-5-5
+ */
 export function slideIn(_: Element, { delay = 0, x = 8, duration = 220 } = {}): TransitionConfig {
   if (reduced) return { delay, duration: 160, css: (t) => `opacity: ${t}` };
   return { delay, duration, easing: easeOut, css: (t, u) => `opacity: ${t}; transform: translateX(${u * x}px)` };
 }
 
-/** Leaving is quicker and only fades, so the layout can take the room back at once. */
+/**
+ * Leaving is quicker and only fades, so the layout can take the room back at once.
+ *
+ * @agent claude-opus-5-5
+ */
 export function fadeOut(_: Element): TransitionConfig {
   return { duration: 120, easing: easeOut, css: (t) => `opacity: ${t}` };
 }
 
-/** Inline groups open by height; under reduce motion they fade. */
+/**
+ * Inline groups open by height; under reduce motion they fade.
+ *
+ * @agent claude-opus-5-5
+ */
 export function expand(node: Element, { duration = 200 } = {}): TransitionConfig {
   return reduced ? fade(node, { duration: 160 }) : slide(node, { duration, easing: easeOut });
 }
 
+/** @agent claude-opus-5-5 */
 export const flipDuration = (ms = 200) => (reduced ? 0 : ms);
 
-/** The HUD island morphs width and height; this drives a numeric tween that respects reduce motion. */
+/**
+ * The HUD island morphs width and height; this drives a numeric tween that respects reduce motion.
+ *
+ * @agent claude-opus-5-5
+ */
 export function tween(from: number, to: number, duration: number, onFrame: (value: number) => void) {
   if (reduced || duration <= 0) {
     onFrame(to);

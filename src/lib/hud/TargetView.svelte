@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import PlayerHead from "../ui/PlayerHead.svelte";
   import type { TargetInfo } from "./live.svelte";
 

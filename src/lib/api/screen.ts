@@ -22,6 +22,7 @@ export type ScreenChange = {
   type: string;
 };
 
+/** @agent claude-opus-5-5 */
 export function readLocation(): PageLocation {
   const hash = location.hash.replace(/^#\/?/, "");
   const queryStart = hash.indexOf("?");
@@ -35,15 +36,24 @@ export function readLocation(): PageLocation {
 const OWN_ROUTES = new Set(Object.keys(import.meta.glob("../../routes/*/Screen.svelte")).map((path) => path.split("/")[3]));
 const handoverListeners = new Set<(leaving: boolean) => void>();
 
-/** Calls `listener` with true when the page is about to give way to a game screen, false when that did not happen. */
+/**
+ * Calls `listener` with true when the page is about to give way to a game screen, false when that did not happen.
+ *
+ * @agent claude-opus-5-5
+ */
 export function onHandover(listener: (leaving: boolean) => void): Unsubscribe {
   handoverListeners.add(listener);
   return () => handoverListeners.delete(listener);
 }
 
+/** @agent claude-opus-5-5 */
 const nextFrame = () => new Promise((done) => requestAnimationFrame(done));
 
-/** Hands the page over to the game before `action` (a join or a reconnect), which leaves the page's screen. */
+/**
+ * Hands the page over to the game before `action` (a join or a reconnect), which leaves the page's screen.
+ *
+ * @agent claude-opus-5-5
+ */
 export async function leaveFor<T>(action: () => Promise<T>): Promise<T> {
   for (const listener of handoverListeners) listener(true);
   await nextFrame();
@@ -60,7 +70,11 @@ const CONNECTING_TO = "tinted.connectingTo";
 // A reconnect goes to the server joined last, which may be a while ago
 const CONNECTING_FRESH_MS = 60 * 60_000;
 
-/** The address the page last joined, for the connecting screen until the client names it. */
+/**
+ * The address the page last joined, for the connecting screen until the client names it.
+ *
+ * @agent claude-opus-5-5
+ */
 export function connectingTo(): string | undefined {
   try {
     const { address, at } = JSON.parse(sessionStorage.getItem(CONNECTING_TO) ?? "null") ?? {};
@@ -70,6 +84,7 @@ export function connectingTo(): string | undefined {
   }
 }
 
+/** @agent claude-opus-5-5 */
 export function rememberConnecting(address: string) {
   sessionStorage.setItem(CONNECTING_TO, JSON.stringify({ address, at: Date.now() }));
 }
@@ -78,18 +93,28 @@ export function rememberConnecting(address: string) {
  * Opens a client screen (403 for an unknown name). Before a game screen replaces the page, the page empties and paints
  * once more: once the game shows its own screen the browser may not paint again until the mouse moves, and its last
  * frame would stay over the game's screen.
+ *
+ * @agent claude-opus-5-5
  */
 export async function openScreen(name: ScreenRoute): Promise<void> {
   const open = () => request<undefined>("PUT", "/screen", { body: { name } });
   await (OWN_ROUTES.has(name) ? open() : leaveFor(open));
 }
 
-/** Tells the client which screen the page shows ("none" for none). 403 "Wrong virtual screen" on mismatch. */
+/**
+ * Tells the client which screen the page shows ("none" for none). 403 "Wrong virtual screen" on mismatch.
+ *
+ * @agent claude-opus-5-5
+ */
 export function ackScreen(name: ScreenRoute | "none" | (string & {})): Promise<void> {
   return request<undefined>("POST", "/virtualScreen", { body: { name } satisfies VirtualScreenAck });
 }
 
-/** Calls `handler` whenever the client opens or closes a virtual screen. */
+/**
+ * Calls `handler` whenever the client opens or closes a virtual screen.
+ *
+ * @agent claude-opus-5-5
+ */
 export function onScreenChange(handler: (change: ScreenChange) => void): Unsubscribe {
   return on("virtualScreen", (event) => {
     if (typeof event.screenName === "string" && event.screenName) {
@@ -110,6 +135,8 @@ const PASSING_SCREEN = /\.(ProgressScreen|GenericMessageScreen)$/;
  * Multiplayer opened by leaving a server sits over the client's empty "Disconnecting" screen, and going back there
  * leaves the game on a blank screen (the client's own Esc goes to the title screen instead). So when no theme screen
  * follows, no world is loaded and the client shows such a screen, the title screen opens.
+ *
+ * @agent claude-opus-5-5
  */
 export async function closeScreen(): Promise<void> {
   const { promise: reopened, resolve: settle } = Promise.withResolvers<boolean>();

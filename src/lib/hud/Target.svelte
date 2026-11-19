@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { fade } from "svelte/transition";
   import { isReducedMotion } from "../motion";
   import PlayerHead from "../ui/PlayerHead.svelte";

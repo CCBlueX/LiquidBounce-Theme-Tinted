@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { getContext, untrack } from "svelte";
   import type { TransitionConfig } from "svelte/transition";
   import { isReducedMotion, rise, spring, tween } from "../motion";

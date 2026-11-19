@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { onMount, tick, type Snippet } from "svelte";
   import { bindLabel } from "../keys";
   import { isOn, startModules } from "../moduleToggles.svelte";

@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import "../../lib/ui/manager.css";
   import { onMount, tick } from "svelte";
   import { flip } from "svelte/animate";

@@ -5,6 +5,8 @@ import { flipDuration } from "./motion";
  * Runs `change` (a reorder) and keeps keyboard focus on the row `row()` finds. A moved row node loses focus, and a new
  * favorite jumps to the top, out of view; flip draws a moved row at its old place while it runs, so the list scrolls
  * to where the row landed once it has.
+ *
+ * @agent claude-opus-5-5
  */
 export function keepRowFocus(list: HTMLElement | undefined, row: () => HTMLElement | null | undefined, change: () => void) {
   const had = !!list?.contains(document.activeElement);

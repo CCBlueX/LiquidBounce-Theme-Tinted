@@ -1,0 +1,13 @@
+{
+  "date": "2026-11-09",
+  "change": "release: 0.5.1",
+  "tool": "omp",
+  "models": [
+    {
+      "model": "claude-opus-5-5",
+      "provider": "anthropic",
+      "tokens": { "input": 304, "cachedInput": 94009688, "cacheWrite": 804186, "output": 84630 },
+      "usd": 26.93
+    }
+  ]
+}

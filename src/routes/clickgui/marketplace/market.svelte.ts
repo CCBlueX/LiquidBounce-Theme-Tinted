@@ -31,6 +31,7 @@ const EMPTY = { rows: [], page: 0, pages: 0, total: 0, unfeatured: 0, at: 0 };
 /** A list shown again within this long is not asked for again. */
 const FRESH_MS = 60_000;
 
+/** @agent claude-opus-5-5 */
 class MarketState {
   /** Unknown until the first answer; false on clients without the routes. */
   available = $state<boolean>();

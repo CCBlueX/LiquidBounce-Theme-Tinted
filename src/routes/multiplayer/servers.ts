@@ -6,12 +6,18 @@ export type Status = { word: string; health: Health; ping?: number };
 /**
  * Whether label, version and players come from an answer. A row can be Pinging again while still holding the last
  * answer's data, and an old error label can outlive a new ping that has not answered yet.
+ *
+ * @agent claude-opus-5-5
  */
 export function hasAnswer(server: ServerData) {
   return server.status === "SUCCESSFUL" || server.status === "INCOMPATIBLE" || server.status === "UNREACHABLE" || server.players.online !== undefined;
 }
 
-/** Every state is a word; the dot next to it only repeats what the word says. */
+/**
+ * Every state is a word; the dot next to it only repeats what the word says.
+ *
+ * @agent claude-opus-5-5
+ */
 export function statusOf(server: ServerData): Status {
   switch (server.status) {
     case "INITIAL":
@@ -32,11 +38,14 @@ export function statusOf(server: ServerData): Status {
   }
 }
 
+/** @agent claude-opus-5-5 */
 export const formatCount = (value: number) => value.toLocaleString("en-US");
 
 /**
  * Mirrors vanilla ServerAddress.isValidAddress closely enough to catch typos before the client does: host or [IPv6]
  * with an optional port. Returns the problem as a sentence, or undefined when the address looks valid.
+ *
+ * @agent claude-opus-5-5
  */
 export function addressProblem(raw: string): string | undefined {
   const value = raw.trim();

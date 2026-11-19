@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import ItemIcon from "../../../lib/ui/ItemIcon.svelte";
 
   // A server icon or thumbnail from the web; until it loads, or when it fails, an item stands in

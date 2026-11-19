@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import type { Argb } from "../../../lib/api/types";
   import { play } from "../../../lib/sound";
   import { channels, cssColor, fromHex, toHex, withAlpha } from "../tree";

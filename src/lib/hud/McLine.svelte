@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import type { TextComponent } from "../api/types";
   import { textLines } from "../mctext";
 

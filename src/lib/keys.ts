@@ -50,7 +50,11 @@ export const MODIFIERS: [tag: string, label: string][] = [
   ["Super", "Super"],
 ];
 
-/** Keycap label for a bound key, or null when nothing is bound. */
+/**
+ * Keycap label for a bound key, or null when nothing is bound.
+ *
+ * @agent claude-opus-5-5
+ */
 function keyLabel(boundKey: string | undefined | null): string | null {
   if (!boundKey || boundKey === "key.keyboard.unknown") return null;
   if (boundKey.startsWith("key.mouse.")) {
@@ -66,7 +70,11 @@ function keyLabel(boundKey: string | undefined | null): string | null {
     .join(" ");
 }
 
-/** Keycap label for a bind with the modifiers it needs, e.g. "Ctrl+Shift+R", or null when nothing is bound. */
+/**
+ * Keycap label for a bind with the modifiers it needs, e.g. "Ctrl+Shift+R", or null when nothing is bound.
+ *
+ * @agent claude-opus-5-5
+ */
 export function bindLabel(bind: { boundKey: string; modifiers?: string[] } | undefined): string | null {
   const key = keyLabel(bind?.boundKey);
   if (!key) return null;

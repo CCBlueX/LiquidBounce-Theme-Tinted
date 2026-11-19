@@ -35,6 +35,7 @@ export const NOTES: Record<string, string> = {
   ClientChat: "Connects to the LiquidBounce chat while on",
 };
 
+/** @agent claude-opus-5-5 */
 export function title(name: string): string {
   return TITLES[name] ?? humanize(name);
 }
@@ -42,6 +43,7 @@ export function title(name: string): string {
 /** What one area shows: its root group (reduced to the shown sections), the trail above it, and its names from the tree root. */
 export type AreaRoot = { group: ValueGroup; trail: Trail; base: string[] };
 
+/** @agent claude-opus-5-5 */
 export function tintedRoot(hud: ToggleableGroup): AreaRoot | undefined {
   const found = locate(hud, TINTED_PATH);
   if (!found) return undefined;
@@ -50,6 +52,7 @@ export function tintedRoot(hud: ToggleableGroup): AreaRoot | undefined {
   return { group: { ...found.group, value } as ValueGroup, trail: found.trail, base: TINTED_PATH };
 }
 
+/** @agent claude-opus-5-5 */
 export function clientRoot(root: ConfigurableGroup): AreaRoot {
   const rank = (name: string) => {
     const at = CLIENT_ORDER.indexOf(name);
@@ -59,10 +62,16 @@ export function clientRoot(root: ConfigurableGroup): AreaRoot {
   return { group: { ...root, value }, trail: [], base: [] };
 }
 
+/** @agent claude-opus-5-5 */
 export const loadHud = (): Promise<ToggleableGroup> => modules.settings("HUD");
+/** @agent claude-opus-5-5 */
 export const loadClient = (): Promise<ConfigurableGroup> => globalSettings.get();
 
-/** valueChanged keys are lowerCamelCase paths; Tinted's are under liquidbounce.module.hud.themes.tinted. */
+/**
+ * valueChanged keys are lowerCamelCase paths; Tinted's are under liquidbounce.module.hud.themes.tinted.
+ *
+ * @agent claude-opus-5-5
+ */
 export function changes(key: string | undefined): SettingsArea | undefined {
   if (!key) return undefined;
   const lower = key.toLowerCase();
@@ -70,7 +79,11 @@ export function changes(key: string | undefined): SettingsArea | undefined {
   return lower.startsWith("liquidbounce.module.") ? undefined : "client";
 }
 
-/** Search entries for both areas; `names` run from the area's root group (Tinted, or the global root). */
+/**
+ * Search entries for both areas; `names` run from the area's root group (Tinted, or the global root).
+ *
+ * @agent claude-opus-5-5
+ */
 export async function areaEntries(): Promise<SettingHit[]> {
   const [hud, client] = await Promise.allSettled([loadHud(), loadClient()]);
   const hits: SettingHit[] = [];

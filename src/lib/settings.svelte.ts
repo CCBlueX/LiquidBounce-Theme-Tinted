@@ -9,6 +9,7 @@ const RELOAD_DEBOUNCE_MS = 100;
 
 type Tristate = "Auto" | "On" | "Off";
 
+/** @agent claude-opus-5-5 */
 interface ThemeSettings {
   accessibility?: {
     reduceMotion?: Tristate;
@@ -40,10 +41,12 @@ let raw: ThemeSettings = {};
 const motionQuery = matchMedia("(prefers-reduced-motion: reduce)");
 const contrastQuery = matchMedia("(prefers-contrast: more), (forced-colors: active)");
 
+/** @agent claude-opus-5-5 */
 function tristate(value: Tristate | undefined, query: MediaQueryList) {
   return value === "On" || ((value ?? "Auto") === "Auto" && query.matches);
 }
 
+/** @agent claude-opus-5-5 */
 function apply() {
   const a = raw.accessibility ?? {};
   settings.reduceMotion = tristate(a.reduceMotion, motionQuery);
@@ -68,6 +71,7 @@ function apply() {
   configureSound({ volume: settings.volume, reduceSound: settings.reduceSound, captions: settings.soundCaptions });
 }
 
+/** @agent claude-opus-5-5 */
 async function load() {
   try {
     const theme = await request<{ id: string; settings?: ThemeSettings }>("GET", "/theme");
@@ -78,6 +82,7 @@ async function load() {
   apply();
 }
 
+/** @agent claude-opus-5-5 */
 export function startSettings() {
   motionQuery.addEventListener("change", apply);
   contrastQuery.addEventListener("change", apply);

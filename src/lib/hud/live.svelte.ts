@@ -23,6 +23,7 @@ export type TargetInfo = {
 };
 
 // Vanilla's format: minutes and seconds, with hours in front once there are any
+/** @agent claude-opus-5-5 */
 function clock(ticks: number) {
   const seconds = Math.max(0, Math.floor(ticks / 20));
   const hours = Math.floor(seconds / 3600);
@@ -30,6 +31,7 @@ function clock(ticks: number) {
   return hours ? `${hours}:${mmss.padStart(5, "0")}` : mmss;
 }
 
+/** @agent claude-opus-5-5 */
 function chipsOf(effects: MobEffect[]): EffectChip[] {
   return effects
     .filter((effect) => effect.showIcon)
@@ -45,6 +47,7 @@ function chipsOf(effects: MobEffect[]): EffectChip[] {
     });
 }
 
+/** @agent claude-opus-5-5 */
 export function throttle<T>(ms: number, apply: (value: T) => void) {
   let last = 0;
   let timer: number | undefined;
@@ -70,6 +73,7 @@ export function throttle<T>(ms: number, apply: (value: T) => void) {
   return run;
 }
 
+/** @agent claude-opus-5-5 */
 class LiveState {
   armor = $state.raw<ItemStack[]>([]);
   scoreboard = $state.raw<Scoreboard>();

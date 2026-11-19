@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { untrack, type Component } from "svelte";
   import type { TransitionConfig } from "svelte/transition";
   import { request } from "./lib/api/client";

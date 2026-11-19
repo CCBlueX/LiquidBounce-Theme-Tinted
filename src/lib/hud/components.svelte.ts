@@ -21,6 +21,8 @@ type Declaration = { name: string; description?: string; enabled: boolean; align
 /**
  * Inline style that puts a component where the client's alignment says, moved by `shiftX`/`shiftY` to stay inside
  * the window; the HUD and the editor both use it.
+ *
+ * @agent claude-opus-5-5
  */
 export function place(
   { horizontalAlignment: h, horizontalOffset: x, verticalAlignment: v, verticalOffset: y }: Alignment,
@@ -42,6 +44,7 @@ export function place(
   return style.join("; ");
 }
 
+/** @agent claude-opus-5-5 */
 class HudComponents {
   list = $state.raw<HudComponent[]>([]);
   shown = $derived(this.list.filter((component) => component.settings.enabled && COMPONENT_NAMES.includes(component.name)));

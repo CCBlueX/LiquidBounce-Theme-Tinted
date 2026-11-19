@@ -5,6 +5,7 @@
 </script>
 
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { apiUrl } from "../api/client";
   import { resources } from "../api/routes";
   import { settings } from "../settings.svelte";

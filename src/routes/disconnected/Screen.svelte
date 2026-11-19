@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { onMount, tick } from "svelte";
   import { reasonOf, request } from "../../lib/api/client";
   import { on, onReconnect } from "../../lib/api/events";

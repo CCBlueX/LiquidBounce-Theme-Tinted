@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { hud } from "../../lib/hud/components.svelte";
   import Placed from "../../lib/hud/Placed.svelte";
   import { VIEWS } from "../../lib/hud/views";

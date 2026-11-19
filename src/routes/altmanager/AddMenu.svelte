@@ -3,6 +3,7 @@
 </script>
 
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import PopoverMenu from "../../lib/ui/PopoverMenu.svelte";
 
   // "Add account": a pull-down of every way to add one

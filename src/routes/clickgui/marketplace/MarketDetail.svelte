@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { ApiError, request } from "../../../lib/api/client";
   import { market as api } from "../../../lib/api/routes";
   import type { MarketConfigDetail, MarketItemDetail } from "../../../lib/api/types";

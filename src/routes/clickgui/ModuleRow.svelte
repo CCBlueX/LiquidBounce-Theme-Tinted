@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import type { Module } from "../../lib/api/types";
   import { bindLabel } from "../../lib/keys";
   import Keycap from "../../lib/ui/Keycap.svelte";

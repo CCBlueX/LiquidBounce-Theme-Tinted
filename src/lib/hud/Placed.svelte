@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { untrack, type Snippet } from "svelte";
   import type { HTMLAttributes } from "svelte/elements";
   import type { Alignment } from "../api/types";

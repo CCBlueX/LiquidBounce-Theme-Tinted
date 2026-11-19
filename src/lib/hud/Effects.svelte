@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import ItemIcon from "../ui/ItemIcon.svelte";
   import { slotOf } from "./layout.svelte";
   import { live } from "./live.svelte";

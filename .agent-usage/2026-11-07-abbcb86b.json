@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-07",
+  "change": "feat: tinted, a glass theme with an island hud",
+  "tool": "omp",
+  "models": [
+    {
+      "model": "claude-opus-5-5",
+      "provider": "anthropic",
+      "tokens": { "input": 3302, "cachedInput": 365856457, "cacheWrite": 4290883, "output": 1474991 },
+      "usd": 137.01
+    },
+    {
+      "model": "claude-fable-5-1",
+      "provider": "anthropic",
+      "tokens": { "input": 162, "cachedInput": 15034553, "cacheWrite": 295078, "output": 46189 },
+      "usd": 11.97
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "provider": "anthropic",
+      "tokens": { "input": 64363, "cachedInput": 20602584, "cacheWrite": 2493757, "output": 663257 },
+      "usd": 1.04
+    }
+  ]
+}

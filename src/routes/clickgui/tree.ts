@@ -20,17 +20,26 @@ export type Step = { node: ValueGroup; choice?: string };
 export type Trail = Step[];
 export type Item = { node: ValueNode; trail: Trail };
 
+/** @agent claude-opus-5-5 */
 export function isGroup(node: ValueNode): node is ValueGroup {
   return node.valueType === "CONFIGURABLE" || node.valueType === "TOGGLEABLE" || node.valueType === "CHOICE";
 }
 
-/** The BOOLEAN "Enabled" child that carries a nested TOGGLEABLE's state. Module roots have none. */
+/**
+ * The BOOLEAN "Enabled" child that carries a nested TOGGLEABLE's state. Module roots have none.
+ *
+ * @agent claude-opus-5-5
+ */
 export function enabledOf(group: ValueGroup): BooleanValue | undefined {
   if (group.valueType !== "TOGGLEABLE") return undefined;
   return group.value.find((node): node is BooleanValue => node.name === "Enabled" && node.valueType === "BOOLEAN");
 }
 
-/** Values shown inside a group: its own values without "Enabled", then a CHOICE's active mode values. */
+/**
+ * Values shown inside a group: its own values without "Enabled", then a CHOICE's active mode values.
+ *
+ * @agent claude-opus-5-5
+ */
 export function contents(group: ValueGroup, trail: Trail): Item[] {
   const own: Trail = [...trail, { node: group }];
   const items: Item[] = [];
@@ -48,7 +57,11 @@ export function contents(group: ValueGroup, trail: Trail): Item[] {
   return items;
 }
 
-/** Finds a group by the names on its way down from the root (CHOICE modes are followed through the active one). */
+/**
+ * Finds a group by the names on its way down from the root (CHOICE modes are followed through the active one).
+ *
+ * @agent claude-opus-5-5
+ */
 export function locate(root: ValueGroup, names: string[]): { group: ValueGroup; trail: Trail } | undefined {
   let group = root;
   let trail: Trail = [];
@@ -61,7 +74,11 @@ export function locate(root: ValueGroup, names: string[]): { group: ValueGroup; 
   return { group, trail };
 }
 
-/** Stable id of a value inside its module: group names and the value name joined by "/". */
+/**
+ * Stable id of a value inside its module: group names and the value name joined by "/".
+ *
+ * @agent claude-opus-5-5
+ */
 export function pathKey(trail: Trail, name: string): string {
   return [...trail.slice(1).map((step) => step.node.name), name].join("/");
 }
@@ -69,6 +86,8 @@ export function pathKey(trail: Trail, name: string): string {
 /**
  * Empty patches for every mode of a CHOICE. The client reads `active` and every mode under `choices` when it
  * applies a CHOICE; leaving `choices` out makes it skip the whole group.
+ *
+ * @agent claude-opus-5-5
  */
 export function choicePatches(node: ChoiceGroup, choice?: string, inner?: ValuePatch): Record<string, ValuePatch> {
   const patches: Record<string, ValuePatch> = {};
@@ -78,7 +97,11 @@ export function choicePatches(node: ChoiceGroup, choice?: string, inner?: ValueP
   return patches;
 }
 
-/** Wraps a value patch in its groups up to the module root; the root name is the module name. */
+/**
+ * Wraps a value patch in its groups up to the module root; the root name is the module name.
+ *
+ * @agent claude-opus-5-5
+ */
 export function patchFor(trail: Trail, leaf: ValuePatch): ValuePatch {
   let patch = leaf;
   for (let i = trail.length - 1; i >= 0; i--) {
@@ -91,7 +114,11 @@ export function patchFor(trail: Trail, leaf: ValuePatch): ValuePatch {
   return patch;
 }
 
-/** "MaxPerTick" -> "Max per tick", keeps acronyms such as CPS and FOV. */
+/**
+ * "MaxPerTick" -> "Max per tick", keeps acronyms such as CPS and FOV.
+ *
+ * @agent claude-opus-5-5
+ */
 export function humanize(name: string): string {
   const words = name
     .replace(/([a-z])([A-Z])/g, "$1 $2")
@@ -101,7 +128,11 @@ export function humanize(name: string): string {
   return words.map((word, i) => (i === 0 || /^[A-Z0-9]{2,}$/.test(word) ? word : word.toLowerCase())).join(" ");
 }
 
-/** "minecraft:magma_cream" -> "Magma cream". */
+/**
+ * "minecraft:magma_cream" -> "Magma cream".
+ *
+ * @agent claude-opus-5-5
+ */
 export function idName(id: string): string {
   const path = id.includes(":") ? id.slice(id.indexOf(":") + 1) : id;
   const text = path.replace(/[_/.]/g, " ");
@@ -110,27 +141,35 @@ export function idName(id: string): string {
 
 type Ranged = IntValue | FloatValue | IntRangeValue | FloatRangeValue;
 
+/** @agent claude-opus-5-5 */
 export function isInt(node: Ranged): boolean {
   return node.valueType === "INT" || node.valueType === "INT_RANGE";
 }
 
-/** Slider step: whole numbers for INT, a step that gives about 100 to 500 positions for FLOAT. */
+/**
+ * Slider step: whole numbers for INT, a step that gives about 100 to 500 positions for FLOAT.
+ *
+ * @agent claude-opus-5-5
+ */
 export function stepOf(node: Ranged): number {
   if (isInt(node)) return 1;
   const span = node.range.to - node.range.from;
   return span <= 1 ? 0.01 : span <= 10 ? 0.05 : span <= 50 ? 0.1 : 1;
 }
 
+/** @agent claude-opus-5-5 */
 export function formatNumber(value: number, int: boolean): string {
   if (int) return String(Math.round(value));
   return Number.isInteger(value) ? value.toFixed(1) : String(Number(value.toFixed(2)));
 }
 
+/** @agent claude-opus-5-5 */
 export function withSuffix(text: string, suffix: string | undefined): string {
   if (!suffix) return text;
   return /^[%°]/.test(suffix) ? text + suffix : `${text} ${suffix}`;
 }
 
+/** @agent claude-opus-5-5 */
 export function formatRanged(node: Ranged): string {
   const int = isInt(node);
   if (node.valueType === "INT_RANGE" || node.valueType === "FLOAT_RANGE") {
@@ -141,20 +180,30 @@ export function formatRanged(node: Ranged): string {
 }
 
 // Colors are signed 32-bit ARGB ints
+/** @agent claude-opus-5-5 */
 export function channels(argb: Argb) {
   const u = argb >>> 0;
   return { a: (u >>> 24) & 255, r: (u >>> 16) & 255, g: (u >>> 8) & 255, b: u & 255 };
 }
 
+/** @agent claude-opus-5-5 */
 const hex2 = (n: number) => n.toString(16).padStart(2, "0").toUpperCase();
 
-/** "#RRGGBB" for opaque colors, "#RRGGBBAA" otherwise. */
+/**
+ * "#RRGGBB" for opaque colors, "#RRGGBBAA" otherwise.
+ *
+ * @agent claude-opus-5-5
+ */
 export function toHex(argb: Argb): string {
   const { a, r, g, b } = channels(argb);
   return `#${hex2(r)}${hex2(g)}${hex2(b)}${a === 255 ? "" : hex2(a)}`;
 }
 
-/** Parses #RGB, #RRGGBB or #RRGGBBAA; undefined when the text is not a color. */
+/**
+ * Parses #RGB, #RRGGBB or #RRGGBBAA; undefined when the text is not a color.
+ *
+ * @agent claude-opus-5-5
+ */
 export function fromHex(text: string): Argb | undefined {
   let hex = text.trim().replace(/^#/, "");
   if (/^[0-9a-f]{3}$/i.test(hex)) hex = [...hex].map((c) => c + c).join("");
@@ -166,10 +215,12 @@ export function fromHex(text: string): Argb | undefined {
   return ((a << 24) | (r << 16) | (g << 8) | b) | 0;
 }
 
+/** @agent claude-opus-5-5 */
 export function withAlpha(argb: Argb, alpha: number): Argb {
   return ((Math.round(alpha) & 255) << 24) | ((argb >>> 0) & 0xffffff) | 0;
 }
 
+/** @agent claude-opus-5-5 */
 export function cssColor(argb: Argb, opaque = false): string {
   const { a, r, g, b } = channels(argb);
   return `rgb(${r} ${g} ${b} / ${opaque ? 1 : (a / 255).toFixed(3)})`;
@@ -188,6 +239,8 @@ const SKIPPED_ROOT_VALUES: Record<string, true> = { Bind: true, Hidden: true };
 /**
  * Every value and group below `root` (active modes only) with its names from `root` down; `where` starts with
  * `place`, followed by the labels of the groups on the way.
+ *
+ * @agent claude-opus-5-5
  */
 export function treeEntries(
   root: ValueGroup,
@@ -208,16 +261,25 @@ export function treeEntries(
   return entries;
 }
 
-/** Every value reachable in the inspector, as search entries. */
+/**
+ * Every value reachable in the inspector, as search entries.
+ *
+ * @agent claude-opus-5-5
+ */
 export function settingEntries(module: Module, root: ValueGroup): SettingHit[] {
   return treeEntries(root, [module.name], humanize, SKIPPED_ROOT_VALUES).map((entry) => ({ ...entry, module }));
 }
 
+/** @agent claude-opus-5-5 */
 export function normalize(text: string): string {
   return text.toLowerCase().replace(/\s+/g, "");
 }
 
-/** 0 when the module does not match; higher is better. */
+/**
+ * 0 when the module does not match; higher is better.
+ *
+ * @agent claude-opus-5-5
+ */
 export function moduleScore(module: Module, query: string): number {
   const q = normalize(query);
   if (!q) return 0;
@@ -232,6 +294,7 @@ export function moduleScore(module: Module, query: string): number {
   return 0;
 }
 
+/** @agent claude-opus-5-5 */
 export function settingScore(hit: SettingHit, query: string): number {
   const q = normalize(query);
   const name = normalize(hit.label);

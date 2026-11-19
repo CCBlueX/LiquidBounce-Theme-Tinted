@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import type { ChoiceGroup, ValueGroup } from "../../../lib/api/types";
   import { play } from "../../../lib/sound";
   import type { SettingsEditor } from "../editor.svelte";

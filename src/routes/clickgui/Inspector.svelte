@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { onDestroy, tick } from "svelte";
   import { on, onReconnect } from "../../lib/api/events";
   import { modules } from "../../lib/api/routes";

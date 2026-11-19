@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { onMount } from "svelte";
   import { market as api, servers } from "../../../lib/api/routes";
   import type { MarketConfig, MarketItem } from "../../../lib/api/types";

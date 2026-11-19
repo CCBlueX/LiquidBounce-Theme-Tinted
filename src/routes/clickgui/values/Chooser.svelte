@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import Segmented from "../../../lib/ui/Segmented.svelte";
   import Menu from "./Menu.svelte";
 

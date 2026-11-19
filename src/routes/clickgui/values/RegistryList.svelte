@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { tick } from "svelte";
   import type { Registry } from "../../../lib/api/types";
   import { keepEscape } from "../../../lib/escape.svelte";

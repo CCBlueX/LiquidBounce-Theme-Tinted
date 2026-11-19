@@ -7,7 +7,11 @@ export type MarkdownImage = { src: string; alt: string };
 /** Blocks with the images taken out for a gallery. */
 export type MarkdownDocument = { blocks: MarkedToken[]; images: MarkdownImage[] };
 
-/** The link as the browser would load it, when it is http(s); relative, javascript: or data: links give undefined. */
+/**
+ * The link as the browser would load it, when it is http(s); relative, javascript: or data: links give undefined.
+ *
+ * @agent claude-opus-5-5
+ */
 export function webUrl(url: string): string | undefined {
   try {
     const parsed = new URL(url);
@@ -19,7 +23,11 @@ export function webUrl(url: string): string | undefined {
 
 let decoder: HTMLTextAreaElement | undefined;
 
-/** marked leaves character references (&amp;, &copy;) in text; a textarea decodes them without parsing any tags. */
+/**
+ * marked leaves character references (&amp;, &copy;) in text; a textarea decodes them without parsing any tags.
+ *
+ * @agent claude-opus-5-5
+ */
 export function decodeEntities(text: string) {
   if (!text.includes("&")) return text;
   decoder ??= document.createElement("textarea");
@@ -28,9 +36,14 @@ export function decodeEntities(text: string) {
 }
 
 // Without extensions the lexer only makes the tokens marked knows
+/** @agent claude-opus-5-5 */
 const lex = (source: string) => Lexer.lex(source, { gfm: true }) as MarkedToken[];
 
-/** Calls visit on every token, with whether it sits inside a link. */
+/**
+ * Calls visit on every token, with whether it sits inside a link.
+ *
+ * @agent claude-opus-5-5
+ */
 function walk(tokens: Token[], visit: (token: MarkedToken, inLink: boolean) => void, inLink = false) {
   for (const token of tokens as MarkedToken[]) {
     visit(token, inLink);
@@ -41,6 +54,7 @@ function walk(tokens: Token[], visit: (token: MarkedToken, inLink: boolean) => v
   }
 }
 
+/** @agent claude-opus-5-5 */
 function plainText(tokens: Token[]): string {
   let text = "";
   walk(tokens, (token) => {
@@ -49,18 +63,25 @@ function plainText(tokens: Token[]): string {
   return decodeEntities(text);
 }
 
-/** A paragraph of nothing but images and white space, which the gallery leaves empty. */
+/**
+ * A paragraph of nothing but images and white space, which the gallery leaves empty.
+ *
+ * @agent claude-opus-5-5
+ */
 export function blank(paragraph: Tokens.Paragraph) {
   return paragraph.tokens.every(
     (token) => token.type === "image" || token.type === "br" || (token.type === "text" && !token.text.trim()),
   );
 }
 
+/** @agent claude-opus-5-5 */
 const sameText = (a: string, b: string | undefined) => !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
 
 /**
  * The blocks of a description and its images, in order. Images inside a link stay with the link, as its text.
  * Paragraphs left empty go, then headings whose section had only images; a first heading that repeats the title too.
+ *
+ * @agent claude-opus-5-5
  */
 export function markdownDocument(source: string, title?: string): MarkdownDocument {
   const tokens = lex(source);
@@ -93,6 +114,8 @@ export function markdownDocument(source: string, title?: string): MarkdownDocume
 /**
  * The inline tokens of a summary line without its images. Headings, list items and quotes give their text; a line
  * of only images or the title gives nothing.
+ *
+ * @agent claude-opus-5-5
  */
 export function summaryTokens(source: string, title?: string): Token[] {
   let token: MarkedToken | undefined = lex(source).find((block) => block.type !== "space");

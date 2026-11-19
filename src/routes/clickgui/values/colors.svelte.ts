@@ -3,7 +3,11 @@ import { storage } from "../../../lib/api/routes";
 
 export type Hsv = { h: number; s: number; v: number };
 
-/** r, g, b in 0..255 to hue 0..360, saturation and brightness 0..1. */
+/**
+ * r, g, b in 0..255 to hue 0..360, saturation and brightness 0..1.
+ *
+ * @agent claude-opus-5-5
+ */
 export function toHsv(r: number, g: number, b: number): Hsv {
   const max = Math.max(r, g, b);
   const d = max - Math.min(r, g, b);
@@ -17,6 +21,7 @@ export function toHsv(r: number, g: number, b: number): Hsv {
   return { h, s: max ? d / max : 0, v: max / 255 };
 }
 
+/** @agent claude-opus-5-5 */
 export function fromHsv({ h, s, v }: Hsv): { r: number; g: number; b: number } {
   const f = (n: number) => {
     const k = (n + h / 60) % 6;
@@ -28,6 +33,7 @@ export function fromHsv({ h, s, v }: Hsv): { r: number; g: number; b: number } {
 const KEY = "tinted.recentColors";
 const LIMIT = 6;
 
+/** @agent claude-opus-5-5 */
 class RecentColors {
   /** "#RRGGBB" or "#RRGGBBAA", newest first. */
   list = $state<string[]>([]);

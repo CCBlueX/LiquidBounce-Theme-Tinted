@@ -15,6 +15,7 @@ const TOGGLED_KEEP = 16;
 
 type ToggleState = { enabled: boolean; hidden: boolean };
 
+/** @agent claude-opus-5-5 */
 class ModuleStore {
   list = $state.raw<Module[]>([]);
   byName = $derived(new Map(this.list.map((module) => [module.name, module])));

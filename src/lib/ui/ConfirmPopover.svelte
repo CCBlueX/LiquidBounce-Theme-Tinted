@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
   import { keepEscape } from "../escape.svelte";

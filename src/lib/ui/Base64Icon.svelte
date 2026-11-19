@@ -32,6 +32,7 @@
 </script>
 
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import type { Snippet } from "svelte";
 
   // Favicons and world icons are 64px images shown at 32 or 64 CSS px on a zoomed canvas, so nearly always scaled

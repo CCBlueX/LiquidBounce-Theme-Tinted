@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import Ornament from "../../lib/ui/Ornament.svelte";
 
   // Vanilla draws the chest; the client exposes none of its slots, so the ornament carries only the modules that

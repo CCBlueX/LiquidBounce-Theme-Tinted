@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import type { MarkdownImage } from "../../../lib/markdown";
   import { rise } from "../../../lib/motion";
   import { play } from "../../../lib/sound";

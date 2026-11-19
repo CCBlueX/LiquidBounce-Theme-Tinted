@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import type { Snippet } from "svelte";
   import type { Module } from "../api/types";
   import { setModule } from "../moduleToggles.svelte";

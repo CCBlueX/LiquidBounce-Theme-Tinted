@@ -9,6 +9,7 @@
 </script>
 
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { setContext, tick } from "svelte";
   import { on } from "../api/events";
   import type { Alignment, HorizontalAlignment, HudComponent, VerticalAlignment } from "../api/types";

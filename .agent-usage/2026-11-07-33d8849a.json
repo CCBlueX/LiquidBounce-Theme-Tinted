@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-07",
+  "change": "release: 0.2.0",
+  "tool": "omp",
+  "models": [
+    {
+      "model": "claude-opus-5-5",
+      "provider": "anthropic",
+      "tokens": { "input": 1650, "cachedInput": 197026568, "cacheWrite": 1332263, "output": 485236 },
+      "usd": 59.77
+    },
+    {
+      "model": "claude-fable-5-1",
+      "provider": "anthropic",
+      "tokens": { "input": 178, "cachedInput": 9524550, "cacheWrite": 176380, "output": 41794 },
+      "usd": 8.00
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "provider": "anthropic",
+      "tokens": { "input": 49643, "cachedInput": 1187027, "cacheWrite": 298452, "output": 48595 },
+      "usd": 0.10
+    }
+  ]
+}

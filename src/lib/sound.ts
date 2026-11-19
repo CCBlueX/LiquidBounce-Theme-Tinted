@@ -33,6 +33,7 @@ const THEME_ID = "tinted";
 // Undefined until the client first answers; false once it turned out not to have the route
 let inGame: boolean | undefined;
 
+/** @agent claude-opus-5-5 */
 async function playInGame(file: string, volume: number, pitch: number): Promise<boolean> {
   if (inGame === false) return false;
   try {
@@ -46,6 +47,7 @@ async function playInGame(file: string, volume: number, pitch: number): Promise<
 }
 
 // An unknown sound is a 404 with a reason; a client without the route answers a bare 404
+/** @agent claude-opus-5-5 */
 const lacksRoute = (error: unknown) =>
   error instanceof ApiError && error.status === 404 && !(typeof error.body === "object" && error.body);
 
@@ -57,12 +59,20 @@ const SWITCH_HEARD_MS = 1500;
 const SWITCH_WAIT_MS = 60;
 channel?.addEventListener("message", (event: MessageEvent<string>) => switchedElsewhere.set(event.data, performance.now()));
 
-/** Marks a module switch made from this page, which plays its own sound. */
+/**
+ * Marks a module switch made from this page, which plays its own sound.
+ *
+ * @agent claude-opus-5-5
+ */
 export function markModuleSwitch(name: string) {
   channel?.postMessage(name);
 }
 
-/** The toggle sound for a module switched outside the theme's pages. */
+/**
+ * The toggle sound for a module switched outside the theme's pages.
+ *
+ * @agent claude-opus-5-5
+ */
 export function playModuleToggle(name: string, enabled: boolean) {
   // The client's toggle event can beat the switching page's mark here by a few frames
   setTimeout(() => {
@@ -82,6 +92,7 @@ let playing = 0;
 let idleTimer: ReturnType<typeof setTimeout> | undefined;
 let suspending: Promise<void> | undefined;
 
+/** @agent claude-opus-5-5 */
 function sleepSoon() {
   clearTimeout(idleTimer);
   idleTimer = setTimeout(() => {
@@ -91,16 +102,19 @@ function sleepSoon() {
 
 const state = { volume: 0.6, reduceSound: false, captions: false };
 
+/** @agent claude-opus-5-5 */
 export function configureSound(options: Partial<typeof state>) {
   Object.assign(state, options);
   if (master) master.gain.value = state.volume;
 }
 
+/** @agent claude-opus-5-5 */
 export function onCaption(listener: (caption: string) => void) {
   captionListeners.add(listener);
   return () => captionListeners.delete(listener);
 }
 
+/** @agent claude-opus-5-5 */
 function audio() {
   if (!context) {
     context = new AudioContext({ latencyHint: "interactive" });
@@ -112,6 +126,7 @@ function audio() {
   return context;
 }
 
+/** @agent claude-opus-5-5 */
 function load(file: string) {
   let buffer = buffers.get(file);
   if (!buffer) {
@@ -124,7 +139,11 @@ function load(file: string) {
   return buffer;
 }
 
-/** Loads the Web Audio files on clients that cannot play theme sounds, so the first one is not late. */
+/**
+ * Loads the Web Audio files on clients that cannot play theme sounds, so the first one is not late.
+ *
+ * @agent claude-opus-5-5
+ */
 export async function preloadSounds() {
   // A request without a sound is refused (400) by a client that has the route
   await request("POST", "/sound", { body: {} }).catch((error) => {
@@ -133,6 +152,7 @@ export async function preloadSounds() {
   if (inGame === false) for (const { file } of Object.values(FILES)) load(file);
 }
 
+/** @agent claude-opus-5-5 */
 export async function play(role: SoundRole) {
   const sound = FILES[role];
   if (state.volume <= 0 || (state.reduceSound && !sound.essential)) return;

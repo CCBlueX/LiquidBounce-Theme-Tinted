@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { market } from "../../../lib/api/routes";
   import { play } from "../../../lib/sound";
 

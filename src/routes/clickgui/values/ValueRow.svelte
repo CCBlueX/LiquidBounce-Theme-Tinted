@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { tick } from "svelte";
   import { request } from "../../../lib/api/client";
   import { player } from "../../../lib/api/routes";

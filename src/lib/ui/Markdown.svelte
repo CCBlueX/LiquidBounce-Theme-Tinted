@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import type { MarkedToken, Token } from "marked";
   import { blank, decodeEntities, webUrl } from "../markdown";
 

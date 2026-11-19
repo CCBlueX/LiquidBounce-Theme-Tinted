@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import "./manager.css";
   import { onMount } from "svelte";
   import { request } from "../api/client";

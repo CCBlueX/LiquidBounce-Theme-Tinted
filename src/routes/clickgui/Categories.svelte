@@ -3,6 +3,7 @@
 </script>
 
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { play } from "../../lib/sound";
 
   // The category sidebar: names with the number of enabled modules, then Marketplace and Settings at the bottom. Up

@@ -23,12 +23,17 @@ export type NoteActivity = { id: number; title: string; message: string; error: 
 export type ScaffoldActivity = { block?: string; blockName: string; count: number; peak: number };
 export type ActivityKind = "target" | "scaffold" | "notification" | "toggle";
 
-/** "minecraft:oak_planks" as "Oak planks" (sentence case, the namespace dropped). */
+/**
+ * "minecraft:oak_planks" as "Oak planks" (sentence case, the namespace dropped).
+ *
+ * @agent claude-opus-5-5
+ */
 export function blockName(id: string) {
   const path = id.slice(id.indexOf(":") + 1).replaceAll("_", " ");
   return path.charAt(0).toUpperCase() + path.slice(1);
 }
 
+/** @agent claude-opus-5-5 */
 export class IslandState {
   scaffold = $state.raw<ScaffoldActivity>();
   notes = $state.raw<NoteActivity[]>([]);

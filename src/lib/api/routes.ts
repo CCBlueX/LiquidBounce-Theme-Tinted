@@ -40,6 +40,7 @@ type CallOptions<K extends RouteKey> = {
   body?: ApiRoutes[K]["body"];
 };
 
+/** @agent claude-opus-5-5 */
 function call<K extends RouteKey>(route: K, options: CallOptions<K> = {}): Promise<ApiRoutes[K]["response"]> {
   const space = route.indexOf(" ");
   const method = route.slice(0, space) as HttpMethod;

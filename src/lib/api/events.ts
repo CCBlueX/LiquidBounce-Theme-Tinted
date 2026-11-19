@@ -21,6 +21,8 @@ let connectedBefore = false;
 /**
  * Opens the event socket and keeps it open: on close it reconnects with exponential backoff (250 ms doubling,
  * capped at 5 s). Calling it again with another port moves the connection. Returns a function that disconnects.
+ *
+ * @agent claude-opus-5-5
  */
 export function connectEvents(port: number): () => void {
   if (activePort === port && socket) return disconnectEvents;
@@ -30,6 +32,7 @@ export function connectEvents(port: number): () => void {
   return disconnectEvents;
 }
 
+/** @agent claude-opus-5-5 */
 export function disconnectEvents(): void {
   activePort = undefined;
   clearTimeout(reconnectTimer);
@@ -39,7 +42,11 @@ export function disconnectEvents(): void {
   current?.close();
 }
 
-/** Calls `handler` for every `name` event until the returned function is called. */
+/**
+ * Calls `handler` for every `name` event until the returned function is called.
+ *
+ * @agent claude-opus-5-5
+ */
 export function on<K extends EventName>(name: K, handler: EventHandler<K>): Unsubscribe {
   let set = handlers.get(name);
   if (!set) {
@@ -52,7 +59,11 @@ export function on<K extends EventName>(name: K, handler: EventHandler<K>): Unsu
   };
 }
 
-/** Calls `handler` each time the socket opens again after a drop; events sent meanwhile are lost, so refetch state. */
+/**
+ * Calls `handler` each time the socket opens again after a drop; events sent meanwhile are lost, so refetch state.
+ *
+ * @agent claude-opus-5-5
+ */
 export function onReconnect(handler: () => void): Unsubscribe {
   reconnectHandlers.add(handler);
   return () => {
@@ -60,6 +71,7 @@ export function onReconnect(handler: () => void): Unsubscribe {
   };
 }
 
+/** @agent claude-opus-5-5 */
 function open(): void {
   const port = activePort;
   if (port === undefined) return;
@@ -94,6 +106,7 @@ function open(): void {
 // The client writes the name first, so frames no page part listens to (most of the per-tick stream) are never parsed
 const FRAME_NAME = /^\{"name":"([^"]+)"/;
 
+/** @agent claude-opus-5-5 */
 function dispatch(data: string): void {
   const name = FRAME_NAME.exec(data)?.[1];
   if (name !== undefined && !handlers.get(name as EventName)?.size) return;

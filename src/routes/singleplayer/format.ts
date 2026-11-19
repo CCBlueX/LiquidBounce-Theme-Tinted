@@ -3,17 +3,27 @@
 import type { World } from "../../lib/api/types";
 import { capitalize } from "../../lib/format";
 
+/** @agent claude-opus-5-5 */
 export const gameModeLabel = (world: World) => (world.gameMode ? capitalize(world.gameMode) : "Survival");
+/** @agent claude-opus-5-5 */
 export const difficultyLabel = (world: World) => (world.difficulty ? capitalize(world.difficulty) : "Normal");
 
-/** "Survival · Normal" or "Hardcore" plus mode; hardcore is always spelled out, never a color. */
+/**
+ * "Survival · Normal" or "Hardcore" plus mode; hardcore is always spelled out, never a color.
+ *
+ * @agent claude-opus-5-5
+ */
 export function modeLine(world: World) {
   return world.hardcore ? `Hardcore · ${gameModeLabel(world)}` : `${gameModeLabel(world)} · ${difficultyLabel(world)}`;
 }
 
 export type Notice = { text: string; blocks: boolean };
 
-/** Plain sentences for the flags vanilla checks before opening a world. Blocking ones disable Play. */
+/**
+ * Plain sentences for the flags vanilla checks before opening a world. Blocking ones disable Play.
+ *
+ * @agent claude-opus-5-5
+ */
 export function notices(world: World): Notice[] {
   const list: Notice[] = [];
   if (world.locked) list.push({ text: "This world is open in another game. Close it there to play here.", blocks: true });

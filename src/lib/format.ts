@@ -1,6 +1,11 @@
-/** "SURVIVAL" or "survival" as "Survival". */
+/**
+ * "SURVIVAL" or "survival" as "Survival".
+ *
+ * @agent claude-opus-5-5
+ */
 export const capitalize = (token: string) => token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
 
+/** @agent claude-opus-5-5 */
 export function relativeTime(ms: number, now = Date.now()) {
   const minutes = Math.round((now - ms) / 60_000);
   if (minutes < 1) return "Just now";
@@ -15,6 +20,7 @@ export function relativeTime(ms: number, now = Date.now()) {
   return new Date(ms).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
 }
 
+/** @agent claude-opus-5-5 */
 export function absoluteTime(ms: number) {
   return new Date(ms).toLocaleString("en-GB", {
     weekday: "long",

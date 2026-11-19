@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import { flip } from "svelte/animate";
   import { fade } from "svelte/transition";
   import { bindLabel } from "../keys";

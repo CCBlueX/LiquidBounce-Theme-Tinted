@@ -55,6 +55,7 @@ const TRANSLATIONS: Record<string, string> = {
   "multiplayer.status.and_more": "... and %s more ...",
 };
 
+/** @agent claude-opus-5-5 */
 function toneOfHex(hex: string): Tone | undefined {
   const match = /^#([0-9a-f]{6})$/i.exec(hex);
   if (!match) return undefined;
@@ -77,12 +78,17 @@ function toneOfHex(hex: string): Tone | undefined {
   return "purple";
 }
 
+/** @agent claude-opus-5-5 */
 function toneOf(color: unknown): Tone | undefined {
   if (typeof color !== "string") return undefined;
   return NAMED[color] ?? toneOfHex(color);
 }
 
-/** Splits a string with § codes into runs; a color code resets formatting, §r returns to the component's style. */
+/**
+ * Splits a string with § codes into runs; a color code resets formatting, §r returns to the component's style.
+ *
+ * @agent claude-opus-5-5
+ */
 function legacy(text: string, base: Style, out: Run[]) {
   let style: Style = { ...base };
   let buffer = "";
@@ -114,6 +120,7 @@ function legacy(text: string, base: Style, out: Run[]) {
   flush();
 }
 
+/** @agent claude-opus-5-5 */
 function walk(component: TextComponent | null | undefined, inherited: Style, out: Run[]) {
   if (component === null || component === undefined) return;
   if (typeof component === "string") {
@@ -144,7 +151,11 @@ function walk(component: TextComponent | null | undefined, inherited: Style, out
   for (const part of component.extra ?? []) walk(part, style, out);
 }
 
-/** Lines of runs with surrounding spaces trimmed (MOTDs pad with spaces to center themselves in vanilla). */
+/**
+ * Lines of runs with surrounding spaces trimmed (MOTDs pad with spaces to center themselves in vanilla).
+ *
+ * @agent claude-opus-5-5
+ */
 export function textLines(component: TextComponent | null | undefined): Run[][] {
   const runs: Run[] = [];
   walk(component, {}, runs);
@@ -168,7 +179,11 @@ export function textLines(component: TextComponent | null | undefined): Run[][] 
     .filter((line) => line.length > 0);
 }
 
-/** Plain text for accessible names and search. */
+/**
+ * Plain text for accessible names and search.
+ *
+ * @agent claude-opus-5-5
+ */
 export function plainText(component: TextComponent | null | undefined): string {
   return textLines(component)
     .map((line) => line.map((run) => run.text).join(""))

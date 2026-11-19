@@ -12,17 +12,23 @@ const SETTLE_MS = 1500;
 const pending = $state<Record<string, boolean>>({});
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
 
+/** @agent claude-opus-5-5 */
 function settle(name: string) {
   clearTimeout(timers.get(name));
   timers.delete(name);
   delete pending[name];
 }
 
-/** The state a switch shows: the pending choice while the client has not confirmed it yet. */
+/**
+ * The state a switch shows: the pending choice while the client has not confirmed it yet.
+ *
+ * @agent claude-opus-5-5
+ */
 export function isOn(module: Module): boolean {
   return pending[module.name] ?? module.enabled;
 }
 
+/** @agent claude-opus-5-5 */
 export async function setModule(name: string, enabled: boolean) {
   pending[name] = enabled;
   clearTimeout(timers.get(name));
@@ -41,7 +47,11 @@ export async function setModule(name: string, enabled: boolean) {
   }
 }
 
-/** Starts the module list and clears pending switches as the client confirms them; returns the stop function. */
+/**
+ * Starts the module list and clears pending switches as the client confirms them; returns the stop function.
+ *
+ * @agent claude-opus-5-5
+ */
 export function startModules() {
   const stopStore = moduleStore.start();
   const off = on("moduleToggle", (event) => {

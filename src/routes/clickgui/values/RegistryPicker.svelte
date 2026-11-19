@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import type { Registry } from "../../../lib/api/types";
   import { play } from "../../../lib/sound";
   import ItemIcon from "../../../lib/ui/ItemIcon.svelte";

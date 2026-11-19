@@ -1,4 +1,5 @@
 <script lang="ts">
+  /** @agent claude-opus-5-5 */
   import Keycap from "./Keycap.svelte";
 
   let {

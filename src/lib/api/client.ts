@@ -5,7 +5,11 @@ export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 export type QueryValue = string | number | boolean | undefined;
 export type RequestOptions = { query?: Record<string, QueryValue>; body?: unknown };
 
-/** Non-2xx answer. `body` is the parsed JSON (usually `{reason}`) or the raw text when it is not JSON. */
+/**
+ * Non-2xx answer. `body` is the parsed JSON (usually `{reason}`) or the raw text when it is not JSON.
+ *
+ * @agent claude-opus-5-5
+ */
 export class ApiError extends Error {
   readonly status: number;
   readonly body: unknown;
@@ -19,7 +23,11 @@ export class ApiError extends Error {
   }
 }
 
-/** The `reason` an ApiError carries, as sent; "" for other errors. */
+/**
+ * The `reason` an ApiError carries, as sent; "" for other errors.
+ *
+ * @agent claude-opus-5-5
+ */
 export function reasonOf(error: unknown): string {
   if (error instanceof ApiError && typeof error.body === "object" && error.body !== null && "reason" in error.body) {
     return String(error.body.reason);
@@ -29,17 +37,26 @@ export function reasonOf(error: unknown): string {
 
 let port: number | undefined;
 
+/** @agent claude-opus-5-5 */
 export function configureClient(options: { port: number }): void {
   port = options.port;
 }
 
-/** Origin of the interop server, e.g. http://127.0.0.1:15100. */
+/**
+ * Origin of the interop server, e.g. http://127.0.0.1:15100.
+ *
+ * @agent claude-opus-5-5
+ */
 export function serverOrigin(): string {
   if (port === undefined) throw new Error("configureClient({port}) was not called");
   return `http://127.0.0.1:${port}`;
 }
 
-/** Absolute URL of a route under /api/v1/client, for fetches the page does not make itself (img src, links). */
+/**
+ * Absolute URL of a route under /api/v1/client, for fetches the page does not make itself (img src, links).
+ *
+ * @agent claude-opus-5-5
+ */
 export function apiUrl(path: string, query?: Record<string, QueryValue>): string {
   const url = new URL(`${serverOrigin()}/api/v1/client${path}`);
   for (const [key, value] of Object.entries(query ?? {})) {
@@ -48,7 +65,11 @@ export function apiUrl(path: string, query?: Record<string, QueryValue>): string
   return url.toString();
 }
 
-/** Sends JSON, parses JSON. 204 and empty bodies give undefined; non-2xx throws ApiError. */
+/**
+ * Sends JSON, parses JSON. 204 and empty bodies give undefined; non-2xx throws ApiError.
+ *
+ * @agent claude-opus-5-5
+ */
 export async function request<T>(method: HttpMethod, path: string, options: RequestOptions = {}): Promise<T> {
   const hasBody = options.body !== undefined;
   const response = await fetch(apiUrl(path, options.query), {
@@ -64,6 +85,7 @@ export async function request<T>(method: HttpMethod, path: string, options: Requ
   return body as T;
 }
 
+/** @agent claude-opus-5-5 */
 function parse(text: string): unknown {
   try {
     return JSON.parse(text);
