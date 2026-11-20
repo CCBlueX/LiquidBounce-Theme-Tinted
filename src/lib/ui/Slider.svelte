@@ -24,7 +24,8 @@
   } = $props();
 
   const isRange = $derived(from !== undefined && to !== undefined);
-  const pct = (v: number) => ((v - min) / (max - min)) * 100;
+  // Stored values can sit outside the range (configs from older clients); the knobs stay on the track
+  const pct = (v: number) => Math.min(100, Math.max(0, ((v - min) / (max - min)) * 100));
   let track: HTMLDivElement;
   let dragging: "single" | "from" | "to" | null = $state(null);
 
