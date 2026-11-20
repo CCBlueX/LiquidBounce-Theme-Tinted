@@ -12,7 +12,7 @@ const TINTED_GROUPS = ["Accessibility", "Sound", "ModuleList"];
 const CLIENT_ORDER = [
   "Language",
   "Targets",
-  "Commands",
+  "CommandManager",
   "ClientChat",
   "RichPresence",
   "AutoTranslate",
@@ -27,6 +27,7 @@ const TITLES: Record<string, string> = {
   ClientChat: "Chat",
   RotationManager: "Rotations",
   BlinkManager: "Blink",
+  CommandManager: "Commands",
   GuiRenderer: "GUI renderer",
 };
 
