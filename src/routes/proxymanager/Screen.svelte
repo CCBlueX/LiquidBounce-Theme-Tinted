@@ -15,7 +15,7 @@
   import { isTextField, typingFocus } from "../../lib/typing";
   import ConfirmPopover from "../../lib/ui/ConfirmPopover.svelte";
   import Keycap from "../../lib/ui/Keycap.svelte";
-  import ProxySheet, { type FieldErrors, type ProxyForm, type ProxyRow } from "./ProxySheet.svelte";
+  import ProxySheet, { address, type FieldErrors, type ProxyForm, type ProxyRow } from "./ProxySheet.svelte";
 
   // /proxies, /proxy and proxyCheckResult carry proxy passwords in plain text. Every proxy is reduced to a ProxyRow the
   // moment it arrives, so a password is never kept, rendered or logged; edits that keep a password read it from a fresh
@@ -52,7 +52,6 @@
   const pending: Pending[] = [];
 
   const keyOf = (p: { host: string; port: number; username: string }) => `${p.host}:${p.port}:${p.username}`;
-  const address = (p: { host: string; port: number }) => `${p.host}:${p.port}`;
 
   function toRow(proxy: ProxyEntry | ActiveProxy): ProxyRow {
     return {

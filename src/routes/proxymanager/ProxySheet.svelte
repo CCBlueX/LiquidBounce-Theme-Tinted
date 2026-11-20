@@ -18,6 +18,14 @@
   /** `password` is null when an edit keeps the stored one. */
   export type ProxyForm = Omit<ProxyRow, "id" | "hasPassword" | "favorite"> & { password: string | null };
   export type FieldErrors = Partial<Record<"host" | "port" | "credentials" | "form", string>>;
+
+  /**
+   * host:port, with an IPv6 host in brackets as the client parses it.
+   *
+   * @agent claude-opus-5-5
+   */
+  export const address = (p: { host: string; port: number }) =>
+    p.host.includes(":") ? `[${p.host}]:${p.port}` : `${p.host}:${p.port}`;
 </script>
 
 <script lang="ts">
@@ -62,13 +70,12 @@
 
   onMount(() => hostInput?.focus());
 
-  // "host:port" typed or pasted into the host field fills both
+  // "host:port" or "[IPv6]:port" typed or pasted into the host field fills both; the client stores IPv6 hosts bare
   function splitHost() {
-    const match = /^(.+):(\d{1,5})$/.exec(host.trim());
-    if (match && !port) {
-      host = match[1];
-      port = match[2];
-    }
+    const match = /^(?:\[([^\]]+)\]|([^:]+))(?::(\d{1,5}))?$/.exec(host.trim());
+    if (!match || (match[3] && port)) return;
+    host = match[1] ?? match[2];
+    if (match[3]) port = match[3];
   }
 
   function submit() {
@@ -107,7 +114,7 @@
 <div class="mg-sheet-head on-glass">
   <div class="grow">
     <h2 class="t-title3" id="mg-sheet-title">{start ? "Edit proxy" : "Add proxy"}</h2>
-    <p class="t-callout l2">{start ? `${start.host}:${start.port}` : "LiquidBounce checks it before saving."}</p>
+    <p class="t-callout l2">{start ? address(start) : "LiquidBounce checks it before saving."}</p>
   </div>
   <button class="mg-close" aria-label="Close {start ? 'edit' : 'add'} proxy form" onclick={onclose}>×</button>
 </div>

@@ -20,8 +20,8 @@ const KNOWN: Record<string, string> = {
   "No host": "Enter a host.",
   "Illegal port": "Ports go from 0 to 65535.",
   "Invalid id": "This entry is no longer in the list.",
-  "Invalid proxy format. Expected format: host:port:username:password or host:port":
-    "The clipboard holds no proxy. Copy host:port or host:port:username:password first.",
+  "Invalid proxy format. Use host:port, host:port:username:password, username:password:host:port, or username:password@host:port. IPv6 hosts require [brackets] and ports must be in 1..65535.":
+    "The clipboard holds no proxy. Copy host:port or host:port:username:password first; IPv6 hosts go in [brackets].",
 };
 
 /** @agent claude-opus-5-5 */
