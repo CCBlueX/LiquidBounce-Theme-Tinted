@@ -53,7 +53,7 @@ export class SettingsEditor {
     const write = async () => {
       this.#bursts.delete(key);
       try {
-        await this.#write(patchFor(trail, { name: node.name, value: snapshot(target.value) }));
+        await this.#write(patchFor(trail, { name: node.name, valueType: node.valueType, value: snapshot(target.value) }));
         settle(true);
       } catch {
         target.value = before;
@@ -74,7 +74,9 @@ export class SettingsEditor {
     node.active = active;
     this.pending++;
     try {
-      await this.#write(patchFor(trail, { name: node.name, value: [], active, choices: choicePatches(node) }));
+      await this.#write(
+        patchFor(trail, { name: node.name, valueType: node.valueType, value: [], active, choices: choicePatches(node) }),
+      );
     } catch {
       node.active = before;
       play("error");

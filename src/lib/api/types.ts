@@ -191,10 +191,12 @@ export type SettingsTree = ValueGroup;
 
 /**
  * Body of PUT /modules/settings, /components/{id}/settings, /global, /spoofer: the GET shape, reduced to the values
- * to change. Values are matched by name; the root name must equal the module name.
+ * to change. Values are matched by name; the root name must equal the module name. Every node keeps the GET's
+ * `valueType`: a group without it reads as an old file config (InventoryConstraints then takes its delays as ticks).
  */
 export type ValuePatch = {
   name: string;
+  valueType: ValueType;
   value: JsonValue | ValuePatch[];
   active?: string;
   choices?: Record<string, ValuePatch>;

@@ -92,7 +92,7 @@ export function pathKey(trail: Trail, name: string): string {
 export function choicePatches(node: ChoiceGroup, choice?: string, inner?: ValuePatch): Record<string, ValuePatch> {
   const patches: Record<string, ValuePatch> = {};
   for (const name of Object.keys(node.choices)) {
-    patches[name] = { name, value: name === choice && inner ? [inner] : [] };
+    patches[name] = { name, valueType: node.choices[name].valueType, value: name === choice && inner ? [inner] : [] };
   }
   return patches;
 }
@@ -108,8 +108,14 @@ export function patchFor(trail: Trail, leaf: ValuePatch): ValuePatch {
     const { node, choice } = trail[i];
     patch =
       node.valueType === "CHOICE"
-        ? { name: node.name, value: choice ? [] : [patch], active: node.active, choices: choicePatches(node, choice, patch) }
-        : { name: node.name, value: [patch] };
+        ? {
+            name: node.name,
+            valueType: node.valueType,
+            value: choice ? [] : [patch],
+            active: node.active,
+            choices: choicePatches(node, choice, patch),
+          }
+        : { name: node.name, valueType: node.valueType, value: [patch] };
   }
   return patch;
 }
