@@ -265,13 +265,15 @@ export type ServerIdentity = { name: string; version: string; author: string };
 // user (LiquidBounce account)
 
 export type User = {
-  user_id: string;
+  uid: string;
   email: string;
   name?: string;
-  nickname?: string;
-  groups: string[];
+  nickname: string;
+  roles: { id: string; displayName: string }[];
+  permissions: string[];
   premium: boolean;
-  is_admin: boolean;
+  /** Disabled ones included. */
+  cosmetics: { category?: string; style?: string; enabled?: boolean }[];
 };
 
 // localStorage
